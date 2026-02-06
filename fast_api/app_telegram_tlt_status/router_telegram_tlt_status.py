@@ -28,12 +28,16 @@ async def telegram_tlt_status_router(
 
         telethon_clients = list(telethon_manager.clients.keys())
         running_async_tasks = list(telethon_manager.running_tasks.keys())
+        event_handlers = list(telethon_manager.event_handlers.keys())
+        running_state = telethon_manager.running_state
 
         json_response = JSONResponse(
             content={"message": "Telethon clients tasks status [OK]",
                      "username": auth_data.username,
                      "telethon_clients": telethon_clients,
-                     "running_async_tasks": running_async_tasks},
+                     "running_async_tasks": running_async_tasks,
+                     "event_handlers": event_handlers,
+                     "running_state": running_state},
             status_code=status.HTTP_200_OK)
 
         blue_clr = CONSOLE_COLORS.BRIGHT_BLUE
@@ -44,7 +48,9 @@ async def telegram_tlt_status_router(
               f"Response.status_code: {json_response.status_code}\n"
               f"username: {auth_data.username}\n"
               f"telethon_clients: {blue_clr}{telethon_clients}{reset_clr}\n"
-              f"running_async_tasks: {yellow_clr}{running_async_tasks}{reset_clr}")
+              f"running_async_tasks: {yellow_clr}{running_async_tasks}{reset_clr}\n"
+              f"event_handlers: {green_clr}{event_handlers}{reset_clr}\n"
+              f"running_state: {running_state}\n")
         return json_response
     except Exception as error:
         log_text = (f"Router Telethon clients and async tasks status [ERROR]: "
