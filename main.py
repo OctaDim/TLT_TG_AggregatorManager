@@ -1,0 +1,174 @@
+import asyncio
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
+
+import uvicorn
+from fastapi import FastAPI
+from sqladmin import Admin
+from starlette.applications import Starlette
+from starlette.middleware.sessions import SessionMiddleware
+
+from admin_panel.admin_views.admin_auth_role_backend import (
+    AdminAuthRoleAuthBackend)
+from configs.labels_messages import LABELS
+from configs.settings import (
+    FASTAPI_OPTIONS, API_HOST, API_PORT,
+    SQLADMIN_OPTIONS, FASTAPI_SESSION_KEY)
+from db_postgres.postgres_conn.pgs_connection import (
+    PgsAsyncConnection, close_all_async_pgs_connections,
+    close_all_sync_pgs_connections)
+from db_postgres.postgres_init.db_create_sqladmin_users import (
+    create_default_sqladmin_users)
+from db_postgres.postgres_init.db_tables_initialization import (
+    sync_initialize_db_tables)
+from fast_api.app_start_new_telethon_client.router_start_new_tlt_client import (
+    rtr_start_new_telethon_client)
+from fast_api.app_telegram_tlt_status.router_telegram_tlt_status import (
+    rtr_telegram_tlt_status)
+from fast_api.app_tlt_fastapi_health_check.router_fastapi_health_check import (
+    rtr_fastapi_health_check)
+from telethon_manager.telethon_clients_manager import (
+    TelethonManagerSingleton)
+from telethon_manager.telethon_init_session_dir import init_telethon_sessions_dir
+
+routers_list = [
+    rtr_fastapi_health_check,
+    rtr_telegram_tlt_status,
+    rtr_start_new_telethon_client,
+]
+
+admin_panel_views = []
+
+
+def initialize_postgres_db_tables():
+    sync_initialize_db_tables()
+
+
+def run_redis():
+    # TODO: Check Redis availability and start Redis if not (future)
+    print("TODO: Check Redis availability and start Redis if not (future)")
+
+
+def run_postgres():
+    # TODO: Check Postgres availability and start Postgres if not (future)
+    print("TODO: Check Postgres availability and start Postgres if not (future)")
+
+
+async def lifespan_on_startup():
+    print(">>>>>>> FastAPI Lifespan (STARTUP): <<<<<<<")
+    run_redis()
+    run_postgres()
+    await create_default_sqladmin_users()  # Creating default sqladmin users
+
+
+async def lifespan_on_shutdown():
+    print(">>>>>>> FastAPI Lifespan (SHUTDOWN): <<<<<<<")
+    telethon_manager = TelethonManagerSingleton()  # Singleton
+    await telethon_manager.disconnect_all_tlt_clients()
+    await telethon_manager.cancel_all_telethon_async_tasks()
+    await close_all_async_pgs_connections()
+    close_all_sync_pgs_connections()
+
+
+@asynccontextmanager
+async def fast_api_lifespan(app: FastAPI) -> AsyncGenerator:
+    await lifespan_on_startup()
+    yield  # FastAPI lifespan yield  (Execution fastapi application)
+    await lifespan_on_shutdown()
+
+
+def setup_admin_panel(
+        application: FastAPI | Starlette,
+        fastapi_session_key: str
+) -> Admin:
+    authentication_backend = AdminAuthRoleAuthBackend(
+        secret_key=fastapi_session_key)
+    admin = Admin(
+        app=application,
+        engine=PgsAsyncConnection().engine,
+        authentication_backend=authentication_backend,
+        session_maker=None,
+        base_url=SQLADMIN_OPTIONS.SQLADMIN_PANEL_BASE_URL,
+        title=LABELS.ADMIN_PANEL_TITLE,
+        logo_url=None,
+        favicon_url=None,
+        middlewares=None,
+        debug=False,
+        templates_dir=SQLADMIN_OPTIONS.SQLADMIN_CUSTOM_TEMPLATES_DIR, )  # Origin SQLAdmin value = "templates"
+    for cur_admin_view in admin_panel_views:
+        admin.add_view(cur_admin_view)
+    return admin
+
+
+def create_fastapi_application() -> SessionMiddleware:
+    fastapi_app = FastAPI(
+        lifespan=fast_api_lifespan,
+        # docs_url=None,
+        # redoc_url=None,
+    )
+
+    for cur_router in routers_list:
+        fastapi_app.include_router(router=cur_router, )
+
+    setup_admin_panel(application=fastapi_app,
+                      fastapi_session_key=FASTAPI_SESSION_KEY)
+
+    fastapi_app_with_middleware = SessionMiddleware(
+        app=fastapi_app,
+        secret_key=FASTAPI_SESSION_KEY,
+        session_cookie="admin_session",
+        max_age=600,
+        path="/",
+        same_site="lax",  # "lax", "strict" or "none"
+        https_only=False,
+        domain=None)
+    return fastapi_app_with_middleware
+
+
+async def run_telethon():
+    await init_telethon_sessions_dir()
+    telethon_manager = TelethonManagerSingleton()
+    telethon_configs = await telethon_manager.get_postgres_db_tlt_configs()
+    await telethon_manager.run_all_telethon_clients(telethon_configs)
+
+
+async def run_uvicorn_fastapi_server():  # If used itself without any other async tasks
+    uvicorn.run(app=create_fastapi_application(),
+                # app="main:create_fastapi_app",  # literal func call is necessary if server reload=True when code changing
+                loop="asyncio",
+                host=API_HOST,
+                port=API_PORT,
+                # reload=True,
+                # factory=True,
+                log_level=FASTAPI_OPTIONS.LOG_LEVEL,
+                use_colors=FASTAPI_OPTIONS.USE_COLORS, )
+    print("Uvicorn and FastAPI server started [OK]")
+
+
+async def create_run_uvicorn_fastapi_server():  # If used together with other async tasks
+    uvicorn_config = uvicorn.Config(
+        app=create_fastapi_application(),
+        host=API_HOST,
+        port=API_PORT,
+        # reload=True,
+        # factory=True,
+        log_level=FASTAPI_OPTIONS.LOG_LEVEL,
+        use_colors=FASTAPI_OPTIONS.USE_COLORS,
+        loop="asyncio",  # Existing Telethon loop used
+        lifespan="on", )  # Lifespan events can be used if necessary
+    server = uvicorn.Server(config=uvicorn_config)
+    await server.serve()
+
+
+async def main_process():
+    await run_telethon()  # Start Telethon clients before FastAPI startup
+    uvicorn_fastapi_task = asyncio.create_task(
+        coro=create_run_uvicorn_fastapi_server(),
+        name="uvicorn_fastapi_server",
+        context=None)  # Context vars can be passed/gotten
+    await asyncio.gather(uvicorn_fastapi_task, return_exceptions=True)
+
+
+if __name__ == "__main__":
+    initialize_postgres_db_tables()
+    asyncio.run(main=main_process(), debug=True)
