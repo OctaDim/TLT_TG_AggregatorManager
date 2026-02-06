@@ -1,0 +1,229 @@
+{% extends "sqladmin/base.html" %}
+{% from 'sqladmin/_macros.html' import display_menu %}
+{% block body %}
+<div class="wrapper">
+    <aside class="navbar navbar-expand-lg navbar-vertical navbar-expand-md navbar-dark hover-navbar">
+        <div class="container-fluid">
+            <h1 class="navbar-brand navbar-brand-autodark">
+                <a href="{{ url_for('admin:index') }}">
+                    {% if admin.logo_url %}
+                    <img src="{{ admin.logo_url }}" width="64" height="64" alt="Admin" class="navbar-brand-image"/>
+                    {% else %}
+                    <h3>{{ admin.title }}</h3>
+                    {% endif %}
+                </a>
+            </h1>
+            <nav class="navbar navbar-expand-sm" id="navbar-menu">
+                <button class="navbar-toggler" type="button" data-toggle="collapse"
+                        data-target="#navbarSupportedContent"
+                        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    {{ display_menu(admin._menu, request) }}
+                </div>
+            </nav>
+            {% if admin.authentication_backend %}
+            <a href="{{ request.url_for('admin:logout') }}" class="btn btn-secondary btn-icon">
+                <i class="fa fa-sign-out"></i>
+                <span>Выйти</span>
+            </a>
+            {% endif %}
+        </div>
+    </aside>
+    <div class="page-wrapper">
+        <div class="container-fluid">
+            <div class="page-header d-print-none">
+                {% block content_header %}
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h2 class="page-title">{{ title }}</h2>
+                        <div class="page-pretitle">{{ subtitle }}</div>
+                    </div>
+                </div>
+                {% endblock %}
+            </div>
+        </div>
+        <div class="page-body flex-grow-1">
+            <div class="container-fluid">
+                <div class="row row-deck row-cards">
+                    {% block content %} {% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Стили для левой навигационной панели */
+    .hover-navbar {
+        width: 250px;
+        transform: translateX(-190px);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        position: fixed;
+        height: 100vh;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+    }
+
+    .hover-navbar:hover {
+        transform: translateX(0);
+    }
+
+    .hover-navbar .container-fluid {
+        min-width: 250px;
+    }
+
+    .hover-navbar .navbar-brand,
+    .hover-navbar #navbar-menu,
+    .hover-navbar .btn {
+        opacity: 0;
+        transition: opacity 0.3s ease 0.1s;
+    }
+
+    .hover-navbar:hover .navbar-brand,
+    .hover-navbar:hover #navbar-menu,
+    .hover-navbar:hover .btn {
+        opacity: 1;
+    }
+
+    /* Стили для основного контента */
+    .page-wrapper {
+        margin-left: 60px;
+        transition: margin-left 0.3s ease;
+        width: calc(100% - 60px);
+    }
+
+    .hover-navbar:hover ~ .page-wrapper {
+        margin-left: 250px;
+        width: calc(100% - 250px);
+    }
+
+    /* Стили для правой панели с фильтрами (если она существует в вашем проекте) */
+    .right-sidebar,
+    .filters-panel,
+    .filter-navbar,
+    .navbar-filters,
+    [class*="filter"],
+    [class*="sidebar"]:not(.hover-navbar) {
+        position: fixed !important;
+        right: 0 !important;
+        top: 0 !important;
+        height: 100vh !important;
+        z-index: 999 !important;
+        background-color: white !important;
+        box-shadow: -2px 0 10px rgba(0,0,0,0.1) !important;
+        overflow-y: auto !important;
+    }
+
+    /* Для таблиц с данными - добавляем отступ справа, чтобы не перекрывались фильтры */
+    .table-responsive,
+    .data-table,
+    table {
+        margin-right: 300px !important;
+        transition: margin-right 0.3s ease !important;
+    }
+
+    /* Уменьшаем отступ, когда левая панель раскрыта */
+    .hover-navbar:hover ~ .page-wrapper .table-responsive,
+    .hover-navbar:hover ~ .page-wrapper .data-table,
+    .hover-navbar:hover ~ .page-wrapper table {
+        margin-right: 250px !important;
+    }
+
+    /* Общие стили для контейнера с контентом */
+    .page-body .container-fluid {
+        position: relative;
+        z-index: 1;
+    }
+</style>
+
+<!-- Дополнительный JavaScript для обработки динамических элементов фильтров -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Находим правую панель с фильтрами (адаптируйте селектор под ваш проект)
+    const findFilterPanel = function() {
+        // Попробуем найти стандартные элементы фильтров SQLAdmin
+        let filterPanel = document.querySelector('.filters-panel, .right-sidebar, .filter-navbar');
+
+        // Если не нашли, ищем по классам, содержащим "filter"
+        if (!filterPanel) {
+            const allElements = document.querySelectorAll('[class*="filter"], [class*="sidebar"]');
+            for (let el of allElements) {
+                if (!el.classList.contains('hover-navbar') &&
+                    (el.textContent.includes('Filter') || el.textContent.includes('Фильтр') ||
+                     el.querySelector('input, select, button'))) {
+                    filterPanel = el;
+                    break;
+                }
+            }
+        }
+
+        return filterPanel;
+    };
+
+    // Применяем стили к найденной панели фильтров
+    const applyFilterPanelStyles = function() {
+        const filterPanel = findFilterPanel();
+        if (filterPanel) {
+            // Добавляем классы для фиксации позиции
+            filterPanel.classList.add('fixed-filter-panel');
+
+            // Применяем inline-стили для гарантии
+            filterPanel.style.position = 'fixed';
+            filterPanel.style.right = '0';
+            filterPanel.style.top = '0';
+            filterPanel.style.height = '100vh';
+            filterPanel.style.zIndex = '999';
+            filterPanel.style.backgroundColor = 'white';
+            filterPanel.style.boxShadow = '-2px 0 10px rgba(0,0,0,0.1)';
+            filterPanel.style.overflowY = 'auto';
+            filterPanel.style.padding = '20px';
+            filterPanel.style.width = '280px';
+
+            console.log('Filter panel fixed to right side');
+        } else {
+            console.log('Filter panel not found, retrying...');
+            // Повторяем попытку через короткое время, если панель загружается динамически
+            setTimeout(applyFilterPanelStyles, 500);
+        }
+    };
+
+    // Применяем стили после загрузки страницы
+    setTimeout(applyFilterPanelStyles, 100);
+
+    // Также применяем стили при изменении DOM (на случай динамической загрузки)
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.addedNodes.length) {
+                applyFilterPanelStyles();
+            }
+        });
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    // Обработка ресайза окна
+    window.addEventListener('resize', function() {
+        const filterPanel = findFilterPanel();
+        if (filterPanel) {
+            // Подстраиваем ширину панели фильтров
+            const windowWidth = window.innerWidth;
+            const panelWidth = Math.min(300, windowWidth * 0.25);
+            filterPanel.style.width = panelWidth + 'px';
+
+            // Обновляем отступы для таблиц
+            const tables = document.querySelectorAll('.table-responsive, .data-table, table');
+            tables.forEach(table => {
+                table.style.marginRight = (panelWidth + 20) + 'px';
+            });
+        }
+    });
+});
+</script>
+{% endblock %}
