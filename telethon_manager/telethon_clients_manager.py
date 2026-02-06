@@ -18,7 +18,8 @@ from db_postgres.postgres_queries.qry_update_telethon_session_data import (
     update_telethon_session_data_qry)
 from meta_classes.singlton_meta import SingletonMeta
 from telethon_manager.telethon_client_config import TelethonConfig
-from telethon_manager.telethon_register_handlers import add_all_telethon_client_handlers
+from telethon_manager.telethon_register_handlers import (
+    add_all_telethon_client_handlers)
 from utils_common.normalized_path import get_full_file_normal_path
 
 
@@ -364,7 +365,7 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                 print("Telethon user client authorising via phone")
                 request_sent_code = await user_client.send_code_request(
                     phone=telegram_phone,
-                    force_sms=False,  # Depricated
+                    force_sms=False,  # Deprecated
                     _retry_count=0)
                 print(f"Phone authorisation code sent to phone [OK]:\n"
                       f"request_sent_code: {request_sent_code}\n")
