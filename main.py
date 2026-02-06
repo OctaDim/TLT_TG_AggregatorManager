@@ -130,6 +130,8 @@ async def run_telethon():
     telethon_manager = TelethonManagerSingleton()
     telethon_configs = await telethon_manager.get_postgres_db_tlt_configs()
     await telethon_manager.run_all_telethon_clients(telethon_configs)
+    tlt_async_tasks = await telethon_manager.run_all_tlt_clients_async_tasks()
+    return tlt_async_tasks
 
 
 async def run_uvicorn_fastapi_server():  # If used itself without any other async tasks
@@ -161,12 +163,13 @@ async def create_run_uvicorn_fastapi_server():  # If used together with other as
 
 
 async def main_process():
-    await run_telethon()  # Start Telethon clients before FastAPI startup
+    telethon_async_tasks = await run_telethon()  # Start Telethon clients before FastAPI startup
     uvicorn_fastapi_task = asyncio.create_task(
         coro=create_run_uvicorn_fastapi_server(),
         name="uvicorn_fastapi_server",
         context=None)  # Context vars can be passed/gotten
-    await asyncio.gather(uvicorn_fastapi_task, return_exceptions=True)
+    all_async_tasks = [*telethon_async_tasks, uvicorn_fastapi_task]
+    await asyncio.gather(*all_async_tasks, return_exceptions=True)
 
 
 if __name__ == "__main__":
