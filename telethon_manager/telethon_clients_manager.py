@@ -1,5 +1,6 @@
 import asyncio
 import weakref
+from asyncio import Task
 from typing import Dict, List, Literal, Callable
 
 import qrcode
@@ -532,42 +533,45 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
         periodic_task_interval = TELETHON_OPTIONS.PERIODIC_ASYNC_TASK_INTERVAL_SEC
         await asyncio.sleep(periodic_task_interval)
 
-    async def run_all_tlt_clients_async_tasks(self):
+    async def run_all_tlt_clients_async_tasks(self) -> List[Task] | None:
         print("\nTelethon clients async tasks startup and executing:\n")
         self.running_state = True
-        for cur_config_name, cur_tlt_client in self.clients.items():
-            cur_tlt_client_task = asyncio.create_task(
-                coro=cur_tlt_client.run_until_disconnected(),
-                name=cur_config_name,
-                context=None)  # Context vars can be passed/gotten
-            self.running_tasks[cur_config_name] = cur_tlt_client_task
-
-        periodic_async_task = asyncio.create_task(
-            coro=self.execute_async_periodic_task(),
-            name="periodic_async_task",
-            context=None)  # Context vars can be passed/gotten
-        self.running_tasks["periodic_async_task"] = periodic_async_task
-
-        print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ self.running_tasks", self.running_tasks)
         try:
-            coros_or_futures = self.running_tasks.values()
-            await asyncio.gather(*coros_or_futures, return_exceptions=True)
-            # done, pending = await asyncio.wait(
-            #     fs=cors_or_futures,
-            #     timeout=None,
-            #     return_when=asyncio.ALL_COMPLETED)
-            print(f"Async tasks gathered and started successfully [OK]:\n")
+            for cur_config_name, cur_tlt_client in self.clients.items():
+                cur_tlt_client_task = asyncio.create_task(
+                    coro=cur_tlt_client.run_until_disconnected(),
+                    name=cur_config_name,
+                    context=None)  # Context vars can be passed/gotten
+                self.running_tasks[cur_config_name] = cur_tlt_client_task
+
+            periodic_async_task = asyncio.create_task(
+                coro=self.execute_async_periodic_task(),
+                name="periodic_async_task",
+                context=None)  # Context vars can be passed/gotten
+            self.running_tasks["periodic_async_task"] = periodic_async_task
+
+            # ### Telethon async tasks will be started later, together with uvicorn server in main.py
+            # coros_or_futures = self.running_tasks.values()
+            # await asyncio.gather(*coros_or_futures, return_exceptions=True)
+            # done, pending = await asyncio.wait(fs=coros_or_futures, timeout=None, return_when=asyncio.ALL_COMPLETED)
+
+            print(f"Telethon async tasks started (not gathered) and returned [OK]:\n")
+            tlt_clients_async_tasks_list = list(self.running_tasks.values())
+            return tlt_clients_async_tasks_list
         except KeyboardInterrupt as keyboard_interr_error:
             error_log = (f"Keyboard stop signal error [ERROR]:\n"
                          f"keyboard_interr_error: {keyboard_interr_error}\n")
             print(error_log)
+            await self.disconnect_all_tlt_clients()  # Also in FastAPI shutdown lifespan
+            await self.cancel_all_telethon_async_tasks()  # Also in FastAPI shutdown lifespan
         except Exception as error:
             error_log = (f"Running up asyncio tasks [ERROR]:\n"
                          f"error: {error}")
             print(error_log)
+            await self.disconnect_all_tlt_clients()  # Also in FastAPI shutdown lifespan
+            await self.cancel_all_telethon_async_tasks()  # Also in FastAPI shutdown lifespan
         finally:
-            await self.disconnect_all_tlt_clients()
-            await self.cancel_all_telethon_async_tasks()
+            pass
 
     async def disconnect_all_tlt_clients(self):
         self.running_state = False
