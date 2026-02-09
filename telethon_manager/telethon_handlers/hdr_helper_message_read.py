@@ -4,7 +4,7 @@ from telethon_manager.telethon_client_config import TelethonConfig
 
 
 async def message_read_handler_helper(
-        event: events.NewMessage.Event,
+        event: events.MessageRead.Event,
         telethon_client: TelegramClient,
         telethon_config: TelethonConfig
 ) -> None:

@@ -4,7 +4,7 @@ from telethon_manager.telethon_client_config import TelethonConfig
 
 
 async def inline_query_handler_helper(
-        event: events.NewMessage.Event,
+        event: events.InlineQuery.Event,
         telethon_client: TelegramClient,
         telethon_config: TelethonConfig
 ) -> None:

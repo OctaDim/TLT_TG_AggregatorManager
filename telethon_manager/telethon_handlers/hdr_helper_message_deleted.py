@@ -4,7 +4,7 @@ from telethon_manager.telethon_client_config import TelethonConfig
 
 
 async def message_deleted_handler_helper(
-        event: events.NewMessage.Event,
+        event: events.MessageDeleted.Event,
         telethon_client: TelegramClient,
         telethon_config: TelethonConfig
 ) -> None:
