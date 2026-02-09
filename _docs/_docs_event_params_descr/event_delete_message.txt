@@ -1,0 +1,560 @@
+ПОЛНЫЙ СПИСОК ПАРАМЕТРОВ ДЛЯ events.MessageDeleted.Event В TELEGRAM/TELETHON
+
+================================================================================
+ОСНОВНЫЕ ПАРАМЕТРЫ СОБЫТИЯ MessageDeleted.Event
+================================================================================
+
+MessageDeleted.Event генерируется, когда сообщение(я) удаляются.
+
+1. original_update - UpdateDeleteMessages/UpdateDeleteChannelMessages - Исходный объект обновления от Telegram API
+2. pattern_match - Match или None - Результаты сопоставления с регулярным выражением из фильтра (обычно None)
+3. _client - TelegramClient - Ссылка на клиент Telethon (внутреннее использование)
+4. _chat - Chat/Channel/User или None - Кешированный объект чата/диалога
+5. _entities - Dict[int, Union[User, Chat, Channel]] или None - Словарь кешированных сущностей
+6. _message_ids - List[int] - Список ID удаленных сообщений
+7. _deleted_messages - List[Message] или None - Кешированные объекты удаленных сообщений
+8. _peer - Peer или None - Peer чата/диалога
+9. _channel_id - int или None - ID канала (если применимо)
+10. _broadcast - bool - Флаг, является ли чат каналом/супергруппой
+11. _pts - int - PTS из обновления
+12. _pts_count - int - PTS_COUNT из обновления
+13. _is_channel - bool - Флаг, является ли событие из канала
+
+================================================================================
+ТИПЫ original_update ДЛЯ MessageDeleted.Event
+================================================================================
+
+1. UpdateDeleteMessages - Удаление сообщений в личном чате/группе
+2. UpdateDeleteChannelMessages - Удаление сообщений в канале/супергруппе
+
+================================================================================
+ПАРАМЕТРЫ UpdateDeleteMessages
+================================================================================
+
+Используется, когда сообщения в личном чате или группе удаляются.
+
+• messages - List[int] - Список ID удаленных сообщений
+• pts - int - PTS (sequence для обновлений)
+• pts_count - int - Количество PTS
+
+================================================================================
+ПАРАМЕТРЫ UpdateDeleteChannelMessages
+================================================================================
+
+Используется, когда сообщения в канале/супергруппе удаляются.
+
+• channel_id - int - ID канала
+• messages - List[int] - Список ID удаленных сообщений
+• pts - int - PTS (sequence для обновлений)
+• pts_count - int - Количество PTS
+
+================================================================================
+СВОЙСТВА (PROPERTIES) СОБЫТИЯ MessageDeleted.Event
+================================================================================
+
+1. deleted_ids - List[int] - Список ID удаленных сообщений
+2. messages - List[Message] или None - Объекты удаленных сообщений (если доступны в кеше)
+3. is_channel - bool - Удалены ли сообщения из канала
+4. is_group - bool - Удалены ли сообщения из группы
+5. is_private - bool - Удалены ли сообщения из личного чата
+6. chat_id - int или None - ID чата (для неканальных удалений)
+7. channel_id - int или None - ID канала (для канальных удалений)
+8. peer - Peer или None - Peer объекта чата
+9. chat - Chat/Channel/User или None - Объект чата (если доступен в кеше)
+10. broadcast - bool - Является ли каналом с широковещательными сообщениями
+11. pts - int - PTS из обновления
+12. pts_count - int - PTS_COUNT из обновления
+13. is_single - bool - Удалено ли только одно сообщение
+14. is_bulk - bool - Удалено ли несколько сообщений
+15. count - int - Количество удаленных сообщений
+16. min_id - int - Минимальный ID среди удаленных сообщений
+17. max_id - int - Максимальный ID среди удаленных сообщений
+18. deleted_messages - List[Message] или None - Синоним для messages
+19. deleted_messages_dict - Dict[int, Message] или None - Словарь ID->Message удаленных сообщений
+
+================================================================================
+МЕТОДЫ СОБЫТИЯ MessageDeleted.Event
+================================================================================
+
+1. get_messages() -> List[Message] - Получить объекты удаленных сообщений (из кеша клиента)
+2. get_input_chat() -> InputPeer или InputChannel - Получить InputPeer/InputChannel объекта чата
+3. get_chat() -> Chat/Channel/User - Получить объект чата (загружает при необходимости)
+4. get_deleted_messages() -> List[Message] - Синоним для get_messages()
+5. get_message_ids() -> List[int] - Получить список ID удаленных сообщений
+6. is_from_channel(channel_id: int) -> bool - Проверить, из указанного ли канала удаление
+7. contains_message_id(message_id: int) -> bool - Проверить, содержится ли указанный ID в удаленных
+
+================================================================================
+ВЛОЖЕННЫЕ СТРУКТУРЫ
+================================================================================
+
+1. ПАРАМЕТРЫ chat (ЕСЛИ ДОСТУПЕН В КЕШЕ):
+----------------------------------------------------------------
+-- User (для личных чатов):
+  • id: int - ID пользователя
+  • access_hash: int - Хэш доступа
+  • first_name: str - Имя
+  • last_name: str или None - Фамилия
+  • username: str или None - Юзернейм
+  • phone: str или None - Номер телефона
+  • photo: UserProfilePhoto или None - Фото профиля
+  • status: UserStatus - Статус пользователя
+  • bot: bool - Является ли ботом
+  • verified: bool - Верифицирован ли
+  • restricted: bool - Ограничен ли
+  • scam: bool - Помечен как мошенник
+  • fake: bool - Помечен как фейк
+  • bot_chat_history: bool - Доступна ли история бота
+  • bot_nochats: bool - Может ли бот добавляться в чаты
+  • premium: bool - Имеет ли Telegram Premium
+
+-- Chat (для групп):
+  • id: int - ID чата
+  • title: str - Название чата
+  • photo: ChatPhoto или None - Фото чата
+  • participants_count: int - Количество участников
+  • date: datetime - Дата создания
+  • version: int - Версия чата
+  • creator: bool - Являетесь ли вы создателем
+  • left: bool - Покинули ли вы чат
+  • deactivated: bool - Деактивирован ли чат
+  • call_active: bool - Активен ли звонок
+  • call_not_empty: bool - Есть ли участники в звонке
+  • noforwards: bool - Запрещена пересылка
+  • migrated_to: InputChannel или None - Мигрировал в канал
+
+-- Channel (для каналов/супергрупп):
+  • id: int - ID канала
+  • access_hash: int - Хэш доступа
+  • title: str - Название канала
+  • username: str или None - Юзернейм
+  • photo: ChatPhoto или None - Фото канала
+  • date: datetime - Дата создания
+  • version: int - Версия канала
+  • broadcast: bool - Широковещательный канал (канал) или супергруппа
+  • megagroup: bool - Супергруппа
+  • restricted: bool - Ограничен ли
+  • signatures: bool - Показывать подписи
+  • min: bool - Минимальная информация
+  • scam: bool - Помечен как мошенник
+  • fake: bool - Помечен как фейк
+  • gigagroup: bool - Гигагруппа
+  • noforwards: bool - Запрещена пересылка
+  • join_to_send: bool - Нужно вступать для отправки сообщений
+  • join_request: bool - Нужно одобрение для вступления
+  • participants_count: int или None - Количество участников
+
+================================================================================
+ОБЪЕКТЫ Message В КЕШЕ (ЕСЛИ ДОСТУПНЫ)
+================================================================================
+
+Если сообщения были в кеше клиента до удаления, они доступны через messages/deleted_messages:
+
+1. id - int - ID сообщения
+2. peer_id - Peer - Peer чата
+3. date - datetime - Дата отправки
+4. message - str - Текст сообщения
+5. from_id - Peer - Peer отправителя
+6. media - Разные типы медиа или None - Медиа-вложение
+7. entities - List[MessageEntity] или None - Сущности форматирования
+8. views - int или None - Количество просмотров (для каналов)
+9. forwards - int или None - Количество пересылок
+10. replies - MessageReplies или None - Информация об ответах
+11. edit_date - datetime или None - Дата последнего редактирования
+12. post_author - str или None - Автор поста
+13. grouped_id - int или None - ID группы медиа
+14. reactions - MessageReactions или None - Реакции
+15. reply_to - MessageReplyHeader или None - Информация о reply
+16. fwd_from - MessageFwdHeader или None - Информация о пересылке
+
+================================================================================
+ПРИМЕРЫ ДОСТУПА К ПАРАМЕТРАМ:
+================================================================================
+
+# Список ID удаленных сообщений
+deleted_ids = event.deleted_ids
+
+# Количество удаленных сообщений
+count = event.count
+
+# Минимальный и максимальный ID
+min_id = event.min_id
+max_id = event.max_id
+
+# Объекты сообщений (если были в кеше)
+messages = event.messages
+
+# Проверка типа чата
+if event.is_channel:
+    print(f"Удаление из канала ID: {event.channel_id}")
+elif event.is_group:
+    print(f"Удаление из группы ID: {event.chat_id}")
+elif event.is_private:
+    print(f"Удаление из личного чата ID: {event.chat_id}")
+
+# Проверка массового удаления
+if event.is_bulk:
+    print(f"Массовое удаление: {event.count} сообщений")
+elif event.is_single:
+    print(f"Удалено одно сообщение: {event.deleted_ids[0]}")
+
+# Получить объекты сообщений из кеша
+messages = await event.get_messages()
+if messages:
+    for msg in messages:
+        print(f"Удалено сообщение от {msg.from_id}: {msg.text}")
+
+# Получить объект чата
+chat = await event.get_chat()
+print(f"Чат: {chat.title if hasattr(chat, 'title') else chat.first_name}")
+
+# Проверка конкретного ID
+if event.contains_message_id(12345):
+    print("Сообщение 12345 было удалено")
+
+# PTS информация
+print(f"PTS: {event.pts}, PTS_COUNT: {event.pts_count}")
+
+# Для UpdateDeleteChannelMessages
+if hasattr(event.original_update, 'channel_id'):
+    channel_id = event.original_update.channel_id
+
+# Для UpdateDeleteMessages
+if hasattr(event.original_update, 'messages'):
+    messages_list = event.original_update.messages
+
+================================================================================
+ПРАКТИЧЕСКИЕ СЦЕНАРИИ ИСПОЛЬЗОВАНИЯ:
+================================================================================
+
+1. Логирование удалений:
+   @client.on(events.MessageDeleted())
+   async def log_deletions(event):
+       print(f"[DELETE] {event.count} сообщений удалено")
+       messages = await event.get_messages()
+       if messages:
+           for msg in messages:
+               print(f"  ID {msg.id}: {msg.text[:50]}...")
+
+2. Резервное копирование удаленных сообщений:
+   @client.on(events.MessageDeleted())
+   async def backup_deleted(event):
+       messages = await event.get_messages()
+       if messages:
+           for msg in messages:
+               await save_to_backup(msg)
+
+3. Модерация в группах:
+   @client.on(events.MessageDeleted(is_group=True))
+   async def track_group_deletions(event):
+       chat = await event.get_chat()
+       print(f"В группе '{chat.title}' удалено {event.count} сообщений")
+
+       # Проверить, кто удалил (если есть доступ к правам)
+       # (требуются дополнительные API-вызовы)
+
+4. Статистика удалений в каналах:
+   @client.on(events.MessageDeleted(is_channel=True))
+   async def channel_deletion_stats(event):
+       channel = await event.get_chat()
+       print(f"В канале '{channel.title}' удалено {event.count} сообщений")
+
+       if event.messages:
+           # Анализ типов удаленных сообщений
+           text_msgs = sum(1 for m in event.messages if m.text)
+           media_msgs = sum(1 for m in event.messages if m.media)
+           print(f"Текстовых: {text_msgs}, Медиа: {media_msgs}")
+
+5. Автоматическое восстановление:
+   @client.on(events.MessageDeleted())
+   async def auto_restore(event):
+       messages = await event.get_messages()
+       if messages and should_restore(messages):
+           chat = await event.get_chat()
+           for msg in messages:
+               # Восстановить в лог-чат
+               await client.send_message(
+                   LOG_CHAT_ID,
+                   f"Восстановлено удаленное сообщение из {chat.id}:\n{msg.text}"
+               )
+
+6. Отслеживание self-destruct сообщений:
+   @client.on(events.MessageDeleted())
+   async def track_self_destruct(event):
+       if event.is_single:
+           msg = (await event.get_messages())[0]
+           if msg.ttl_period:
+               print(f"Самоуничтожающееся сообщение {msg.id} удалено")
+
+================================================================================
+ОСОБЫЕ СЛУЧАИ ДЛЯ MessageDeleted.Event:
+================================================================================
+
+1. Массовое удаление:
+   - Администратор очищает историю
+   - Удаление всех сообщений пользователя
+   - Очистка чата при выходе
+   - Может содержать сотни сообщений
+
+2. Самоуничтожение сообщений:
+   - Сообщения с ttl_period
+   - Фотографии/видео с ограничением времени просмотра
+   - Secret Chats (зашифрованные чаты)
+
+3. Удаление в каналах:
+   - Только администраторы могут удалять
+   - Могут удаляться сообщения от других
+   - Удаление постов с комментариями
+
+4. Удаление в супергруппах:
+   - Администраторы и иногда участники
+   - Удаление только своих сообщений (для обычных пользователей)
+   - Удаление с уведомлением всех
+
+5. Системное удаление:
+   - Удаление системой Telegram (спам, нарушение правил)
+   - Автоматическое удаление старых сообщений
+   - Очистка кеша сервера
+
+================================================================================
+ОГРАНИЧЕНИЯ И ОСОБЕННОСТИ:
+================================================================================
+
+1. Доступность данных:
+   - Сообщения могут не быть в кеше клиента
+   - get_messages() возвращает только кешированные сообщения
+   - Невозможно получить удаленные сообщения с сервера
+
+2. Тайминги событий:
+   - Событие может приходить с задержкой
+   - Могут быть пропущены некоторые удаления
+   - В больших каналах события могут группироваться
+
+3. Ограничения массового удаления:
+   - Telegram ограничивает количество одновременно удаляемых сообщений
+   - Flood control при частых удалениях
+   - Ограничения для новых пользователей/чатов
+
+4. Права доступа:
+   - В личных чатах: оба участника могут удалять свои сообщения
+   - В группах: зависит от настроек и прав
+   - В каналах: только администраторы
+
+================================================================================
+МЕТОД get_messages() - ПОВЕДЕНИЕ:
+================================================================================
+
+1. Возвращает только сообщения, которые были в кеше клиента
+2. Если сообщений нет в кеше - возвращает пустой список
+3. Для получения сообщений из истории нужно предварительно их загрузить
+4. Не делает запросов к API Telegram для получения удаленных сообщений
+5. Кеш очищается при перезапуске клиента
+
+================================================================================
+ОБРАБОТКА ОШИБОК:
+================================================================================
+
+1. ChatNotFound - Чат не найден (удален или недоступен)
+2. ChannelInvalidError - Канал недействителен
+3. ChannelPrivateError - Канал приватный
+4. AuthKeyError - Проблемы с аутентификацией
+5. FloodWaitError - Слишком много запросов
+
+================================================================================
+ОПТИМИЗАЦИЯ ДЛЯ MessageDeleted.Event:
+================================================================================
+
+1. Кеширование сообщений:
+   - Храните важные сообщения локально
+   - Используйте базу данных для архивации
+   - Регулярно синхронизируйте кеш
+
+2. Фильтрация событий:
+   - Фильтруйте по типам чатов
+   - Игнорируйте массовые удаления при необходимости
+   - Используйте паттерны для важных сообщений
+
+3. Асинхронная обработка:
+   - Используйте очереди для обработки массовых удалений
+   - Обрабатывайте в фоновых задачах
+   - Балансируйте нагрузку между обработчиками
+
+================================================================================
+РЕАЛЬНЫЕ ПРИМЕРЫ ОБРАБОТКИ:
+================================================================================
+
+Пример 1: Система архивации удаленных сообщений
+@client.on(events.MessageDeleted())
+async def archive_system(event):
+    messages = await event.get_messages()
+    if messages:
+        for msg in messages:
+            archive_entry = {
+                'chat_id': event.chat_id or event.channel_id,
+                'message_id': msg.id,
+                'sender_id': msg.from_id.user_id if isinstance(msg.from_id, PeerUser) else None,
+                'text': msg.text,
+                'media': bool(msg.media),
+                'date': msg.date,
+                'deleted_at': datetime.now(),
+                'chat_type': 'channel' if event.is_channel else 'group' if event.is_group else 'private'
+            }
+            await save_to_archive(archive_entry)
+
+Пример 2: Система отчетов для модераторов
+@client.on(events.MessageDeleted(is_group=True))
+async def moderation_report(event):
+    if event.count > 5:  # Массовое удаление
+        chat = await event.get_chat()
+        messages = await event.get_messages()
+
+        report = f"""
+        ⚠️ МАССОВОЕ УДАЛЕНИЕ
+        Группа: {chat.title}
+        Удалено сообщений: {event.count}
+
+        Примеры удаленных сообщений:
+        """
+
+        for i, msg in enumerate(messages[:5], 1):
+            sender = await msg.get_sender()
+            sender_name = sender.first_name if sender else "Неизвестно"
+            report += f"\n{i}. От {sender_name}: {msg.text[:100]}..."
+
+        await send_to_moderators(report)
+
+Пример 3: Аналитика удалений для каналов
+@client.on(events.MessageDeleted(is_channel=True))
+async def channel_analytics(event):
+    stats = {
+        'channel_id': event.channel_id,
+        'deletion_time': datetime.now(),
+        'message_count': event.count,
+        'min_id': event.min_id,
+        'max_id': event.max_id,
+        'is_bulk': event.is_bulk,
+        'pts': event.pts,
+        'pts_count': event.pts_count
+    }
+
+    # Сохранить в аналитическую БД
+    await save_deletion_stats(stats)
+
+    # Обновить статистику канала
+    channel_stats = await get_channel_stats(event.channel_id)
+    channel_stats.total_deletions += event.count
+    channel_stats.last_deletion = datetime.now()
+    await update_channel_stats(channel_stats)
+
+Пример 4: Восстановление важных сообщений
+IMPORTANT_KEYWORDS = ['пароль', 'ключ', 'доступ', 'важно', 'critical']
+
+@client.on(events.MessageDeleted())
+async def restore_important(event):
+    messages = await event.get_messages()
+    for msg in messages:
+        if any(keyword in msg.text.lower() for keyword in IMPORTANT_KEYWORDS):
+            # Отправить копию в безопасное место
+            await client.send_message(
+                SAFE_CHAT_ID,
+                f"⚠️ Восстановлено важное удаленное сообщение:\n"
+                f"Из чата: {event.chat_id or event.channel_id}\n"
+                f"Сообщение: {msg.text}"
+            )
+
+Пример 5: Система аудита для бизнес-чатов
+@client.on(events.MessageDeleted())
+async def audit_system(event):
+    audit_log = {
+        'event': 'message_deleted',
+        'timestamp': datetime.now(),
+        'chat_id': event.chat_id or event.channel_id,
+        'channel_id': event.channel_id,
+        'deleted_ids': event.deleted_ids,
+        'count': event.count,
+        'is_channel': event.is_channel,
+        'is_group': event.is_group,
+        'is_private': event.is_private,
+        'client_session': event._client.session.filename if event._client.session else None
+    }
+
+    # Сохранить в лог аудита
+    await write_audit_log(audit_log)
+
+    # Уведомить администраторов системы
+    if event.count > 10:  # Большое количество удалений
+        await notify_system_admins(
+            f"Массовое удаление: {event.count} сообщений в "
+            f"{'канале' if event.is_channel else 'группе' if event.is_group else 'личном чате'} "
+            f"{event.chat_id or event.channel_id}"
+        )
+
+================================================================================
+СОВМЕСТИМОСТЬ С ДРУГИМИ СОБЫТИЯМИ:
+================================================================================
+
+1. MessageEdited - Сообщение может быть отредактировано перед удалением
+2. MessageRead - Сообщение может быть прочитано перед удалением
+3. ChatAction - Пользователь может покинуть чат, вызывая удаление сообщений
+4. UserUpdate - Информация об отправителе может измениться
+5. DialogUpdate - Диалог может быть очищен или заархивирован
+
+================================================================================
+БЕЗОПАСНОСТЬ ДЛЯ MessageDeleted.Event:
+================================================================================
+
+1. Проверка источника:
+   - Убедитесь, что событие пришло из доверенного чата
+   - Проверяйте права доступа к чату
+   - Валидируйте данные события
+
+2. Ограничение обработки:
+   - Rate limiting для частых удалений
+   - Ограничение размера обрабатываемых данных
+   - Проверка на корректность ID сообщений
+
+3. Защита данных:
+   - Шифрование архивированных сообщений
+   - Ограничение доступа к логам удалений
+   - Очистка старых логов
+
+================================================================================
+ТЕСТИРОВАНИЕ MessageDeleted.Event:
+================================================================================
+
+1. Юнит-тесты:
+   - Тестирование обработки массовых удалений
+   - Тестирование get_messages() с разными состояниями кеша
+   - Тестирование свойств is_channel/is_group/is_private
+
+2. Интеграционные тесты:
+   - Реальное удаление в тестовых чатах
+   - Тестирование с разными типами медиа-сообщений
+   - Тестирование в разных типах чатов
+
+3. Нагрузочное тестирование:
+   - Обработка сотен одновременных удалений
+   - Тестирование с полным кешем сообщений
+   - Тестирование при высокой нагрузке сети
+
+================================================================================
+ИТОГОВАЯ СТАТИСТИКА:
+================================================================================
+
+• Основные параметры события: 13
+• Типы original_update: 2
+• Свойства (properties): 19
+• Методы: 7
+• Специальные свойства для анализа удалений: 9 (count, min_id, max_id и др.)
+
+================================================================================
+ВАЖНЫЕ ЗАМЕЧАНИЯ:
+================================================================================
+
+1. Событие приходит только для сообщений, которые были получены клиентом
+2. Невозможно получить содержимое удаленных сообщений с сервера Telegram
+3. Массовые удаления могут приходить одним событием
+4. В каналах удаление может приходить с задержкой
+5. Для полного отслеживания удалений нужен постоянный кеш сообщений
+6. Событие может быть пропущено при потере соединения
+7. PTS помогает отслеживать порядок событий, но не гарантирует полноту

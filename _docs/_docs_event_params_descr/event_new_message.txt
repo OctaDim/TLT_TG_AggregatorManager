@@ -1,0 +1,457 @@
+================================================================================
+================================================================================
+ВНИМАНИЕ:
+1. Многие параметры могут быть None, если они не применимы к конкретному сообщению
+2. Типы медиа и клавиатур различаются в зависимости от содержимого сообщения
+3. Некоторые параметры доступны только в определенных типах чатов (каналы, супергруппы)
+4. Для безопасного доступа к вложенным параметрам используйте проверки (пример
+   получения значения одного параметра reply_to):
+   if event.message.reply_to:
+       if event.message:
+           if event.message.reply_to:
+               msg_id = event.message.reply_to.reply_to_msg_id
+================================================================================
+================================================================================
+
+5. Свойства (properties) являются вычисляемыми и не хранятся напрямую в объекте
+
+
+ПОЛНЫЙ СПИСОК ПАРАМЕТРОВ ДЛЯ events.NewMessage.Event В TELEGRAM
+
+Общее количество параметров: более 200 (включая вложенные структуры)
+
+================================================================================
+ОСНОВНЫЕ ПАРАМЕТРЫ СОБЫТИЯ NewMessage.Event
+================================================================================
+
+1. message - Message - Полный объект сообщения (основной контейнер)
+2. pattern_match - Match или None - Результаты сопоставления с регулярным выражением из фильтра
+3. original_update - UpdateNewMessage/UpdateNewChannelMessage и др. - Исходный объект обновления от Telegram API
+4. _client - TelegramClient - Ссылка на клиент Telethon (внутреннее использование)
+5. _chat - Chat/Channel/User - Кешированный объект чата/диалога
+6. _entities - Dict[int, Union[User, Chat, Channel]] - Словарь кешированных сущностей
+7. _reply_message - Message или None - Кешированное сообщение-ответ
+8. _sender - User или Channel - Кешированный объект отправителя
+9. _input_sender - InputPeer - Входной объект отправителя для API-вызовов
+10. _message_id - int - ID сообщения (кешированный)
+11. _chat_peer - Peer - Peer объекта чата (кешированный)
+12. _sender_id - int - ID отправителя (кешированный)
+13. _broadcast - bool - Флаг, является ли чат каналом/супергруппой
+
+================================================================================
+ОБЪЕКТ MESSAGE (48 ОСНОВНЫХ ПАРАМЕТРОВ)
+================================================================================
+
+1. id - int - Уникальный ID сообщения в рамках диалога
+2. peer_id - Peer - Объект, идентифицирующий чат
+3. date - datetime - Дата и время отправки сообщения
+4. message - str - Текст сообщения
+5. out - bool - Исходящее (от вас) сообщение
+6. mentioned - bool - Флаг упоминания вас в сообщении
+7. media_unread - bool - Непросмотренное медиа-вложение
+8. silent - bool - Сообщение без уведомления
+9. post - bool - Является ли постом в канале
+10. from_scheduled - bool - Отправлено из запланированных
+11. legacy - bool - Устаревший флаг (совместимость)
+12. edit_hide - bool - Скрывать отметку об редактировании
+13. pinned - bool - Закрепленное сообщение
+14. noforwards - bool - Запрещена пересылка
+15. invert_media - bool - Медиа отображается под текстом
+16. offline - bool - Сообщение получено в офлайн-режиме
+17. video_processing_pending - bool - Видео еще обрабатывается
+18. paid_suggested_post_stars - bool - Платный пост (Telegram Stars)
+19. paid_suggested_post_ton - bool - Платный пост (TON)
+20. from_id - Peer - ID отправителя
+21. from_boosts_applied - int или None - Количество примененных бустов
+22. saved_peer_id - Peer или None - Peer сохраненного диалога
+23. fwd_from - MessageFwdHeader или None - Информация о пересылке
+24. via_bot_id - int или None - ID бота, через которого отправлено
+25. via_business_bot_id - int или None - ID бизнес-бота
+26. reply_to - MessageReplyHeader или None - Информация о сообщении-ответе
+27. media - Разные типы медиа или None - Медиа-вложение
+28. reply_markup - Разные типы клавиатур или None - Интерактивная клавиатура
+29. entities - List[MessageEntity] или None - Сущности форматирования текста
+30. views - int или None - Количество просмотров
+31. forwards - int или None - Количество пересылок
+32. replies - MessageReplies или None - Информация об ответах
+33. edit_date - datetime или None - Дата последнего редактирования
+34. post_author - str или None - Автор поста в канале
+35. grouped_id - int или None - ID группы медиа (для альбомов)
+36. reactions - MessageReactions или None - Реакции на сообщение
+37. restriction_reason - List[RestrictionReason] - Причины ограничения доступа
+38. ttl_period - int или None - Время жизни самоуничтожающегося сообщения
+39. quick_reply_shortcut_id - int или None - ID быстрого ответа
+40. effect - int или None - Эффект сообщения (анимация)
+41. factcheck - Factcheck или None - Информация о проверке фактов
+42. report_delivery_until_date - datetime или None - Дата доставки репорта
+43. paid_message_stars - PaidMessageStars или None - Информация о платных сообщениях
+44. suggested_post - SuggestedPost или None - Информация о предложенном посте
+45. _finish_init - Метод - Внутренний метод инициализации
+46. _client - TelegramClient или None - Привязанный клиент
+47. _text - str или None - Кешированный текст
+48. _file - File или None - Кешированный файл
+
+================================================================================
+ВЛОЖЕННЫЕ СТРУКТУРЫ И ИХ ПОЛЯ
+================================================================================
+
+1. ПАРАМЕТРЫ peer_id / from_id (ТИП Peer И НАСЛЕДНИКИ):
+----------------------------------------------------------------
+- PeerUser:
+  • user_id: int - ID пользователя
+
+- PeerChat:
+  • chat_id: int - ID обычного чата
+
+- PeerChannel:
+  • channel_id: int - ID канала/супергруппы
+
+2. ПАРАМЕТРЫ reply_to (ТИП MessageReplyHeader):
+----------------------------------------------------------------
+• reply_to_msg_id: int - ID сообщения, на которое отвечаем
+• reply_to_peer_id: Peer или None - Peer чата оригинального сообщения
+• reply_to_top_id: int или None - ID верхнего сообщения в треде
+• reply_to_scheduled: bool - Ответ на запланированное сообщение
+• forum_topic: bool - Является ли форумной темой
+• quote: bool - Является ли цитатой
+• quote_text: str или None - Текст цитаты
+• quote_entities: List[MessageEntity] или None - Сущности в цитате
+• quote_offset: int или None - Смещение цитаты в тексте
+• reply_from: MessageFwdHeader или None - Информация об отправителе оригинала
+• reply_media: Разные типы медиа или None - Медиа из оригинального сообщения
+• todo_item_id: int или None - ID элемента todo
+
+3. ПАРАМЕТРЫ fwd_from (ТИП MessageFwdHeader):
+----------------------------------------------------------------
+• date: datetime - Дата оригинального сообщения
+• from_id: Peer или None - Peer отправителя оригинала
+• from_name: str или None - Имя отправителя (если скрыто)
+• channel_post: int или None - ID поста в канале
+• post_author: str или None - Автор поста
+• saved_from_peer: Peer или None - Peer сохраненного диалога
+• saved_from_msg_id: int или None - ID сохраненного сообщения
+• psa_type: str или None - Тип PSA (общественный сервис)
+• imported: bool - Импортировано ли сообщение
+
+4. ПАРАМЕТРЫ reactions (ТИП MessageReactions):
+----------------------------------------------------------------
+• results: List[ReactionCount] - Список реакций и их счетчиков
+• min: bool - Флаг минимального отображения
+• can_see_list: bool - Можно ли просмотреть список реакций
+• reactions_as_tags: bool - Реакции как теги
+• recent_reactions: List[MessagePeerReaction] - Последние реакции
+• top_reactors: List[Peer] - Топ-реакторы
+
+-- ReactionCount:
+  • reaction: Reaction - Тип реакции (эмодзи или кастомная)
+  • count: int - Количество таких реакций
+  • chosen: bool - Выбрана ли вами
+
+-- MessagePeerReaction:
+  • peer_id: Peer - Peer пользователя
+  • reaction: Reaction - Тип реакции
+  • unread: bool - Непрочитанная реакция
+
+-- Reaction (типы):
+  • ReactionEmoji: emoticon: str - Обычный эмодзи
+  • ReactionCustomEmoji: document_id: int - Кастомный эмодзи (ID документа)
+
+5. ПАРАМЕТРЫ replies (ТИП MessageReplies):
+----------------------------------------------------------------
+• replies: int - Количество ответов
+• replies_pts: int - PTS для ответов
+• comments: bool - Флаг комментариев
+• recent_repliers: List[Peer] - Последние ответившие
+• channel_id: int или None - ID канала для комментариев
+• max_id: int или None - Максимальный ID ответа
+• read_max_id: int или None - Максимальный прочитанный ID
+
+6. ПАРАМЕТРЫ media (РАЗНЫЕ ТИПЫ МЕДИА):
+----------------------------------------------------------------
+-- MessageMediaPhoto:
+  • photo: Photo или None - Объект фотографии
+  • ttl_seconds: int или None - Время жизни фото
+
+-- MessageMediaDocument:
+  • document: Document или None - Объект документа
+  • ttl_seconds: int или None - Время жизни документа
+
+-- MessageMediaGeo:
+  • geo: GeoPoint - Геопозиция
+
+-- MessageMediaGeoLive:
+  • geo: GeoPoint - Геопозиция
+  • heading: int или None - Направление
+  • period: int - Период обновления
+  • proximity_notification_radius: int или None - Радиус уведомления
+
+-- MessageMediaContact:
+  • phone_number: str - Номер телефона
+  • first_name: str - Имя
+  • last_name: str или None - Фамилия
+  • vcard: str или None - vCard данные
+
+-- MessageMediaPoll:
+  • poll: Poll - Объект опроса
+  • results: PollResults - Результаты опроса
+
+-- MessageMediaDice:
+  • value: int - Значение кубика
+  • emoticon: str - Эмодзи кубика
+
+-- MessageMediaGame:
+  • game: Game - Объект игры
+
+-- MessageMediaInvoice:
+  • title: str - Название товара
+  • description: str - Описание
+  • photo: WebDocument или None - Фото товара
+  • start_param: str или None - Параметр для бота
+  • currency: str - Валюта
+  • total_amount: int - Общая сумма
+  • receipt_msg_id: int или None - ID сообщения с чеком
+  • shipping_address_requested: bool - Запрошен адрес доставки
+  • test: bool - Тестовый платеж
+
+-- MessageMediaWebPage:
+  • webpage: WebPage - Объект веб-страницы
+
+-- MessageMediaVenue:
+  • geo: GeoPoint - Геопозиция
+  • title: str - Название места
+  • address: str - Адрес
+  • provider: str - Провайдер
+  • venue_id: str - ID места
+  • venue_type: str - Тип места
+
+-- MessageMediaUnsupported:
+  • (нет полей) - Неподдерживаемый тип медиа
+
+7. СТРУКТУРА Photo:
+----------------------------------------------------------------
+• id: int - ID фотографии
+• access_hash: int - Хэш доступа
+• file_reference: bytes - Референс файла
+• date: datetime - Дата загрузки
+• sizes: List[PhotoSize] - Размеры фото
+• dc_id: int - ID дата-центра
+• has_stickers: bool - Есть ли стикеры на фото
+• video_sizes: List[VideoSize] или None - Размеры видео (для анимированных фото)
+
+-- PhotoSize (типы):
+  • PhotoSizeEmpty: type: str - Пустой размер
+  • PhotoSize: type: str, location: FileLocation, w: int, h: int, size: int - Обычный размер
+  • PhotoCachedSize: type: str, location: FileLocation, w: int, h: int, bytes: bytes - Кешированный размер
+  • PhotoStrippedSize: type: str, bytes: bytes - Упрощенный размер
+
+8. СТРУКТУРА Document:
+----------------------------------------------------------------
+• id: int - ID документа
+• access_hash: int - Хэш доступа
+• file_reference: bytes - Референс файла
+• date: datetime - Дата загрузки
+• mime_type: str - MIME-тип
+• size: int - Размер файла
+• thumbs: List[PhotoSize] или None - Превью
+• video_thumbs: List[VideoSize] или None - Видео-превью
+• dc_id: int - ID дата-центра
+• attributes: List[DocumentAttribute] - Атрибуты документа
+
+-- DocumentAttribute (типы):
+  • DocumentAttributeFilename: file_name: str - Имя файла
+  • DocumentAttributeAudio: voice: bool, duration: int, title: str, performer: str, waveform: bytes - Атрибуты аудио
+  • DocumentAttributeVideo: duration: int, w: int, h: int, round_message: bool, supports_streaming: bool - Атрибуты видео
+  • DocumentAttributeImageSize: w: int, h: int - Размеры изображения
+  • DocumentAttributeSticker: alt: str, stickerset: InputStickerSet, mask: bool - Атрибуты стикера
+  • DocumentAttributeAnimated: (нет полей) - Анимированный документ
+  • DocumentAttributeHasStickers: (нет полей) - Имеет связанные стикеры
+
+9. ПАРАМЕТРЫ reply_markup (ТИПЫ КЛАВИАТУР):
+----------------------------------------------------------------
+-- ReplyKeyboardMarkup:
+  • rows: List[KeyboardButtonRow] - Ряды кнопок
+  • resize: bool - Изменять размер клавиатуры
+  • single_use: bool - Одноразовая клавиатура
+  • selective: bool - Выборочная клавиатура
+  • persistent: bool - Постоянная клавиатура
+
+-- ReplyInlineMarkup:
+  • rows: List[KeyboardButtonRow] - Ряды инлайн-кнопок
+
+-- KeyboardButtonRow:
+  • buttons: List[KeyboardButton] - Кнопки в ряду
+
+-- KeyboardButton (типы):
+  • KeyboardButton: text: str - Обычная кнопка
+  • KeyboardButtonUrl: text: str, url: str - Кнопка с URL
+  • KeyboardButtonCallback: text: str, data: bytes - Кнопка с callback
+  • KeyboardButtonRequestPhone: text: str - Запрос номера телефона
+  • KeyboardButtonRequestGeoLocation: text: str - Запрос геолокации
+  • KeyboardButtonSwitchInline: text: str, query: str, same_peer: bool - Переключение в инлайн-режим
+  • KeyboardButtonGame: text: str - Кнопка игры
+  • KeyboardButtonBuy: text: str - Кнопка покупки
+  • KeyboardButtonUrlAuth: text: str, url: str, button_id: int - Авторизация по URL
+
+10. ПАРАМЕТРЫ entities (ТИПЫ MessageEntity):
+----------------------------------------------------------------
+• MessageEntityMention: offset: int, length: int - Упоминание (@username)
+• MessageEntityHashtag: offset: int, length: int - Хэштег (#tag)
+• MessageEntityBotCommand: offset: int, length: int - Команда бота (/command)
+• MessageEntityUrl: offset: int, length: int - URL-адрес
+• MessageEntityEmail: offset: int, length: int - Email адрес
+• MessageEntityBold: offset: int, length: int - Жирный текст
+• MessageEntityItalic: offset: int, length: int - Курсив
+• MessageEntityCode: offset: int, length: int - Код (inline)
+• MessageEntityPre: offset: int, length: int, language: str - Преформатированный текст
+• MessageEntityTextUrl: offset: int, length: int, url: str - Кликабельная ссылка
+• MessageEntityMentionName: offset: int, length: int, user_id: int - Упоминание по ID пользователя
+• MessageEntityPhone: offset: int, length: int - Номер телефона
+• MessageEntityCashtag: offset: int, length: int - Тег валюты ($USD)
+• MessageEntityUnderline: offset: int, length: int - Подчеркнутый текст
+• MessageEntityStrike: offset: int, length: int - Зачеркнутый текст
+• MessageEntityBlockquote: offset: int, length: int - Цитата (блок)
+• MessageEntityBankCard: offset: int, length: int - Банковская карта
+• MessageEntitySpoiler: offset: int, length: int - Спойлер
+• MessageEntityCustomEmoji: offset: int, length: int, document_id: int - Кастомный эмодзи
+
+11. ПАРАМЕТРЫ restriction_reason (ТИП RestrictionReason):
+----------------------------------------------------------------
+• platform: str - Платформа (android, ios, web и т.д.)
+• reason: str - Причина ограничения
+• text: str - Текст объяснения
+
+12. ПАРАМЕТРЫ factcheck (ТИП Factcheck):
+----------------------------------------------------------------
+• country: str - Страна проверки фактов
+• text: str - Текст проверки
+• hash: int - Хэш проверки
+
+13. ПАРАМЕТРЫ paid_message_stars (ТИП PaidMessageStars):
+----------------------------------------------------------------
+• amount: int - Количество Stars
+• currency: str - Валюта
+• stars_amount: int - Количество звезд
+• revenue_share: int - Доля дохода
+• from_id: Peer - Отправитель платежа
+
+14. ПАРАМЕТРЫ suggested_post (ТИП SuggestedPost):
+----------------------------------------------------------------
+• channel_id: int - ID канала
+• post_id: int - ID поста
+• text: str или None - Текст поста
+• entities: List[MessageEntity] или None - Сущности поста
+
+================================================================================
+СВОЙСТВА (PROPERTIES) СОБЫТИЯ NewMessage.Event
+================================================================================
+
+1. text - str - Текст сообщения (message.message)
+2. raw_text - str - Необработанный текст с разметкой
+3. is_reply - bool - Является ли ответом
+4. is_private - bool - Личное сообщение
+5. is_group - bool - Сообщение в группе
+6. is_channel - bool - Сообщение в канале
+7. chat_id - int - ID чата (извлеченный из peer_id)
+8. sender_id - int - ID отправителя (извлеченный)
+9. forward - MessageFwdHeader или None - Объект пересылки
+10. photo - Photo или None - Фото из медиа
+11. document - Document или None - Документ из медиа
+12. audio - Document или None - Аудио из медиа
+13. video - Document или None - Видео из медиа
+14. voice - Document или None - Голосовое сообщение
+15. sticker - Document или None - Стикер
+16. contact - MessageMediaContact или None - Контакт
+17. location - MessageMediaGeo или None - Локация
+18. venue - MessageMediaVenue или None - Место
+19. game - MessageMediaGame или None - Игра
+20. poll - MessageMediaPoll или None - Опрос
+21. dice - MessageMediaDice или None - Кубик
+22. invoice - MessageMediaInvoice или None - Инвойс
+23. web_preview - MessageMediaWebPage или None - Веб-превью
+24. action - MessageAction или None - Действие сообщения
+25. video_note - Document или None - Видео-заметка
+26. gif - Document или None - GIF анимация
+
+================================================================================
+ТИПЫ original_update
+================================================================================
+
+1. UpdateNewMessage:
+   • message: Message - Объект сообщения
+   • pts: int - PTS (sequence для обновлений)
+   • pts_count: int - Количество PTS
+
+2. UpdateNewChannelMessage:
+   • message: Message - Объект сообщения
+   • pts: int - PTS
+   • pts_count: int - Количество PTS
+
+3. UpdateNewScheduledMessage:
+   • message: Message - Объект сообщения
+
+4. UpdateEditMessage:
+   • message: Message - Объект сообщения
+   • pts: int - PTS
+   • pts_count: int - Количество PTS
+
+5. UpdateEditChannelMessage:
+   • message: Message - Объект сообщения
+   • pts: int - PTS
+   • pts_count: int - Количество PTS
+
+================================================================================
+ИТОГОВАЯ СТАТИСТИКА
+================================================================================
+
+• Основные параметры события: 13
+• Основные параметры Message: 48
+• Вложенные структуры первого уровня: 14
+• Типы MessageEntity: 19
+• Типы медиа: 12
+• Типы клавиатур: 3 основных + 9 типов кнопок
+• Свойства (properties): 26
+• Типы original_update: 5
+
+ВСЕГО УНИКАЛЬНЫХ ПАРАМЕТРОВ: более 200
+
+================================================================================
+ПРИМЕРЫ ДОСТУПА К ПАРАМЕТРАМ:
+================================================================================
+
+# Текст сообщения
+event.message.message
+
+# ID отправителя
+event.message.from_id.user_id
+
+# Дата отправки
+event.message.date
+
+# ID чата
+event.message.peer_id.channel_id  # для каналов
+event.message.peer_id.chat_id     # для чатов
+event.message.peer_id.user_id     # для личных сообщений
+
+# Является ли ответом
+event.is_reply
+
+# ID сообщения, на которое отвечают
+event.message.reply_to.reply_to_msg_id
+
+# Количество просмотров (для каналов)
+event.message.views
+
+# Реакции на сообщение
+event.message.reactions.results
+
+# Геолокация из медиа
+event.message.media.geo
+
+# Документ (файл)
+event.message.media.document
+
+# Сущности форматирования
+event.message.entities
+
+# Клавиатура
+event.message.reply_markup.rows
