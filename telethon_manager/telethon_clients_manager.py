@@ -502,11 +502,19 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
             telethon_config_weak_ref=telethon_config_weak_ref)
 
     async def cancel_all_telethon_async_tasks(self):
+        errors_list = []
         for cur_config_name, cur_tlt_task in self.running_tasks.items():
             try:
                 if cur_tlt_task.done():
                     print(f"{'>' * 55}\n{'>' * 55}\n"
-                          f"Already cancelled Telethon client asyncio task skipped [OK]:\n"
+                          f"Already done Telethon client asyncio task skipped [OK]:\n"
+                          f"cur_config_name: {cur_config_name}\n"
+                          f"cur_tlt_task.cancelled(): {cur_tlt_task.cancelled()}\n"
+                          f"cur_tlt_task.done(): {cur_tlt_task.done()}\n")
+                    continue
+                if cur_tlt_task.cancelled():
+                    print(f"{'>' * 55}\n{'>' * 55}\n"
+                          f"Already canceled Telethon client asyncio task skipped [OK]:\n"
                           f"cur_config_name: {cur_config_name}\n"
                           f"cur_tlt_task.cancelled(): {cur_tlt_task.cancelled()}\n"
                           f"cur_tlt_task.done(): {cur_tlt_task.done()}\n")
@@ -522,9 +530,16 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                 print(f"Canceling Telethon client asyncio task [ERROR]:\n"
                       f"error: {error}\n"
                       f"cur_config_name: {cur_config_name}\n")
+                errors_list.append(f"cur_config_name: {cur_config_name}, "
+                                   f"error: {error}")
         self.running_state = False
         self.running_tasks.clear()
-        print("All Telethon clients asyncio tasks canceled [OK]\n")
+        if errors_list:
+            print("Not all Telethon clients asyncio tasks canceled [ERROR]:\n")
+            for cur_error in errors_list:
+                print(f"\t{cur_error}")
+        else:
+            print("All Telethon clients asyncio tasks canceled [OK]\n")
 
     async def execute_async_periodic_task(self):
         print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
