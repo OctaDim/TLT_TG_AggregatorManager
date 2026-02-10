@@ -1,0 +1,183 @@
+# Полный список данных из Telethon events.NewMessage.Event
+
+## **Основные атрибуты event:**
+event.id                  # ID сообщения
+event.date                # Дата и время сообщения (datetime)
+event.is_private          # True для личных сообщений
+event.is_group            # True для групповых чатов
+event.is_channel          # True для каналов
+event.out                 # True если сообщение отправлено вами
+event.mentioned           # True если вас упомянули
+event.scheduled           # True если запланированное сообщение
+event.from_scheduled      # True если из запланированных
+event.silent              # True если сообщение без уведомления
+event.post                # True если пост в канале
+event.via_bot_id          # ID бота, через которого отправлено
+event.edit_date           # Дата последнего редактирования
+event.post_author         # Автор поста (для каналов)
+event.views               # Количество просмотров (для каналов/постов)
+event.forwards            # Количество пересылок
+event.replies             # Информация о ответах (MessageReplies)
+
+## **Объекты связанные с event:**
+event.message             # Сам объект сообщения (Message)
+event.chat_id             # ID чата
+event.sender_id           # ID отправителя
+event.peer_id             # ID пира (чата/пользователя)
+event.input_chat          # InputPeer объекта чата
+event.input_sender        # InputPeer отправителя
+event.client              # Клиент Telethon
+event.original_update     # Исходный raw update
+event._entities           # Сущности из события
+event._set_entities       # Метод установки entities
+
+## **Данные из event.message:**
+msg = event.message
+
+# Основные атрибуты сообщения
+msg.id                    # ID сообщения
+msg.peer_id               # ID чата
+msg.from_id               # ID отправителя
+msg.date                  # Дата отправки
+msg.message               # Текст сообщения
+msg.out                   # True если отправлено вами
+msg.mentioned             # True если упомянули
+msg.media_unread          # True если медиа не просмотрено
+msg.silent                # True если без звука
+msg.post                  # True если пост
+msg.from_scheduled        # True если из запланированных
+msg.legacy                # Legacy флаг
+msg.edit_hide             # True если скрыто редактирование
+msg.pinned                # True если закреплено
+msg.noforwards            # True если запрещена пересылка
+msg.invert_media          # True если инвертировано медиа
+msg.reply_to              # Ответ на сообщение (MessageReplyHeader)
+msg.fwd_from              # Информация о пересылке (MessageFwdHeader)
+msg.via_bot_id            # ID бота
+msg.via_business_bot_id   # ID бизнес-бота
+msg.reply_to_msg_id       # ID сообщения на которое отвечаем
+msg.reply_to_top_id       # ID верхнего сообщения в треде
+msg.reply_to_scheduled    # Ответ на запланированное
+msg.post_author           # Автор поста
+msg.grouped_id            # ID группы (для альбомов)
+msg.reactions             # Реакции (MessageReactions)
+msg.restricted            # Ограничения
+msg.views                 # Просмотры
+msg.forwards              # Пересылки
+msg.replies               # Ответы (MessageReplies)
+msg.edit_date             # Дата редактирования
+msg.post_author           # Автор поста
+msg.action                # Action сообщения
+msg.ttl_period            # Время самоуничтожения
+msg.ttl_period_timestamp  # Timestamp уничтожения
+
+## **Медиа в сообщении:**
+msg.media                 # Медиа объект (может быть None)
+msg.photo                 # Фото (если есть)
+msg.document              # Документ (файл)
+msg.web_preview           # Web превью
+msg.video                 # Видео
+msg.audio                 # Аудио
+msg.voice                 # Голосовое
+msg.sticker               # Стикер
+msg.gif                   # GIF
+msg.geo                   # Геолокация
+msg.venue                 # Место
+msg.game                  # Игра
+msg.poll                  # Опрос
+msg.invoice               # Инвойс
+msg.contact               # Контакт
+
+## **Вложенные объекты:**
+# Для пересланных сообщений (fwd_from)
+if msg.fwd_from:
+    msg.fwd_from.date              # Дата оригинального сообщения
+    msg.fwd_from.from_id           # ID оригинального отправителя
+    msg.fwd_from.from_name         # Имя оригинального отправителя
+    msg.fwd_from.channel_post      # Пост в канале
+    msg.fwd_from.post_author       # Автор поста
+    msg.fwd_from.saved_from_peer   # Peer сохраненного из
+    msg.fwd_from.saved_from_msg_id # ID сохраненного сообщения
+
+# Для ответов (reply_to)
+if msg.reply_to:
+    msg.reply_to.reply_to_msg_id    # ID сообщения
+    msg.reply_to.reply_to_top_id    # ID верхнего сообщения
+    msg.reply_to.forum_topic        # True если топик форума
+    msg.reply_to.reply_to_peer_id   # ID пира
+
+## **Экшен сообщения (для служебных):**
+if msg.action:
+    msg.action.__class__.__name__  # Тип действия
+    # Например: MessageActionChatAddUser, MessageActionPinMessage и т.д.
+
+## **Асинхронные методы для получения объектов:**
+# Получение объектов с загрузкой из API
+await event.get_sender()           # Получить пользователя-отправителя
+await event.get_chat()             # Получить чат
+await event.get_input_chat()       # Получить InputChat
+await event.get_input_sender()     # Получить InputSender
+await event.get_entities()         # Получить сущности
+await event.get_message()          # Получить сообщение (синоним event.message)
+
+# Получение отправителя пересланного сообщения
+await event.get_forward_sender()
+await event.get_forward_chat()
+
+# Для пересланных сообщений
+await event.get_forward()          # Получить пересланное сообщение
+
+## **Методы ответа:**
+await event.respond(text)          # Ответить в тот же чат
+await event.reply(text)            # Ответить на сообщение
+await event.edit(text)             # Редактировать сообщение
+await event.delete()               # Удалить сообщение
+await event.forward_to(entity)     # Переслать
+await event.pin()                  # Закрепить
+await event.unpin()                # Открепить
+await event.mark_read()            # Отметить прочитанным
+
+## **Дополнительные методы:**
+event.to_json()                    # Конвертировать в JSON
+event.stringify()                  # Строковое представление
+event._bytes()                     # Байтовое представление
+
+## **Практические примеры извлечения данных:**
+# Контактная информация
+if event.message.contact:
+    contact = event.message.contact
+    contact.user_id
+    contact.first_name
+    contact.last_name
+    contact.phone_number
+    contact.vcard
+
+# Геолокация
+if event.message.geo:
+    geo = event.message.geo
+    geo.lat
+    geo.long
+    geo.access_hash
+
+# Опрос
+if event.message.poll:
+    poll = event.message.poll
+    poll.id
+    poll.question
+    poll.answers  # Список ответов
+    poll.closed
+    poll.public_voters
+    poll.multiple_choice
+    poll.quiz
+    poll.close_date
+
+## **События клавиатуры:**
+if event.message.reply_markup:
+    markup = event.message.reply_markup
+    markup.rows  # Строки кнопок
+    # Для inline кнопок
+    for row in markup.rows:
+        for button in row.buttons:
+            button.text
+            button.data
+            button.url
