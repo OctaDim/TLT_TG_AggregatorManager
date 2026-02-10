@@ -8,6 +8,13 @@ async def raw_event_handler_helper(
         telethon_client: TelegramClient,
         telethon_config: TelethonConfig
 ) -> None:
-    # print(f"RAW EVENT:\n"
-    #       f"event: {event}\n")
-    return None
+    if None in (telethon_client, telethon_config):
+        print(f"Deleted Telethon object(s), not handled event [ERROR]:\n"
+              f"telethon_client: {telethon_client}\n"
+              f"telethon_config: {telethon_config}\n")
+        return
+
+    # print(f"\n{'=' * 80}\n{'=' * 80}")
+    # print("RAW EVENT:")
+    # print(event.stringify())
+    # print(f"{'=' * 80}\n{'=' * 80}\n")

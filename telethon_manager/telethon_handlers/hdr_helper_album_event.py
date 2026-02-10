@@ -14,7 +14,7 @@ async def album_event_handler_helper(
               f"telethon_config: {telethon_config}\n")
         return
 
-    print(f"\n{'=' * 80}\n{'=' * 80}")
-    print("ALBUM EVENT:")
-    print(event.stringify())
-    print(f"{'=' * 80}\n{'=' * 80}\n")
+    # print(f"\n{'=' * 80}\n{'=' * 80}")
+    # print("ALBUM EVENT:")
+    # print(event.stringify())
+    # print(f"{'=' * 80}\n{'=' * 80}\n")
