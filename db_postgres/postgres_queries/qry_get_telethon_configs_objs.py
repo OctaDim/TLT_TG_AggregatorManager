@@ -13,7 +13,8 @@ async def get_telethon_configs_objs_qry(
         ongoing_session: AsyncSession,
 ) -> List[Row]:
     """Returns list of dicts with Telethon clients configurations"""
-    filter_fields = {"active": True}
+    filter_fields = {"active": True,
+                     "telethon_is_active": True}
     telethon_configs_objs = await get_model_rows_flex_query(
         orm_model_class=TelethonConfigModel,
         ongoing_session=ongoing_session,
