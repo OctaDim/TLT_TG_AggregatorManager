@@ -1,0 +1,9 @@
+def get_msg_delete_attr_chains():
+    attrs_chains = {
+        # MessageDeleted
+        "delete_message": {
+            "deleted_id": "deleted_id",
+            "deleted_ids": "deleted_ids",
+            "separator": "", },
+    }
+    return attrs_chains
