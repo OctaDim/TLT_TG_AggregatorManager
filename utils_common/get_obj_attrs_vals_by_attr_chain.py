@@ -45,17 +45,26 @@ async def get_attr_value_by_attr_chain(
 
 async def get_attrs_values_by_attr_chains(
         base_class_or_obj: Union[Type, object],
-        attributes_chains_dict: Dict[str, Union[str, List[str], Tuple[str], None]]
+        attributes_chains_dict: Dict[str, Dict[str, Union[str, List[str], Tuple[str], None]]],
+        section_separator_prefix: str
 ) -> Dict[str, any]:
     if not base_class_or_obj or not attributes_chains_dict:
         return {}
 
     all_attrs_values_dict = {}
-    for cur_attr_str, cur_attr_chain in attributes_chains_dict.items():
-        cur_attr_str = cur_attr_str.strip()
-        cur_attr_chain = cur_attr_chain.strip()
-        cur_attr_value = await get_attr_value_by_attr_chain(
-            base_class_or_obj=base_class_or_obj,
-            attribute_chain=cur_attr_chain)
-        all_attrs_values_dict[cur_attr_str] = cur_attr_value
+    sep_counter = 1
+    for cur_attr_section, cur_attr_chains in attributes_chains_dict.items():
+        for cur_attr_str, cur_attr_chain in cur_attr_chains.items():
+            if cur_attr_str.startswith(section_separator_prefix):
+                counted_attr_str = f"{cur_attr_str}_{sep_counter}"
+                all_attrs_values_dict[counted_attr_str] = cur_attr_chain
+                sep_counter += 1
+                continue
+
+            cur_attr_str = cur_attr_str.strip()
+            cur_attr_chain = cur_attr_chain.strip()
+            cur_attr_value = await get_attr_value_by_attr_chain(
+                base_class_or_obj=base_class_or_obj,
+                attribute_chain=cur_attr_chain)
+            all_attrs_values_dict[cur_attr_str] = cur_attr_value
     return all_attrs_values_dict
