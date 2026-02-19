@@ -30,7 +30,7 @@ async def chat_action_handler_helper(
 
     attrs_chains = get_chat_action_attr_chains()  # NewMessage attrs chains
     event_params = {
-        "event_type": "NewMessage",
+        "event_type": "ChatAction",
         "web_account_id": telethon_config.web_account_id,
         "web_account_username": telethon_config.web_account_username,
         "tlt_account_type": telethon_config.account_type.value,
