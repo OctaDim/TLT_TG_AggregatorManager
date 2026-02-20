@@ -19,7 +19,7 @@ async def message_read_handler_helper(
               f"telethon_config: {telethon_config}\n")
         return
 
-    if TELETHON_OPTIONS.LOG_EVENT_STRINGIFY:
+    if TELETHON_OPTIONS.LOG_ALL_EVENT_STRINGIFY_PARAMS:
         print(event.stringify())
 
     if telethon_config.bot_token:
