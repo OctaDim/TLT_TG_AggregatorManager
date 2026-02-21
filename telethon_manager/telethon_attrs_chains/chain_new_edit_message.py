@@ -109,12 +109,18 @@ def get_event_new_edit_msg_attr_chains():
         # event_fwd_from >>> (MessageFwdHeader)
         "event_fwd_from": {
             "ev_fwd_from_date": "fwd_from.date",
-            "ev_fwd_from_from_id": "fwd_from.from_id",  # Peer
+            "ev_fwd_from_from_id": "fwd_from.from_id",  # ev_fwd_from_from_id_peer_id >>> (Peer)
             "ev_fwd_from_from_name": "fwd_from.from_name",
             "ev_fwd_from_channel_post": "fwd_from.channel_post",
             "ev_fwd_from_post_author": "fwd_from.post_author",
             "ev_fwd_from_saved_from_peer": "fwd_from.saved_from_peer",
             "ev_fwd_from_saved_from_msg_id": "fwd_from.saved_from_msg_id",
+            "separator": ""},
+        # ev_fwd_from_from_id_peer_id >>> (Peer)
+        "ev_fwd_from_from_id_peer_id": {
+            "ev_fwd_from_from_id_channel_id": "fwd_from.from_id.channel_id",
+            "ev_fwd_from_from_id_chat_id": "fwd_from.from_id.chat_id",
+            "ev_fwd_from_from_id_user_id": "fwd_from.from_id.user_id",
             "separator": ""},
         # event_reply_to >>> (MessageReplyHeader)
         "event_reply_to": {
@@ -127,6 +133,12 @@ def get_event_new_edit_msg_attr_chains():
             "ev_reply_to_quote_text": "reply_to.quote_text",
             "ev_reply_to_reply_media": "reply_to.reply_media",
             "ev_reply_to_todo_item_id": "reply_to.todo_item_id",
+            "separator": ""},
+        # ev_reply_to_reply_to_peer_id >>> (Peer)
+        "ev_reply_to_reply_to_peer_id": {
+            "ev_reply_to_reply_to_peer_id_channel_id": "reply_to.reply_to_peer_id.channel_id",
+            "ev_reply_to_reply_to_peer_id_chat_id": "reply_to.reply_to_peer_id.chat_id",
+            "ev_reply_to_reply_to_peer_id_user_id": "reply_to.reply_to_peer_id.user_id",
             "separator": ""},
         # event_media >>> photo (MessageMediaPhoto)
         "event_media_photo": {
