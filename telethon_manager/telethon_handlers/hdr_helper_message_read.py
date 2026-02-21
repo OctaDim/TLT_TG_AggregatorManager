@@ -22,6 +22,8 @@ async def message_read_handler_helper(
     if TELETHON_OPTIONS.LOG_ALL_EVENT_STRINGIFY_PARAMS:
         print(event.stringify())
 
+    separator = TELETHON_OPTIONS.EVENT_ATTRS_SECTION_SEPARATOR_PREFIX
+
     if telethon_config.bot_token:
         tlt_bot_token_info = telethon_config.bot_token[:10]
     else:
@@ -35,17 +37,17 @@ async def message_read_handler_helper(
         "tlt_account_type": telethon_config.account_type.value,
         "tlt_phone": telethon_config.phone,
         "tlt_bot_token": tlt_bot_token_info,
-        "separator": "", }
+        separator: "", }
 
     new_msg_evnt_data = await get_attrs_values_by_attr_chains(
         base_class_or_obj=event,
         attributes_chains_dict=attrs_chains,
-        section_separator_prefix="separator")
+        section_separator_prefix=separator)
     event_params.update(new_msg_evnt_data)
 
     print(f"\nMESSAGE READ EVENT:\n{'=' * 80}")
     for cur_param_str, cur_param_val in event_params.items():
-        if cur_param_str.startswith("separator"):
+        if cur_param_str.startswith(separator):
             print(f"\t")
             continue
         if cur_param_val is None:

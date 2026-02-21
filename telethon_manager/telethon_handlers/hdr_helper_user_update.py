@@ -32,6 +32,8 @@ async def user_update_handler_helper(
         if TELETHON_OPTIONS.LOG_ALL_EVENT_STRINGIFY_PARAMS:
             print(event.stringify())
 
+        separator = TELETHON_OPTIONS.EVENT_ATTRS_SECTION_SEPARATOR_PREFIX
+
         if telethon_config.bot_token:
             tlt_bot_token_info = telethon_config.bot_token[:10]
         else:
@@ -45,7 +47,7 @@ async def user_update_handler_helper(
             "tlt_account_type": telethon_config.account_type.value,
             "tlt_phone": telethon_config.phone,
             "tlt_bot_token": tlt_bot_token_info,
-            "separator": "", }
+            separator: "", }
 
         evnt_msg_msg = await get_attr_value_by_attr_chain(
             base_class_or_obj=event,
@@ -54,7 +56,6 @@ async def user_update_handler_helper(
             origin_text=evnt_msg_msg,
             clean_line_breaks=True,
             clean_continuous_spaces=True)
-        event_params["event_message_message"] = evnt_msg_msg
 
         evnt_msg_text = await get_attr_value_by_attr_chain(
             base_class_or_obj=event,
@@ -63,7 +64,6 @@ async def user_update_handler_helper(
             origin_text=evnt_msg_text,
             clean_line_breaks=True,
             clean_continuous_spaces=True)
-        event_params["event_message_text"] = evnt_msg_text
 
         evnt_msg_raw_text = await get_attr_value_by_attr_chain(
             base_class_or_obj=event,
@@ -71,17 +71,22 @@ async def user_update_handler_helper(
         evnt_msg_raw_text = await clean_text(origin_text=evnt_msg_raw_text,
                                              clean_line_breaks=True,
                                              clean_continuous_spaces=True)
-        event_params["event_message_raw_text"] = evnt_msg_raw_text
+
+        event_messages = {"ev_message_message": evnt_msg_msg,
+                          "ev_message_text": evnt_msg_text,
+                          "evnt_msg_raw_text": evnt_msg_raw_text,
+                          f"{separator}_msgs": ""}
+        event_params.update(event_messages)
 
         new_msg_evnt_data = await get_attrs_values_by_attr_chains(
             base_class_or_obj=event,
             attributes_chains_dict=attrs_chains,
-            section_separator_prefix="separator")
+            section_separator_prefix=separator)
         event_params.update(new_msg_evnt_data)
 
         print(f"\nUSER UPDATE EVENT:\n{'=' * 80}")
         for cur_param_str, cur_param_val in event_params.items():
-            if cur_param_str.startswith("separator"):
+            if cur_param_str.startswith(separator):
                 print(f"\t")
                 continue
             if cur_param_val is None:
