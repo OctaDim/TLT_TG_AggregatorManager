@@ -150,6 +150,7 @@ def get_event_new_edit_msg_attr_chains():
             "ev_media_photo_file_reference": "media.photo.file_reference",
             "ev_media_photo_date": "media.photo.date",
             "ev_media_photo_sizes": "media.photo.sizes",  # PhotoSize
+            "ev_media_video_sizes": "media.photo.sizes",  # VideoSize
             "ev_media_photo_has_stickers": "media.photo.has_stickers",
             "separator": ""},
         # event_media_document >>> (MessageMediaDocument)
@@ -166,7 +167,6 @@ def get_event_new_edit_msg_attr_chains():
             "ev_media_document_thumbs": "media.document.thumbs",  # List[PhotoSize]
             "ev_media_document_video_thumbs": "media.document.video_thumbs",  # List[VideoSize]
             "ev_media_document_attributes": "media.document.attributes",  # List[DocumentAttribute]
-            "ev_media_document_": "media.document.",
             "separator": ""},
         # event_media_geo >>> geo (MessageMediaGeo)
         "event_media_geo": {
@@ -220,6 +220,7 @@ def get_event_new_edit_msg_attr_chains():
         # event_repliers (MessageReplies)
         "event_replies": {
             "ev_replies_replies": "replies.replies",
+            "ev_replies_replies_pts": "replies.replies_pts",
             "ev_replies_comments": "replies.comments",
             "ev_replies_recent_repliers": "replies.recent_repliers",
             "ev_replies_channel_id": "replies.channel_id",
