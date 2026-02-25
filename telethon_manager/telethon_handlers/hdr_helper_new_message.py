@@ -80,8 +80,9 @@ async def new_message_handler_helper(
         section_separator_prefix=separator)
     all_event_params.update(new_msg_evnt_data)
 
-    await log_all_event_params(log_title="NEW MESSAGE EVENT",
-                               event_params_dict=all_event_params)
+    if TELETHON_OPTIONS.LOG_NEW_MESSAGE_EVENT_PARAMS:
+        await log_all_event_params(log_title="NEW MESSAGE EVENT",
+                                   event_params_dict=all_event_params)
 
     webhook_event_data = {}
     for cur_param_name, cur_param_value in all_event_params.items():
