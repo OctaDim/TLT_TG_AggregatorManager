@@ -168,6 +168,51 @@ POSTGRES_PORT = postgres_conf_parser.get(section=postgres_conf_name, option="POS
 POSTGRES_DB_NAME = postgres_conf_parser.get(section=postgres_conf_name, option="POSTGRES_DB_NAME")
 
 
+# GETTING AGGREGATOR INI CONFIGS #########################################
+@dataclass(frozen=True)
+class AGGREGATOR_CONFIG_NAMES:
+    AGGREGATOR_PRODUCT_SERVER_IP = "AGGREGATOR_production"
+    AGGREGATOR_HAKASIA_SERVER_IP = "AGGREGATOR_Hakasia_product_server"
+    AGGREGATOR_TEST_176_124_136_22_IP = "AGGREGATOR_test_176_124_136_22"
+    AGGREGATOR_TEST_PORT_ANY_IP = "AGGREGATOR_all_ips_0_0_0_0"
+    AGGREGATOR_TEST_WIN_LOCALHOST = "AGGREGATOR_win_localhost_127_0_0_1"
+    AGGREGATOR_TEST_UNIX_LOCALHOST = "AGGREGATOR_unix_localhost_127_0_1_1"
+    AGGREGATOR_TEST_DEXP_IP = "AGGREGATOR_dexp_ip_192_168_0_106"
+
+
+aggregator_ini_normal_path = get_full_file_normal_path(
+    all_dir_str_parts=[BASE_DIR],
+    file_name_with_ext=".configs_aggregator.ini")
+aggregator_conf_parser = ConfigParser()
+aggregator_conf_parser.read(filenames=aggregator_ini_normal_path)
+
+if cur_external_ip == "___.___.___.___":  # Just example
+    aggregator_conf_name = AGGREGATOR_CONFIG_NAMES.AGGREGATOR_TEST_176_124_136_22_IP
+elif cur_external_ip == "172.19.201.24":
+    aggregator_conf_name = AGGREGATOR_CONFIG_NAMES.AGGREGATOR_PRODUCT_SERVER_IP
+elif cur_external_ip == "172.19.201.24":
+    aggregator_conf_name = AGGREGATOR_CONFIG_NAMES.AGGREGATOR_HAKASIA_SERVER_IP
+elif cur_external_ip == "176.124.136.22":
+    aggregator_conf_name = AGGREGATOR_CONFIG_NAMES.AGGREGATOR_TEST_176_124_136_22_IP
+elif cur_external_ip == "192.168.0.117":
+    aggregator_conf_name = AGGREGATOR_CONFIG_NAMES.AGGREGATOR_TEST_DEXP_IP
+elif sys.platform == "linux":
+    aggregator_conf_name = AGGREGATOR_CONFIG_NAMES.AGGREGATOR_TEST_UNIX_LOCALHOST
+elif sys.platform == "win32":
+    aggregator_conf_name = AGGREGATOR_CONFIG_NAMES.AGGREGATOR_TEST_WIN_LOCALHOST
+else:
+    aggregator_conf_name = AGGREGATOR_CONFIG_NAMES.AGGREGATOR_TEST_PORT_ANY_IP
+
+AGGREGATOR_USERNAME = aggregator_conf_parser.get(section=aggregator_conf_name, option="AGGREGATOR_USERNAME")
+AGGREGATOR_PASSWORD = aggregator_conf_parser.get(section=aggregator_conf_name, option="AGGREGATOR_PASSWORD")
+AGGREGATOR_HOST = aggregator_conf_parser.get(section=aggregator_conf_name, option="AGGREGATOR_HOST")
+AGGREGATOR_PORT = aggregator_conf_parser.get(section=aggregator_conf_name, option="AGGREGATOR_PORT") or None
+
+# Server-port for BERT classifier API to request
+AGGREGATOR_API_SEVER_PORT = "{api_host}:{api_port}".format(
+    api_host=AGGREGATOR_HOST, api_port=AGGREGATOR_PORT)
+
+
 @dataclass(frozen=True)
 class FASTAPI_OPTIONS:
     LOG_LEVEL = "debug"  # used in main.py when starting uvicorn
@@ -255,4 +300,10 @@ class TELETHON_OPTIONS:
     LOG_EXEC_TIME_GET_EACH_ATTR: bool = False
     LOG_NON_EXISTING_ATTR_ERROR: bool = False
     LOG_ALL_EVENT_STRINGIFY_PARAMS: bool = False
-    EVENT_ATTRS_SECTION_SEPARATOR_PREFIX = "separator"
+    EVENT_ATTRS_SECTION_SEPARATOR_PREFIX: str = "separator"
+    LOG_NON_JSON_SERIALIZABLE_OBJ: bool = True
+
+@dataclass(frozen=True)
+class AGGREGATOR_API_OPTIONS:
+    AGGREGATOR_WEBHOOKS_API_URL_BASE_NAME: str = "global_api_aggregator"
+    OUTGOING_EXT_API_REQ_TIMEOUT: int = 60
