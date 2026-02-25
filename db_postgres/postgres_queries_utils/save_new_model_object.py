@@ -11,14 +11,19 @@ from db_postgres.postgres_queries_utils.merge_obj_ongoing_session import (
 async def save_new_model_object_qry(
         ModelClassORM: Type[Base] | DeclarativeMeta,
         ongoing_session: AsyncSession,
-        new_data: Dict[str, any]
+        new_data: Dict[str, any],
+        log_new_data: bool
 ) -> bool | None:
+    if not new_data:
+        return None
+
     try:
         new_model_obj = ModelClassORM()
         await merge_obj_to_ongoing_session(
             object_to_merge=new_model_obj,
             ongoing_session=ongoing_session,
-            new_update_data=new_data)
+            new_update_data=new_data,
+            log_new_data=log_new_data)
         print(f"DB Postgres saving new model object data [OK]")
         return True
     except Exception as error:

@@ -13,9 +13,11 @@ async def merge_obj_to_ongoing_session(
         object_to_merge: DeclarativeBase | Row[Tuple[Any, ...]] |
                          Row | RowMapping,
         new_update_data: dict,
+        log_new_data: bool = False,
 ) -> None:
     update_model_obj_no_commit(orm_model_object=object_to_merge,
-                               new_update_data=new_update_data)
+                               new_update_data=new_update_data,
+                               log_update_data=log_new_data)
     try:
         await ongoing_session.merge(object_to_merge)
     except Exception as error:
