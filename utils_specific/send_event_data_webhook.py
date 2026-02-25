@@ -1,9 +1,7 @@
 from typing import Dict, Union
 
 import httpx
-from fastapi import HTTPException
 from httpx import Response
-from starlette import status
 
 from configs.aggregator_api_urls import (
     AGGREGATOR_API_WEBHOOKS_URL)
@@ -16,7 +14,7 @@ async def send_event_data_webhook_req(
         source: str,
         operation: str = "event data webhook",
         aggregator_url: str = AGGREGATOR_API_WEBHOOKS_URL
-) -> Response:
+) -> Response | None:
     headers = {"Content-Type": "application/json"}
 
     auth_data = {"username": AGGREGATOR_USERNAME,
@@ -27,34 +25,43 @@ async def send_event_data_webhook_req(
                  "source": source,
                  "operation": operation}
 
-    async with httpx.AsyncClient() as client:
-        try:
+    try:
+        async with httpx.AsyncClient() as client:
             req_timeout = AGGREGATOR_API_OPTIONS.OUTGOING_EXT_API_REQ_TIMEOUT
             response = await client.post(url=aggregator_url,
                                          headers=headers,
                                          json=json_data,
                                          timeout=req_timeout)
             response.raise_for_status()
-            # response_json = response.json()
-            # if PACT_API_OPTIONS.LOG_ALL_COMPANIES_REQ_RESPONSE:
-            #     print(f"response_json: {response_json}")
-            #
-            # all_companies = response_json["data"]["companies"]
-            # next_page_token = response_json["data"].get("next_page", "N/A")
-            #
-            # if PACT_API_OPTIONS.LOG_ALL_COMPANIES_REQ_RESPONSE:
-            #     print(f"next_page_token: {next_page_token}")
-            #     for cur_company in all_companies:
-            #         print(f"cur_company: {cur_company}")
+            response_json = response.json()
+            if AGGREGATOR_API_OPTIONS.LOG_EXT_AGGREGATOR_API_RESPONSE:
+                print(f"Event Data Webhook request sent to external API [OK]:\n"
+                      f"event_type: {new_event_data['event_type']}\n"
+                      f"request code: {response}\n"
+                      f"response_json: {response_json}\n")
             return response
-        except httpx.HTTPStatusError as ext_api_error:
-            raise HTTPException(
-                status_code=ext_api_error.response.status_code,
-                detail=f"External Aggregator API [ERROR]: "
-                       f"error: {ext_api_error}")
-        except Exception as error:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Send Event data request [ERROR]:\n"
-                       f"error: {error}\n"
-                       f"json_data: {json_data}\n")
+    except httpx.TimeoutException as timeout_error:
+        error_log = (f"Request timeout to External Aggregator API [ERROR]:\n"
+                     f"error: {timeout_error}\n")
+        print(error_log)
+        # raise HTTPException(
+        #     status_code=status.HTTP_408_REQUEST_TIMEOUT,
+        #     detail=error_log)
+        return None
+    except httpx.HTTPStatusError as ext_api_error:
+        error_log = (f"External Aggregator API [ERROR]:\n"
+                     f"error: {ext_api_error}\n")
+        print(error_log)
+        # raise HTTPException(
+        #     status_code=ext_api_error.response.status_code,
+        #     detail=error_log)
+        return None
+    except Exception as error:
+        error_log = (f"Send Event data request [ERROR]:\n"
+                     f"error: {error}\n"
+                     f"json_data: {json_data}\n")
+        print(error_log)
+        # raise HTTPException(
+        #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        #     detail=error_log)
+        return None
