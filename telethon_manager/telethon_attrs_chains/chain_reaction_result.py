@@ -4,7 +4,6 @@ def get_reaction_result_attr_chains():
         "reaction_count": {
             "ev_reaction_result_reaction": "reaction",  # reaction_count_reaction >>> (Reaction)
             "ev_reaction_result_reaction_count": "count",
-            "ev_reaction_result_reaction_chosen": "chosen",
             "ev_reaction_result_reaction_chosen_order": "chosen_order",
             "separator": ""},
         # reaction_count_reaction >>> (Reaction)
