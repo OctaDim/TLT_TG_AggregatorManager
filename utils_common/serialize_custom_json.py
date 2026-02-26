@@ -1,7 +1,7 @@
 import json
 
 from datetime import datetime
-from typing import Tuple
+from typing import Tuple, Any, Dict, Union
 
 
 async def get_jsonable_value(
@@ -22,3 +22,21 @@ async def get_jsonable_value(
                   f"object_name: {object_log_name}\n"
                   f"object_value: {orig_object}\n")
         return None
+
+
+async def get_only_jsonable_values(
+        all_values: Dict[str, Any],
+        separator: str = None
+) -> Dict[str, Union[str, int, float, list, dict]]:
+    jsonable_values = {}
+    for cur_param_name, cur_param_value in all_values.items():
+        jsonable_result = await get_jsonable_value(
+            orig_object=cur_param_value,
+            object_log_name=cur_param_name,
+            log_invalid_json=True)
+
+        if not jsonable_result or cur_param_name.startswith(separator):
+            continue
+
+        jsonable_values[cur_param_name] = jsonable_result[1]
+    return jsonable_values
