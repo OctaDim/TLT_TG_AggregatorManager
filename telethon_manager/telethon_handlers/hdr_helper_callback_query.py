@@ -6,7 +6,8 @@ from telethon_manager.telethon_client_config import TelethonConfig
 async def callback_query_handler_helper(
         event: events.CallbackQuery.Event,
         telethon_client: TelegramClient,
-        telethon_config: TelethonConfig
+        telethon_config: TelethonConfig,
+        event_type: str = None
 ) -> None:
     if None in (telethon_client, telethon_config):
         print(f"Deleted Telethon object(s), not handled event [ERROR]:\n"

@@ -6,7 +6,8 @@ from telethon_manager.telethon_client_config import TelethonConfig
 async def user_update_handler_helper(
         event: events.UserUpdate.Event,
         telethon_client: TelegramClient,
-        telethon_config: TelethonConfig
+        telethon_config: TelethonConfig,
+        event_type: str = None
 ) -> None:
     from telethon import events, TelegramClient
 

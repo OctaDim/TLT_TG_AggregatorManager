@@ -11,7 +11,8 @@ from utils_common.get_obj_attrs_vals_by_attr_chain import (
 async def message_read_handler_helper(
         event: events.MessageRead.Event,
         telethon_client: TelegramClient,
-        telethon_config: TelethonConfig
+        telethon_config: TelethonConfig,
+        event_type: str = None
 ) -> None:
     if None in (telethon_client, telethon_config):
         print(f"Deleted Telethon object(s), not handled event [ERROR]:\n"
