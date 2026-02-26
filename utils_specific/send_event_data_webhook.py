@@ -11,8 +11,8 @@ from configs.settings import (
 
 async def send_event_data_webhook_req(
         new_event_data: Dict[str, Union[str, int, list, tuple, bytes]],
-        source: str,
-        operation: str = "event data webhook",
+        source: str = "telegram_tlt",
+        operation: str = "TelegramEvent",
         aggregator_url: str = AGGREGATOR_API_WEBHOOKS_URL
 ) -> Response | None:
     headers = {"Content-Type": "application/json"}
@@ -57,6 +57,11 @@ async def send_event_data_webhook_req(
         #     detail=error_log)
         return None
     except Exception as error:
+        json_data["auth_data"]["password"] = "***"
+        tlt_bot_token = new_event_data["tlt_bot_token"]
+        if tlt_bot_token:
+            bot_token_info = tlt_bot_token[:10]
+            json_data["event_data"]["tlt_bot_token"] = bot_token_info
         error_log = (f"Send Event data request [ERROR]:\n"
                      f"error: {error}\n"
                      f"json_data: {json_data}\n")

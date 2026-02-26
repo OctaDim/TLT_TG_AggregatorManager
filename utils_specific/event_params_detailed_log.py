@@ -5,7 +5,8 @@ async def log_all_event_params(
         log_title: str,
         event_params_dict: dict
 ) -> None:
-    print(f"\n{log_title.upper()}:\n{'=' * 80}")
+    print(f"\n{log_title}"
+          f"\n{'=' * 80}")
     separator = TELETHON_OPTIONS.EVENT_ATTRS_SECTION_SEPARATOR_PREFIX
     for cur_param_str, cur_param_val in event_params_dict.items():
         if cur_param_str.startswith(separator):
