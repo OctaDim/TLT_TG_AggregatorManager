@@ -161,7 +161,7 @@ def get_event_new_edit_msg_attr_chains():
             "ev_media_document_id": "media.document.id",
             "ev_media_document_access_hash": "media.document.access_hash",
             "ev_media_document_file_reference": "media.document.file_reference",
-            "ev_media_document_date": "media.document.file_reference",
+            "ev_media_document_date": "media.document.date",
             "ev_media_document_mime_type": "media.document.mime_type",
             "ev_media_document_size": "media.document.size",
             "ev_media_document_thumbs": "media.document.thumbs",  # List[PhotoSize]
