@@ -60,16 +60,16 @@ async def add_all_telethon_client_handlers(
 
     cur_client_handlers.append(message_edited_handler)
 
-    # ChatAction Handler
-    @telethon_client.on(events.ChatAction())
-    async def chat_action_handler(event):
-        await chat_action_handler_helper(
+    # MessageRead Handler
+    @telethon_client.on(events.MessageRead())
+    async def message_read_handler(event):
+        await message_read_handler_helper(
             event=event,
             telethon_client=telethon_client,
             telethon_config=telethon_config,
-            event_type="ChatAction")
+            event_type="MessageRead")
 
-    cur_client_handlers.append(chat_action_handler)
+    cur_client_handlers.append(message_read_handler)
 
     # MessageDeleted Handler
     @telethon_client.on(events.MessageDeleted())
@@ -82,16 +82,16 @@ async def add_all_telethon_client_handlers(
 
     cur_client_handlers.append(message_deleted_handler)
 
-    # MessageRead Handler
-    @telethon_client.on(events.MessageRead())
-    async def message_read_handler(event):
-        await message_read_handler_helper(
+    # ChatAction Handler
+    @telethon_client.on(events.ChatAction())
+    async def chat_action_handler(event):
+        await chat_action_handler_helper(
             event=event,
             telethon_client=telethon_client,
             telethon_config=telethon_config,
-            event_type="MessageRead")
+            event_type="ChatAction")
 
-    cur_client_handlers.append(message_read_handler)
+    cur_client_handlers.append(chat_action_handler)
 
     # UserUpdate Handler
     @telethon_client.on(events.UserUpdate())
