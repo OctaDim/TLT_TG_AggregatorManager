@@ -63,7 +63,7 @@ def get_event_new_edit_msg_attr_chains():
             "ev_is_private": "is_private",
             "ev_is_group": "is_group",
             "ev_is_channel": "is_channel",
-            "ev_chat": "chat",
+            "ev_chat": "chat",  # chat >>> (Chat)
             "ev_chat_id": "chat_id",
             "ev_chat__client": "_client",
             "ev_sender_id": "sender_id",
@@ -251,6 +251,10 @@ def get_event_new_edit_msg_attr_chains():
             "ev_sender_first_name": "sender.first_name",
             "ev_sender_last_name": "sender.last_name",
             "ev_sender_bot": "sender.bot",
+            "separator": ""},
+        # chat >>> (Chat)
+        "event_chat": {
+            "ev_chat_title": "chat.title",
             "separator": ""},
     }
     return attrs_chains
