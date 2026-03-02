@@ -2,8 +2,8 @@ def get_event_new_edit_msg_attr_chains():
     attrs_chains = {
         # event_original_update
         "event_original_update": {
-            "ev_original_update_pts": "original_update.pts",
-            "ev_original_update_pts_count": "original_update.pts_count",
+            "ev_orig_upd_pts": "original_update.pts",
+            "ev_orig_upd_pts_count": "original_update.pts_count",
             "separator": ""},
         # event__client
         "event__client": {

@@ -2,10 +2,10 @@ def get_chat_action_attr_chains():
     attrs_chains = {
         # event_original_update
         "original_update_message": {
-            "ev_original_update_pts": "original_update.pts",
-            "ev_original_update_pts_count": "original_update.pts_count",
-            "ev_original_update_message": "original_update.message",
-            "ev_original_update_message_action": "original_update.message.action",  # ev_original_update_message_action
+            "ev_orig_upd_pts": "original_update.pts",
+            "ev_orig_upd_pts_count": "original_update.pts_count",
+            "ev_orig_upd_message": "original_update.message",
+            "ev_orig_upd_message_action": "original_update.message.action",  # ev_original_update_message_action
             "separator": ""},
         # event__client
         "event__client": {
@@ -64,11 +64,10 @@ def get_chat_action_attr_chains():
             #     "ev_action_message_action_users": "action_message.action.users",  # No access!!!
             #     "ev_action_message_action_user_id": "action_message.action.user_id",
             "separator": ""},
-
         # ev_original_update_message_action >>> (MessageActionChatAddUser, MessageActionChatDeleteUser)
         "ev_original_update_message_action": {
-            "ev_original_update_message_action_users": "original_update.message.action.users",
-            "ev_original_update_message_action_user_id": "original_update.message.action.user_id",
+            "ev_orig_upd_message_action_users": "original_update.message.action.users",
+            "ev_orig_upd_message_action_user_id": "original_update.message.action.user_id",
             "separator": ""},
         # event additional
         "event additional": {

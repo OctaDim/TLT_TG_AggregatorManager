@@ -2,8 +2,8 @@ def get_msg_read_attr_chains():
     attrs_chains = {
         # event_original_update
         "event_original_update": {
-            "ev_original_update_pts": "original_update.pts",
-            "ev_original_update_pts_count": "original_update.pts_count",
+            "ev_orig_upd_pts": "original_update.pts",
+            "ev_orig_upd_pts_count": "original_update.pts_count",
             "separator": ""},
         # event__client
         "event__client": {
@@ -14,10 +14,10 @@ def get_msg_read_attr_chains():
             "ev_outbox": "outbox",
             "ev_contents": "contents",
             "ev_max_id": "max_id",
-            "ev_original_update": "original_update",
-            "ev_original_update_peer": "original_update.peer",  # ev_original_update >>> (Peer)
-            "ev_original_update_pts": "original_update.pts",
-            "ev_original_update_pts_count": "original_update.pts_count",
+            "ev_orig_upd": "original_update",  # (UpdateReadHistoryOutbox)
+            "ev_orig_upd_peer": "original_update.peer",  # ev_original_update >>> (Peer)
+            "ev_orig_upd_pts": "original_update.pts",
+            "ev_orig_upd_pts_count": "original_update.pts_count",
             "separator": ""},
         # event additional
         "event additional": {
@@ -30,9 +30,9 @@ def get_msg_read_attr_chains():
             "separator": ""},
         # event_original_update >>> (Peer)
         "original_update_peer": {
-            "ev_original_update_peer_channel_id": "original_update.peer.channel_id",
-            "ev_original_update_peer_chat_id": "original_update.peer.chat_id",
-            "ev_original_update_peer_user_id": "original_update.peer.user_id",
+            "ev_orig_upd_peer_channel_id": "original_update.peer.channel_id",
+            "ev_orig_upd_peer_chat_id": "original_update.peer.chat_id",
+            "ev_orig_upd_peer_user_id": "original_update.peer.user_id",
             "separator": ""},
     }
     return attrs_chains
