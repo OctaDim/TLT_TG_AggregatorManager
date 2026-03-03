@@ -13,8 +13,8 @@ def get_chat_action_attr_chains():
             "separator": ""},
         # event stringify()
         "event stringify": {
-            "ev_action_message": "action_message",  # event_action_message >>> (MessageService)
-            "ev_original_update": "original_update",  # event_original_update >>> (UpdateNewMessage)
+            "ev_act_msg": "action_message",  # event_action_message >>> (MessageService)
+            "ev_orig_upd": "original_update",  # event_original_update >>> (UpdateNewMessage)
             "ev_new_pin": "new_pin",
             "ev_new_photo": "new_photo",
             "ev_photo": "photo",
@@ -29,35 +29,42 @@ def get_chat_action_attr_chains():
             "separator": ""},
         # event_action_message >>> (MessageService)
         "event_action_message": {
-            "ev_action_message_id": "action_message.id",
-            "ev_action_message_peer_id": "action_message.peer_id",  # ev_action_message_peer_id >>> (Peer)
-            "ev_action_message_date": "action_message.date",
-            "ev_action_message_action": "action_message.action",  # ev_action_message_action >>> ()
-            "ev_action_message_action_users": "action_message.action.users",
-            "ev_action_message_out": "action_message.out",
-            "ev_action_message_mentioned": "action_message.mentioned",
-            "ev_action_message_media_unread": "action_message.media_unread",
-            "ev_action_message_reactions_are_possible": "action_message.reactions_are_possible",
-            "ev_action_message_silent": "action_message.silent",
-            "ev_action_message_post": "action_message.post",
-            "ev_action_message_legacy": "action_message.legacy",
-            "ev_action_message_from_id": "action_message.from_id",  # ev_action_message_from_id >>> (Peer)
-            "ev_action_message_saved_peer_id": "action_message.saved_peer_id",
-            "ev_action_message_reply_to": "action_message.reply_to",
-            "ev_action_message_reactions": "action_message.reactions",
-            "ev_action_message_ttl_period": "action_message.ttl_period",
+            "ev_act_msg_id": "action_message.id",
+            "ev_act_msg_peer_id": "action_message.peer_id",  # ev_action_message_peer_id >>> (Peer)
+            "ev_act_msg_date": "action_message.date",
+            "ev_act_msg_action": "action_message.action",  # ev_action_message_action >>> ()
+            "ev_act_msg_action_users": "action_message.action.users",
+            "ev_act_msg_action_user_id": "action_message.action.user_id",
+            "ev_act_msg_out": "action_message.out",
+            "ev_act_msg_mentioned": "action_message.mentioned",
+            "ev_act_msg_media_unread": "action_message.media_unread",
+            "ev_act_msg_reactions_are_possible": "action_message.reactions_are_possible",
+            "ev_act_msg_silent": "action_message.silent",
+            "ev_act_msg_post": "action_message.post",
+            "ev_act_msg_legacy": "action_message.legacy",
+            "ev_act_msg_from_id": "action_message.from_id",  # ev_action_message_from_id >>> (Peer)
+            "ev_act_msg_saved_peer_id": "action_message.saved_peer_id",  # ev_action_message_saved_peer_id >>> (Peer)
+            "ev_act_msg_reply_to": "action_message.reply_to",
+            "ev_act_msg_reactions": "action_message.reactions",
+            "ev_act_msg_ttl_period": "action_message.ttl_period",
             "separator": ""},
         # ev_action_message_peer_id >>> (Peer)
         "ev_action_message_peer_id": {
-            "ev_action_message_peer_id_channel_id": "action_message.peer_id.channel_id",
-            "ev_action_message_peer_id_chat_id": "action_message.peer_id.chat_id",
-            "ev_action_message_peer_id_user_id": "action_message.peer_id.user_id",
+            "ev_act_msg_peer_id_channel_id": "action_message.peer_id.channel_id",
+            "ev_act_msg_peer_id_chat_id": "action_message.peer_id.chat_id",
+            "ev_act_msg_peer_id_user_id": "action_message.peer_id.user_id",
             "separator": ""},
         # ev_action_message_from_id >>> (Peer)
         "ev_action_message_from_id": {
-            "ev_action_message_from_id_channel_id": "action_message.from_id.channel_id",
-            "ev_action_message_from_id_chat_id": "action_message.from_id.chat_id",
-            "ev_action_message_from_id_user_id": "action_message.from_id.user_id",
+            "ev_act_msg_from_id_channel_id": "action_message.from_id.channel_id",
+            "ev_act_msg_from_id_chat_id": "action_message.from_id.chat_id",
+            "ev_act_msg_from_id_user_id": "action_message.from_id.user_id",
+            "separator": ""},
+        # ev_action_message_saved_peer_id >>> (Peer)
+        "ev_action_message_saved_peer_id": {
+            "ev_act_msg_saved_peer_id_channel_id": "action_message.saved_peer_id.channel_id",
+            "ev_act_msg_saved_peer_id_chat_id": "action_message.saved_peer_id.chat_id",
+            "ev_act_msg_saved_peer_id_user_id": "action_message.saved_peer_id.user_id",
             "separator": ""},
         # ev_action_message_action (MessageActionChatAddUser, MessageActionChatDeleteUser)
         "ev_action_message_action": {
@@ -77,6 +84,10 @@ def get_chat_action_attr_chains():
             "ev_chat": "chat",
             "ev_chat_id": "chat_id",
             "ev_chat__client": "_client",
+            "separator": ""},
+        # chat >>> (Chat)
+        "event_chat": {
+            "ev_chat_title": "chat.title",
             "separator": ""},
     }
     return attrs_chains
