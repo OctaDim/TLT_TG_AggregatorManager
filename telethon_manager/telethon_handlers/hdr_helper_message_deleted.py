@@ -18,6 +18,12 @@ async def message_deleted_handler_helper(
         telethon_config: TelethonConfig,
         event_type: str = None
 ) -> None:
+    if not TELETHON_OPTIONS.HANDLE_MESSAGE_DELETED_EVENT:
+        log_txt = (f"\nDEBUG: WEBHOOK SKIPPED [ERROR]:\n"
+                   f"event_type: {event_type}\n")
+        print(log_txt)
+        return
+
     separator = TELETHON_OPTIONS.EVENT_ATTRS_SECTION_SEPARATOR_PREFIX
     handler_specific_params = {}
 

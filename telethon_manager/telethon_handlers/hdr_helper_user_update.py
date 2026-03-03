@@ -12,7 +12,7 @@ async def user_update_handler_helper(
     from telethon import events, TelegramClient
 
     from configs.settings import TELETHON_OPTIONS
-    from telethon_manager.telethon_attrs_chains.chain_new_edit_message import (
+    from telethon_manager.telethon_attrs_chains.chain_message_new_edit import (
         get_event_new_edit_msg_attr_chains)
     from telethon_manager.telethon_client_config import TelethonConfig
     from utils_common.clean_str_new_lines_spaces import clean_text

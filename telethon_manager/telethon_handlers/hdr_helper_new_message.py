@@ -19,6 +19,12 @@ async def new_message_handler_helper(
         telethon_config: TelethonConfig,
         event_type: str = None
 ) -> None:
+    if not TELETHON_OPTIONS.HANDLE_NEW_MESSAGE_EVENT:
+        log_txt = (f"\nDEBUG: WEBHOOK SKIPPED [ERROR]:\n"
+                   f"event_type: {event_type}\n")
+        print(log_txt)
+        return
+
     separator = TELETHON_OPTIONS.EVENT_ATTRS_SECTION_SEPARATOR_PREFIX
     handler_specific_params = {}
 
@@ -40,6 +46,8 @@ async def new_message_handler_helper(
         attributes_chains_dict=get_event_new_edit_msg_attr_chains(),
         section_separator_prefix=separator)
     handler_specific_params.update(event_main_params)
+
+    # handler_specific_params.update({})
 
     # Separate function because handler function with its own params values
     # is enclosed by add_all_telethon_client_handlers()
