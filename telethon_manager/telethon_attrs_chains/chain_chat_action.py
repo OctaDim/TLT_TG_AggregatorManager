@@ -87,6 +87,7 @@ def get_chat_action_attr_chains():
             "separator": ""},
         # chat >>> (Chat)
         "event_chat": {
+            "ev_chat_id": "chat_id",
             "ev_chat_title": "chat.title",
             "separator": ""},
     }
