@@ -246,11 +246,13 @@ def get_event_new_edit_msg_attr_chains():
             "separator": ""},
         # event_sender (Sender)
         "event_sender": {
-            "ev_sender_id": "sender.id",
-            "ev_sender_username": "sender.username",
-            "ev_sender_first_name": "sender.first_name",
-            "ev_sender_last_name": "sender.last_name",
-            "ev_sender_bot": "sender.bot",
+            "tlt_sender": "sender",
+            "tlt_sender_id": "sender.id",
+            "tlt_sender_username": "sender.username",
+            "tlt_sender_first_name": "sender.first_name",
+            "tlt_sender_last_name": "sender.last_name",
+            "tlt_sender_phone": "sender.phone",
+            "tlt_sender_bot": "sender.bot",
             "separator": ""},
         # chat >>> (Chat)
         "event_chat": {
