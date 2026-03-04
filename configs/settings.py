@@ -304,15 +304,30 @@ class TELETHON_OPTIONS:
     LOG_ALL_BEFORE_JSON_EVENT_PARAMS: bool = True
     LOG_ALL_AFTER_JSON_EVENT_PARAMS: bool = True
     LOG_NON_JSON_SERIALIZABLE_OBJ: bool = True
+
     HANDLE_NEW_MESSAGE_EVENT: bool = False
     HANDLE_MESSAGE_EDITED_EVENT: bool = False
     HANDLE_MESSAGE_DELETED_EVENT: bool = False
     HANDLE_MESSAGE_READ_EVENT: bool = False
     HANDLE_CHAT_ACTION_EVENT: bool = False
+
     HANDLE_USER_UPDATE_EVENT: bool = True
-    HANDLE_RAW_EVENT: bool = True
-    HANDLE_INLINE_QUERY_EVENT: bool = True
-    HANDLE_CALLBACK_QUERY_EVENT: bool = True
+    HANDLE_RAW_EVENT: bool = False
+    HANDLE_INLINE_QUERY_EVENT: bool = False
+    HANDLE_CALLBACK_QUERY_EVENT: bool = False
+
+    NEW_MSG_ACTION_STR: str = "new"
+    EDIT_MSG_ACTION_STR: str = "edited"
+    DELETE_MSG_ACTION_STR: str = "deleted"
+    READ_MSG_ACTION_STR: str = "read"
+    CHAT_ACTION_ACTION_STR: str = "chat action"
+    CHAT_USER_ADDED_ACTION_STR: str = "user added"
+    CHAT_USER_DELETED_ACTION_STR: str = "user deleted"
+    CHAT_TITLE_RENAMED_ACTION_STR: str = "chat renamed"
+    CHAT_NEW_CREATED_ACTION_STR: str = "chat created"
+
+    USER_UPDATE_ACTION_STR: str = "user action"
+
 
 
 @dataclass(frozen=True)
