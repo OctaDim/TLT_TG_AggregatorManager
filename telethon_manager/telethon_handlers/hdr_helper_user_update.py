@@ -1,97 +1,51 @@
 from telethon import events, TelegramClient
 
+from configs.settings import TELETHON_OPTIONS
+from telethon_manager.telethon_attrs_chains.chain_user_data import (
+    get_user_data_attr_chains)
+from telethon_manager.telethon_attrs_chains.chain_user_update import (
+    get_user_update_attr_chains)
 from telethon_manager.telethon_client_config import TelethonConfig
+from utils_common.get_obj_attrs_vals_by_attr_chain import (
+    get_attrs_values_by_attr_chains)
+from utils_specific.handle_all_event_params import (
+    send_all_event_params)
 
 
 async def user_update_handler_helper(
-        event: events.UserUpdate.Event,
+        event: events.MessageDeleted.Event,
         telethon_client: TelegramClient,
         telethon_config: TelethonConfig,
         event_type: str = None
 ) -> None:
-    from telethon import events, TelegramClient
+    if not TELETHON_OPTIONS.HANDLE_USER_UPDATE_EVENT:
+        log_txt = (f"\nDEBUG: WEBHOOK SKIPPED [ERROR]:\n"
+                   f"event_type: {event_type}\n")
+        print(log_txt)
+        return
 
-    from configs.settings import TELETHON_OPTIONS
-    from telethon_manager.telethon_attrs_chains.chain_message_new_edit import (
-        get_event_new_edit_msg_attr_chains)
-    from telethon_manager.telethon_client_config import TelethonConfig
-    from utils_common.clean_str_new_lines_spaces import clean_text
-    from utils_common.get_obj_attrs_vals_by_attr_chain import (
-        get_attr_value_by_attr_chain, get_attrs_values_by_attr_chains)
+    separator = TELETHON_OPTIONS.EVENT_ATTRS_SECTION_SEPARATOR_PREFIX
+    handler_specific_params = {}
 
-    async def new_message_handler_helper(
-            event: events.NewMessage.Event,
-            telethon_client: TelegramClient,
-            telethon_config: TelethonConfig
-    ) -> None:
-        if None in (telethon_client, telethon_config):
-            print(f"Deleted Telethon object(s), not handled event [ERROR]:\n"
-                  f"telethon_client: {telethon_client}\n"
-                  f"telethon_config: {telethon_config}\n")
-            return
+    # Getting handler specific params
+    event_main_params = await get_attrs_values_by_attr_chains(
+        base_class_or_obj=event,
+        attributes_chains_dict=get_user_update_attr_chains(),
+        section_separator_prefix=separator)
+    handler_specific_params.update(event_main_params)
 
-        if TELETHON_OPTIONS.LOG_ALL_EVENT_STRINGIFY_PARAMS:
-            print(event.stringify())
+    event_user_obj = await event.get_chat()
+    user_data_params = await get_attrs_values_by_attr_chains(
+        base_class_or_obj=event_user_obj,
+        attributes_chains_dict=get_user_data_attr_chains(),
+        section_separator_prefix=separator)
+    handler_specific_params.update(user_data_params)
 
-        separator = TELETHON_OPTIONS.EVENT_ATTRS_SECTION_SEPARATOR_PREFIX
-
-        if telethon_config.bot_token:
-            tlt_bot_token_info = telethon_config.bot_token[:10]
-        else:
-            tlt_bot_token_info = None
-
-        attrs_chains = get_event_new_edit_msg_attr_chains()  # NewMessage attrs chains
-        event_params = {
-            "event_type": "UserUpdate",
-            "web_account_id": telethon_config.web_account_id,
-            "web_account_username": telethon_config.web_account_username,
-            "tlt_account_type": telethon_config.account_type.value,
-            "tlt_phone": telethon_config.phone,
-            "tlt_bot_token": tlt_bot_token_info,
-            separator: "", }
-
-        evnt_msg_msg = await get_attr_value_by_attr_chain(
-            base_class_or_obj=event,
-            attribute_chain="message.message")
-        evnt_msg_msg = await clean_text(
-            origin_text=evnt_msg_msg,
-            clean_line_breaks=True,
-            clean_continuous_spaces=True)
-
-        evnt_msg_text = await get_attr_value_by_attr_chain(
-            base_class_or_obj=event,
-            attribute_chain="message.text")
-        evnt_msg_text = await clean_text(
-            origin_text=evnt_msg_text,
-            clean_line_breaks=True,
-            clean_continuous_spaces=True)
-
-        evnt_msg_raw_text = await get_attr_value_by_attr_chain(
-            base_class_or_obj=event,
-            attribute_chain="message.raw_text")
-        evnt_msg_raw_text = await clean_text(origin_text=evnt_msg_raw_text,
-                                             clean_line_breaks=True,
-                                             clean_continuous_spaces=True)
-
-        event_messages = {"ev_message_message": evnt_msg_msg,
-                          "ev_message_text": evnt_msg_text,
-                          "evnt_msg_raw_text": evnt_msg_raw_text,
-                          f"{separator}_msgs": ""}
-        event_params.update(event_messages)
-
-        new_msg_evnt_data = await get_attrs_values_by_attr_chains(
-            base_class_or_obj=event,
-            attributes_chains_dict=attrs_chains,
-            section_separator_prefix=separator)
-        event_params.update(new_msg_evnt_data)
-
-        print(f"\nUSER UPDATE EVENT:\n{'=' * 80}")
-        for cur_param_str, cur_param_val in event_params.items():
-            if cur_param_str.startswith(separator):
-                print(f"\t")
-                continue
-            if cur_param_val is None:
-                print(f"\t{cur_param_str} ==")
-            else:
-                print(f"\t{cur_param_str} == {cur_param_val} ({type(cur_param_val)})")
-        print(f"{'=' * 80}\n{'=' * 80}\n")
+    # Separate function because handler function with its own params values
+    # is enclosed by add_all_telethon_client_handlers()
+    await send_all_event_params(
+        event=event,
+        telethon_client=telethon_client,
+        telethon_config=telethon_config,
+        event_type=event_type,
+        handler_additional_params=handler_specific_params)

@@ -47,7 +47,8 @@ async def new_message_handler_helper(
         section_separator_prefix=separator)
     handler_specific_params.update(event_main_params)
 
-    # handler_specific_params.update({})
+    handler_specific_params.update(
+        {"action": TELETHON_OPTIONS.NEW_MSG_ACTION_STR})
 
     # Separate function because handler function with its own params values
     # is enclosed by add_all_telethon_client_handlers()

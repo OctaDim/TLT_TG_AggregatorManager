@@ -37,6 +37,9 @@ async def message_deleted_handler_helper(
     handler_specific_params.update(
         {"ev_delete_date": datetime.now(timezone.utc)})
 
+    handler_specific_params.update(
+        {"action": TELETHON_OPTIONS.DELETE_MSG_ACTION_STR})
+
     # Separate function because handler function with its own params values
     # is enclosed by add_all_telethon_client_handlers()
     await send_all_event_params(

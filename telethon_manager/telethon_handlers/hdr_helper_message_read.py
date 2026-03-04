@@ -6,7 +6,8 @@ from telethon_manager.telethon_attrs_chains.chain_message_read import (
 from telethon_manager.telethon_client_config import TelethonConfig
 from utils_common.get_obj_attrs_vals_by_attr_chain import (
     get_attrs_values_by_attr_chains)
-from utils_specific.handle_all_event_params import send_all_event_params
+from utils_specific.handle_all_event_params import (
+    send_all_event_params)
 
 
 async def message_read_handler_helper(
@@ -31,7 +32,8 @@ async def message_read_handler_helper(
         section_separator_prefix=separator)
     handler_specific_params.update(event_main_params)
 
-    # handler_specific_params.update({})
+    handler_specific_params.update(
+        {"action": TELETHON_OPTIONS.READ_MSG_ACTION_STR})
 
     # Separate function because handler function with its own params values
     # is enclosed by add_all_telethon_client_handlers()

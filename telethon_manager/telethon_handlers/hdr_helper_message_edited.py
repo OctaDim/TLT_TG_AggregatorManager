@@ -61,39 +61,42 @@ async def message_edited_handler_helper(
                 attributes_chains_dict=get_reaction_result_attr_chains(),
                 section_separator_prefix=separator)
 
-            emoji_emoticon = cur_react_res_dict["ev_reaction_result_reaction_emoticon"]
-            emoji_doc_id = cur_react_res_dict["ev_reaction_result_reaction_document_id"]
-            emoji_count = cur_react_res_dict["ev_reaction_result_reaction_count"]
-            emoji_chosen_order = cur_react_res_dict["ev_reaction_result_reaction_chosen_order"]
+            emj_emoticon = cur_react_res_dict["ev_reaction_result_reaction_emoticon"]
+            emj_doc_id = cur_react_res_dict["ev_reaction_result_reaction_document_id"]
+            emj_count = cur_react_res_dict["ev_reaction_result_reaction_count"]
+            emj_chosen_order = cur_react_res_dict["ev_reaction_result_reaction_chosen_order"]
 
-            if emoji_emoticon:
-                emoji_key = emoji_emoticon
-                emoji_emoticons_list.append(emoji_emoticon)
+            if emj_emoticon:
+                emoji_key = emj_emoticon
+                emoji_emoticons_list.append(emj_emoticon)
             else:
-                emoji_key = emoji_doc_id
-                emoji_doc_id_list.append(emoji_doc_id)
+                emoji_key = emj_doc_id
+                emoji_doc_id_list.append(emj_doc_id)
 
             ev_reactions_custom[emoji_key] = {
-                "emoji_emoticon": emoji_emoticon,
-                "emoji_doc_id": emoji_doc_id,
-                "emoji_count": emoji_count,
-                "emoji_chosen_order": emoji_chosen_order, }
+                "emoji_emoticon": emj_emoticon,
+                "emoji_doc_id": emj_doc_id,
+                "emoji_count": emj_count,
+                "emoji_chosen_order": emj_chosen_order, }
 
         handler_specific_params.update({
-            "reactions_total_custom": ev_reactions_custom,
-            "reactions_total_count_custom": len(ev_reactions_results),
-            "reactions_emoticon_custom": emoji_emoticons_list,
-            "reactions_emoticon_count_custom": len(emoji_emoticons_list),
-            "reactions_doc_id_custom": emoji_doc_id_list,
-            "reactions_doc_id_count_custom": len(emoji_doc_id_list), })
+            "reactions_total_cst": ev_reactions_custom,
+            "reactions_total_count_cst": len(ev_reactions_results),
+            "reactions_emoticon_cst": emoji_emoticons_list,
+            "reactions_emoticon_count_cst": len(emoji_emoticons_list),
+            "reactions_doc_id_cst": emoji_doc_id_list,
+            "reactions_doc_id_count_cst": len(emoji_doc_id_list), })
     else:
         handler_specific_params.update({
-            "reactions_total_custom": None,
-            "reactions_total_count_custom": None,
-            "reactions_emoticon_custom": None,
-            "reactions_emoticon_count_custom": None,
-            "reactions_doc_id_custom": None,
-            "reactions_doc_id_count_custom": None})
+            "reactions_total_cst": None,
+            "reactions_total_count_cst": None,
+            "reactions_emoticon_cst": None,
+            "reactions_emoticon_count_cst": None,
+            "reactions_doc_id_cst": None,
+            "reactions_doc_id_count_cst": None})
+
+    handler_specific_params.update(
+        {"action": TELETHON_OPTIONS.EDIT_MSG_ACTION_STR})
 
     # Separate function because handler function with its own params values
     # is enclosed by add_all_telethon_client_handlers()
