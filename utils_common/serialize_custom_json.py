@@ -29,14 +29,15 @@ async def get_jsonable_value(
 
 async def get_only_jsonable_values(
         all_values: Dict[str, Any],
-        separator: str = None
+        separator: str = None,
+        log_invalid_json: bool = False
 ) -> Dict[str, Union[str, int, float, list, dict]]:
     jsonable_values = {}
     for cur_param_name, cur_param_value in all_values.items():
         jsonable_result = await get_jsonable_value(
             orig_obj_value=cur_param_value,
             obj_log_name=cur_param_name,
-            log_invalid_json=True)
+            log_invalid_json=log_invalid_json)
 
         if not jsonable_result or cur_param_name.startswith(separator):
             continue

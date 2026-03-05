@@ -4,16 +4,7 @@ from telethon import events, TelegramClient
 
 from configs.aggregator_api_urls import AGGREGATOR_API_WEBHOOKS_URL
 from configs.settings import TELETHON_OPTIONS, AGGREGATOR_API_OPTIONS
-from telethon_manager.telethon_attrs_chains.chain_message_new_edit import (
-    get_event_new_edit_msg_attr_chains)
-from telethon_manager.telethon_attrs_chains.chain_message_text import (
-    get_message_text_attr_chains)
-from telethon_manager.telethon_attrs_chains.chain_reaction_result import (
-    get_reaction_result_attr_chains)
 from telethon_manager.telethon_client_config import TelethonConfig
-from utils_common.clean_str_new_lines_spaces import group_clean_text
-from utils_common.get_obj_attrs_vals_by_attr_chain import (
-    get_attrs_values_by_attr_chains)
 from utils_common.serialize_custom_json import get_only_jsonable_values
 from utils_specific.event_params_detailed_log import (
     log_all_event_params)
@@ -61,7 +52,8 @@ async def send_all_event_params(
 
     jsonable_event_params = await get_only_jsonable_values(
         all_values=all_event_params,
-        separator=TELETHON_OPTIONS.EVENT_ATTRS_SECTION_SEPARATOR_PREFIX)
+        separator=TELETHON_OPTIONS.EVENT_ATTRS_SECTION_SEPARATOR_PREFIX,
+        log_invalid_json=TELETHON_OPTIONS.LOG_NON_JSON_SERIALIZABLE_OBJ)
 
     if TELETHON_OPTIONS.LOG_ALL_AFTER_JSON_EVENT_PARAMS:
         await log_all_event_params(
