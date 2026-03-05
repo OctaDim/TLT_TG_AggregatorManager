@@ -302,16 +302,15 @@ class TELETHON_OPTIONS:
     LOG_ALL_EVENT_STRINGIFY_PARAMS: bool = True
     EVENT_ATTRS_SECTION_SEPARATOR_PREFIX: str = "separator"
     LOG_ALL_BEFORE_JSON_EVENT_PARAMS: bool = True
-    LOG_ALL_AFTER_JSON_EVENT_PARAMS: bool = True
-    LOG_NON_JSON_SERIALIZABLE_OBJ: bool = True
+    LOG_ALL_AFTER_JSON_EVENT_PARAMS: bool = False
+    LOG_NON_JSON_SERIALIZABLE_OBJ: bool = False
 
-    HANDLE_NEW_MESSAGE_EVENT: bool = False
+    HANDLE_NEW_MESSAGE_EVENT: bool = True
     HANDLE_MESSAGE_EDITED_EVENT: bool = False
-    HANDLE_MESSAGE_DELETED_EVENT: bool = False
+    HANDLE_MESSAGE_DELETED_EVENT: bool = True
     HANDLE_MESSAGE_READ_EVENT: bool = False
-    HANDLE_CHAT_ACTION_EVENT: bool = False
-
-    HANDLE_USER_UPDATE_EVENT: bool = True
+    HANDLE_CHAT_ACTION_EVENT: bool = True
+    HANDLE_USER_UPDATE_EVENT: bool = False
     HANDLE_RAW_EVENT: bool = False
     HANDLE_INLINE_QUERY_EVENT: bool = False
     HANDLE_CALLBACK_QUERY_EVENT: bool = False
@@ -320,14 +319,18 @@ class TELETHON_OPTIONS:
     EDIT_MSG_ACTION_STR: str = "edited"
     DELETE_MSG_ACTION_STR: str = "deleted"
     READ_MSG_ACTION_STR: str = "read"
-    CHAT_ACTION_ACTION_STR: str = "chat action"
+    CHAT_UNDEFINED_ACTION_STR: str = "chat action"
     CHAT_USER_ADDED_ACTION_STR: str = "user added"
     CHAT_USER_DELETED_ACTION_STR: str = "user deleted"
     CHAT_TITLE_RENAMED_ACTION_STR: str = "chat renamed"
     CHAT_NEW_CREATED_ACTION_STR: str = "chat created"
-
-    USER_UPDATE_ACTION_STR: str = "user action"
-
+    USER_UNDEFINED_UPDATE_STR: str = "user update"
+    USER_ONLINE_UPDATE_STATUS_STR: str = "user online"
+    USER_OFFLINE_UPDATE_STATUS_STR: str = "user offline"
+    USER_RECENTLY_UPDATE_STATUS_STR: str = "was recently"
+    USER_LAST_WEEK_UPDATE_STATUS_STR: str = "was last week"
+    USER_LAST_MONTH_UPDATE_STATUS_STR: str = "was last month"
+    USER_TYPING_UPDATE_ACTION_STR: str = "was last month"
 
 
 @dataclass(frozen=True)
