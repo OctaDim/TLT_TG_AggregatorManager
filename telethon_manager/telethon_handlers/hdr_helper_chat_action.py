@@ -44,13 +44,12 @@ async def chat_action_handler_helper(
         base_class_or_obj=entity_user_obj,
         attributes_chains_dict=get_user_data_attr_chains(),
         section_separator_prefix=separator)
-    custom_user_params = {
-        "username_cst": user_data_params["user_username"],
-        "first_name_cst": user_data_params["user_first_name"],
-        "last_name_cst": user_data_params["user_last_name"],
-        "phone_cst": user_data_params["user_phone"],
-        "bot_cst": user_data_params["user_bot"], }
-    handler_specific_params.update(custom_user_params)
+    handler_specific_params.update({
+        "user_username": user_data_params["user_username"],
+        "user_first_name": user_data_params["user_first_name"],
+        "user_last_name": user_data_params["user_last_name"],
+        "user_phone": user_data_params["user_phone"],
+        "user_bot": user_data_params["user_bot"], })
 
     ev_act_msg_action = event_main_params["ev_act_msg_action"]
     if isinstance(ev_act_msg_action, MessageActionChatAddUser):
@@ -62,7 +61,7 @@ async def chat_action_handler_helper(
     elif isinstance(ev_act_msg_action, MessageActionChatCreate):
         action_field_str = TELETHON_OPTIONS.CHAT_NEW_CREATED_ACTION_STR
     else:
-        action_field_str = TELETHON_OPTIONS.CHAT_ACTION_ACTION_STR
+        action_field_str = TELETHON_OPTIONS.CHAT_UNDEFINED_ACTION_STR
     handler_specific_params.update({"action": action_field_str})
 
     # Separate function because handler function with its own params values
