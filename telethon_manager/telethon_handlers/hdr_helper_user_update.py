@@ -77,13 +77,6 @@ async def user_update_handler_helper(
             "user_last_name": user_data_params["user_last_name"],
             "user_phone": user_data_params["user_phone"],
             "user_bot": user_data_params["user_bot"], })
-    else:
-        handler_specific_params.update({
-            "user_username": None,
-            "user_first_name": None,
-            "user_last_name": None,
-            "user_phone": None,
-            "user_bot": None, })
 
     ev_status = event_main_params["ev_status"]
     ev_action = event_main_params["ev_action"]
