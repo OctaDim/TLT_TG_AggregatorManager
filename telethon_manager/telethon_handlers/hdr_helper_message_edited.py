@@ -1,7 +1,16 @@
 from telethon import events, TelegramClient
+from telethon.tl.types import (
+    DocumentAttributeAudio, DocumentAttributeVideo,
+    DocumentAttributeFilename)
 
 from configs.labels_messages import ACTION_STATUS
 from configs.settings import TELETHON_OPTIONS
+from telethon_manager.telethon_attrs_chains.chain_doc_attr_audio import (
+    get_doc_attr_audio_attr_chains)
+from telethon_manager.telethon_attrs_chains.chain_doc_attr_file_name import (
+    get_doc_attr_file_name_attr_chains)
+from telethon_manager.telethon_attrs_chains.chain_doc_attr_video import (
+    get_doc_attr_video_attr_chains)
 from telethon_manager.telethon_attrs_chains.chain_message_new_edit import (
     get_event_new_edit_msg_attr_chains)
 from telethon_manager.telethon_attrs_chains.chain_message_text import (
@@ -50,6 +59,28 @@ async def message_edited_handler_helper(
         section_separator_prefix=separator)
     handler_specific_params.update(event_main_params)
 
+    ev_media_doc_attrs = event_main_params["ev_media_document_attributes"]
+    if ev_media_doc_attrs:
+        for cur_doc_attr_obj in ev_media_doc_attrs:
+            if isinstance(cur_doc_attr_obj, DocumentAttributeAudio):
+                audio_params = await get_attrs_values_by_attr_chains(
+                    base_class_or_obj=cur_doc_attr_obj,
+                    attributes_chains_dict=get_doc_attr_audio_attr_chains(),
+                    section_separator_prefix=separator)
+                handler_specific_params.update(audio_params)
+            elif isinstance(cur_doc_attr_obj, DocumentAttributeVideo):
+                video_params = await get_attrs_values_by_attr_chains(
+                    base_class_or_obj=cur_doc_attr_obj,
+                    attributes_chains_dict=get_doc_attr_video_attr_chains(),
+                    section_separator_prefix=separator)
+                handler_specific_params.update(video_params)
+            elif isinstance(cur_doc_attr_obj, DocumentAttributeFilename):
+                file_name_params = await get_attrs_values_by_attr_chains(
+                    base_class_or_obj=cur_doc_attr_obj,
+                    attributes_chains_dict=get_doc_attr_file_name_attr_chains(),
+                    section_separator_prefix=separator)
+                handler_specific_params.update(file_name_params)
+
     # Getting edited message event reactions params
     ev_reactions_results = event_main_params["ev_reactions_results"]
     if ev_reactions_results:
@@ -87,14 +118,6 @@ async def message_edited_handler_helper(
             "reactions_emoticon_count_cst": len(emoji_emoticons_list),
             "reactions_doc_id_cst": emoji_doc_id_list,
             "reactions_doc_id_count_cst": len(emoji_doc_id_list), })
-    else:
-        handler_specific_params.update({
-            "reactions_total_cst": None,
-            "reactions_total_count_cst": None,
-            "reactions_emoticon_cst": None,
-            "reactions_emoticon_count_cst": None,
-            "reactions_doc_id_cst": None,
-            "reactions_doc_id_count_cst": None})
 
     handler_specific_params.update(
         {"action": ACTION_STATUS.EDIT_MSG_ACTION_STR})

@@ -1,7 +1,16 @@
 from telethon import events, TelegramClient
+from telethon.tl.types import (
+    DocumentAttributeAudio, DocumentAttributeFilename,
+    DocumentAttributeVideo)
 
 from configs.labels_messages import ACTION_STATUS
 from configs.settings import TELETHON_OPTIONS
+from telethon_manager.telethon_attrs_chains.chain_doc_attr_audio import (
+    get_doc_attr_audio_attr_chains)
+from telethon_manager.telethon_attrs_chains.chain_doc_attr_file_name import (
+    get_doc_attr_file_name_attr_chains)
+from telethon_manager.telethon_attrs_chains.chain_doc_attr_video import (
+    get_doc_attr_video_attr_chains)
 from telethon_manager.telethon_attrs_chains.chain_message_new_edit import (
     get_event_new_edit_msg_attr_chains)
 from telethon_manager.telethon_attrs_chains.chain_message_text import (
@@ -47,6 +56,28 @@ async def new_message_handler_helper(
         attributes_chains_dict=get_event_new_edit_msg_attr_chains(),
         section_separator_prefix=separator)
     handler_specific_params.update(event_main_params)
+
+    ev_media_doc_attrs = event_main_params["ev_media_document_attributes"]
+    if ev_media_doc_attrs:
+        for cur_doc_attr_obj in ev_media_doc_attrs:
+            if isinstance(cur_doc_attr_obj, DocumentAttributeAudio):
+                audio_params = await get_attrs_values_by_attr_chains(
+                    base_class_or_obj=cur_doc_attr_obj,
+                    attributes_chains_dict=get_doc_attr_audio_attr_chains(),
+                    section_separator_prefix=separator)
+                handler_specific_params.update(audio_params)
+            elif isinstance(cur_doc_attr_obj, DocumentAttributeVideo):
+                video_params = await get_attrs_values_by_attr_chains(
+                    base_class_or_obj=cur_doc_attr_obj,
+                    attributes_chains_dict=get_doc_attr_video_attr_chains(),
+                    section_separator_prefix=separator)
+                handler_specific_params.update(video_params)
+            elif isinstance(cur_doc_attr_obj, DocumentAttributeFilename):
+                file_name_params = await get_attrs_values_by_attr_chains(
+                    base_class_or_obj=cur_doc_attr_obj,
+                    attributes_chains_dict=get_doc_attr_file_name_attr_chains(),
+                    section_separator_prefix=separator)
+                handler_specific_params.update(file_name_params)
 
     handler_specific_params.update(
         {"action": ACTION_STATUS.NEW_MSG_ACTION_STR})
