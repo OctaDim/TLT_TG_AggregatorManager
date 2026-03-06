@@ -2,6 +2,26 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
+class ACTION_STATUS:
+    NEW_MSG_ACTION_STR: str = "new"
+    EDIT_MSG_ACTION_STR: str = "edited"
+    DELETE_MSG_ACTION_STR: str = "deleted"
+    READ_MSG_ACTION_STR: str = "read"
+    CHAT_UNDEFINED_ACTION_STR: str = "chat action"
+    CHAT_USER_ADDED_ACTION_STR: str = "user added"
+    CHAT_USER_DELETED_ACTION_STR: str = "user deleted"
+    CHAT_TITLE_RENAMED_ACTION_STR: str = "chat renamed"
+    CHAT_NEW_CREATED_ACTION_STR: str = "chat created"
+    USER_UNDEFINED_UPDATE_STR: str = "user update"
+    USER_ONLINE_UPDATE_STATUS_STR: str = "user online"
+    USER_OFFLINE_UPDATE_STATUS_STR: str = "user offline"
+    USER_RECENTLY_UPDATE_STATUS_STR: str = "was recently"
+    USER_LAST_WEEK_UPDATE_STATUS_STR: str = "was last week"
+    USER_LAST_MONTH_UPDATE_STATUS_STR: str = "was last month"
+    USER_TYPING_UPDATE_ACTION_STR: str = "was last month"
+
+
+@dataclass(frozen=True)
 class LABELS:
     ADMIN_PANEL_TITLE = "АНАЛИЗ СООБЩЕНИЙ"
     ICON = "ℹ️"
@@ -115,7 +135,6 @@ class LABELS:
     # VK_FILTER_LABEL = "VK"
     # MAX_FILTER_LABEL = "MAX"
     # INVITES_FILTER_LABEL = "Приглашения"
-
 
 
 @dataclass(frozen=True)

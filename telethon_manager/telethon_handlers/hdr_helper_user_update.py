@@ -4,6 +4,7 @@ from telethon.tl.types import (
     UserStatusLastWeek, UserStatusLastMonth, UserStatusEmpty,
     SendMessageTypingAction)
 
+from configs.labels_messages import ACTION_STATUS
 from configs.settings import TELETHON_OPTIONS
 from telethon_manager.telethon_attrs_chains.chain_user_data import (
     get_user_data_attr_chains)
@@ -88,22 +89,22 @@ async def user_update_handler_helper(
     ev_action = event_main_params["ev_action"]
     # ev_status
     if isinstance(ev_status, UserStatusOnline):
-        action_field_str = TELETHON_OPTIONS.USER_ONLINE_UPDATE_STATUS_STR
+        action_field_str = ACTION_STATUS.USER_ONLINE_UPDATE_STATUS_STR
     elif isinstance(ev_status, UserStatusOffline):
-        action_field_str = TELETHON_OPTIONS.USER_OFFLINE_UPDATE_STATUS_STR
+        action_field_str = ACTION_STATUS.USER_OFFLINE_UPDATE_STATUS_STR
     elif isinstance(ev_status, UserStatusRecently):
-        action_field_str = TELETHON_OPTIONS.USER_RECENTLY_UPDATE_STATUS_STR
+        action_field_str = ACTION_STATUS.USER_RECENTLY_UPDATE_STATUS_STR
     elif isinstance(ev_status, UserStatusLastWeek):
-        action_field_str = TELETHON_OPTIONS.USER_LAST_WEEK_UPDATE_STATUS_STR
+        action_field_str = ACTION_STATUS.USER_LAST_WEEK_UPDATE_STATUS_STR
     elif isinstance(ev_status, UserStatusLastMonth):
-        action_field_str = TELETHON_OPTIONS.USER_LAST_MONTH_UPDATE_STATUS_STR
+        action_field_str = ACTION_STATUS.USER_LAST_MONTH_UPDATE_STATUS_STR
     elif isinstance(ev_status, UserStatusEmpty):
-        action_field_str = TELETHON_OPTIONS.USER_UNDEFINED_UPDATE_STR
+        action_field_str = ACTION_STATUS.USER_UNDEFINED_UPDATE_STR
     # ev_action
     elif isinstance(ev_action, SendMessageTypingAction):
-        action_field_str = TELETHON_OPTIONS.USER_TYPING_UPDATE_ACTION_STR
+        action_field_str = ACTION_STATUS.USER_TYPING_UPDATE_ACTION_STR
     else:
-        action_field_str = TELETHON_OPTIONS.USER_UNDEFINED_UPDATE_STR
+        action_field_str = ACTION_STATUS.USER_UNDEFINED_UPDATE_STR
     handler_specific_params.update({"action": action_field_str})
 
     # Separate function because handler function with its own params values

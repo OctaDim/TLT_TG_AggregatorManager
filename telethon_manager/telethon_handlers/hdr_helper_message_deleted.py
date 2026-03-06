@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from telethon import events, TelegramClient
 
+from configs.labels_messages import ACTION_STATUS
 from configs.settings import TELETHON_OPTIONS
 from telethon_manager.telethon_attrs_chains.chain_message_deleted import (
     get_msg_delete_attr_chains)
@@ -38,7 +39,7 @@ async def message_deleted_handler_helper(
         {"ev_delete_date": datetime.now(timezone.utc)})
 
     handler_specific_params.update(
-        {"action": TELETHON_OPTIONS.DELETE_MSG_ACTION_STR})
+        {"action": ACTION_STATUS.DELETE_MSG_ACTION_STR})
 
     # Separate function because handler function with its own params values
     # is enclosed by add_all_telethon_client_handlers()

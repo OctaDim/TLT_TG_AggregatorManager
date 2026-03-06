@@ -3,6 +3,7 @@ from telethon.tl.types import (
     MessageActionChatAddUser, MessageActionChatDeleteUser,
     MessageActionChatCreate, MessageActionChatEditTitle)
 
+from configs.labels_messages import ACTION_STATUS
 from configs.settings import TELETHON_OPTIONS
 from telethon_manager.telethon_attrs_chains.chain_chat_action import (
     get_chat_action_attr_chains)
@@ -53,15 +54,15 @@ async def chat_action_handler_helper(
 
     ev_act_msg_action = event_main_params["ev_act_msg_action"]
     if isinstance(ev_act_msg_action, MessageActionChatAddUser):
-        action_field_str = TELETHON_OPTIONS.CHAT_USER_ADDED_ACTION_STR
+        action_field_str = ACTION_STATUS.CHAT_USER_ADDED_ACTION_STR
     elif isinstance(ev_act_msg_action, MessageActionChatDeleteUser):
-        action_field_str = TELETHON_OPTIONS.CHAT_USER_DELETED_ACTION_STR
+        action_field_str = ACTION_STATUS.CHAT_USER_DELETED_ACTION_STR
     elif isinstance(ev_act_msg_action, MessageActionChatEditTitle):
-        action_field_str = TELETHON_OPTIONS.CHAT_TITLE_RENAMED_ACTION_STR
+        action_field_str = ACTION_STATUS.CHAT_TITLE_RENAMED_ACTION_STR
     elif isinstance(ev_act_msg_action, MessageActionChatCreate):
-        action_field_str = TELETHON_OPTIONS.CHAT_NEW_CREATED_ACTION_STR
+        action_field_str = ACTION_STATUS.CHAT_NEW_CREATED_ACTION_STR
     else:
-        action_field_str = TELETHON_OPTIONS.CHAT_UNDEFINED_ACTION_STR
+        action_field_str = ACTION_STATUS.CHAT_UNDEFINED_ACTION_STR
     handler_specific_params.update({"action": action_field_str})
 
     # Separate function because handler function with its own params values

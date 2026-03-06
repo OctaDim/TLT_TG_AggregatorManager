@@ -1,5 +1,6 @@
 from telethon import events, TelegramClient
 
+from configs.labels_messages import ACTION_STATUS
 from configs.settings import TELETHON_OPTIONS
 from telethon_manager.telethon_attrs_chains.chain_message_new_edit import (
     get_event_new_edit_msg_attr_chains)
@@ -48,7 +49,7 @@ async def new_message_handler_helper(
     handler_specific_params.update(event_main_params)
 
     handler_specific_params.update(
-        {"action": TELETHON_OPTIONS.NEW_MSG_ACTION_STR})
+        {"action": ACTION_STATUS.NEW_MSG_ACTION_STR})
 
     # Separate function because handler function with its own params values
     # is enclosed by add_all_telethon_client_handlers()
