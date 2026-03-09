@@ -140,6 +140,10 @@ def get_event_new_edit_msg_attr_chains():
             "ev_reply_to_reply_to_peer_id_chat_id": "reply_to.reply_to_peer_id.chat_id",
             "ev_reply_to_reply_to_peer_id_user_id": "reply_to.reply_to_peer_id.user_id",
             "separator": ""},
+        # event_media
+        "event_media": {
+            "ev_media": "media",
+            "separator": ""},  # (MessageMediaPhoto, MessageMediaDocument, MessageMediaGeo, MessageMediaVenue, ...)
         # event_media >>> photo (MessageMediaPhoto)
         "event_media_photo": {
             "ev_media_photo": "media.photo",  # Photo >>>
@@ -150,8 +154,9 @@ def get_event_new_edit_msg_attr_chains():
             "ev_media_photo_file_reference": "media.photo.file_reference",
             "ev_media_photo_date": "media.photo.date",
             "ev_media_photo_sizes": "media.photo.sizes",  # PhotoSize
-            "ev_media_video_sizes": "media.photo.sizes",  # VideoSize
+            "ev_media_photo_dc_id": "media.photo.dc_id",
             "ev_media_photo_has_stickers": "media.photo.has_stickers",
+            "ev_media_video_sizes": "media.photo.video_sizes",  # VideoSize
             "separator": ""},
         # event_media_document >>> (MessageMediaDocument)
         "event_media_document": {

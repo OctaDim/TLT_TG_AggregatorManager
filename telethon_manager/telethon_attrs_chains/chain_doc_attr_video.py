@@ -11,5 +11,9 @@ def get_doc_attr_video_attr_chains():
             "doc_attr_video_start_ts": "video_start_ts",
             "doc_attr_video_codec": "video_codec",
             "separator": ""},
+        # document_attribute_file_name
+        "document_attribute_file_name": {
+            "doc_attr_file_name": "file_name",  # XXX
+            "separator": ""},
     }
     return attrs_chains

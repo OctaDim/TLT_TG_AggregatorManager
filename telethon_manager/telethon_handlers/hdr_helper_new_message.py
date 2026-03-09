@@ -1,10 +1,12 @@
+import os
+
 from telethon import events, TelegramClient
 from telethon.tl.types import (
     DocumentAttributeAudio, DocumentAttributeFilename,
-    DocumentAttributeVideo)
+    DocumentAttributeVideo, MessageMediaPhoto)
 
 from configs.labels_messages import ACTION_STATUS
-from configs.settings import TELETHON_OPTIONS
+from configs.settings import TELETHON_OPTIONS, BASE_DIR
 from telethon_manager.telethon_attrs_chains.chain_doc_attr_audio import (
     get_doc_attr_audio_attr_chains)
 from telethon_manager.telethon_attrs_chains.chain_doc_attr_file_name import (
@@ -19,6 +21,7 @@ from telethon_manager.telethon_client_config import TelethonConfig
 from utils_common.clean_str_new_lines_spaces import group_clean_text
 from utils_common.get_obj_attrs_vals_by_attr_chain import (
     get_attrs_values_by_attr_chains)
+from utils_common.normalized_path import get_full_dir_normal_path
 from utils_specific.handle_all_event_params import (
     send_all_event_params)
 
@@ -57,27 +60,62 @@ async def new_message_handler_helper(
         section_separator_prefix=separator)
     handler_specific_params.update(event_main_params)
 
+    ev__client = event_main_params["ev__client"]
+    ev_media = event_main_params["ev_media"]
     ev_media_doc_attrs = event_main_params["ev_media_document_attributes"]
-    if ev_media_doc_attrs:
+
+    if isinstance(ev_media, MessageMediaPhoto):
+        ev_media_photo = event_main_params["ev_media_photo"]
+        if ev_media_photo and TELETHON_OPTIONS.DOWNLOAD_PHOTO_FILE_NAME:
+            base_tlt_files_dir = TELETHON_OPTIONS.TEMP_TG_DOWNLOADED_FILES_DIR
+            temp_tlt_files_dir = get_full_dir_normal_path(
+                [BASE_DIR, base_tlt_files_dir])
+            os.makedirs(temp_tlt_files_dir, exist_ok=True)
+            temp_file_path = await ev__client.download_media(
+                ev_media_photo, file=temp_tlt_files_dir)  # tg file name
+            # temp_file_path = await ev__client.download_media(ev_media_photo, file=bytes)
+            if os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+            file_name_cst = os.path.basename(temp_file_path)
+            handler_specific_params.update({"file_name_cst": file_name_cst})
+    elif ev_media_doc_attrs:
         for cur_doc_attr_obj in ev_media_doc_attrs:
-            if isinstance(cur_doc_attr_obj, DocumentAttributeAudio):
-                audio_params = await get_attrs_values_by_attr_chains(
-                    base_class_or_obj=cur_doc_attr_obj,
-                    attributes_chains_dict=get_doc_attr_audio_attr_chains(),
-                    section_separator_prefix=separator)
-                handler_specific_params.update(audio_params)
-            elif isinstance(cur_doc_attr_obj, DocumentAttributeVideo):
+            if isinstance(cur_doc_attr_obj, DocumentAttributeVideo):
                 video_params = await get_attrs_values_by_attr_chains(
                     base_class_or_obj=cur_doc_attr_obj,
                     attributes_chains_dict=get_doc_attr_video_attr_chains(),
                     section_separator_prefix=separator)
+                ev_media_doc = event_main_params["ev_media_document"]
+                if (not video_params["doc_attr_file_name"] and ev_media_doc
+                        and TELETHON_OPTIONS.DOWNLOAD_VIDEO_FILE_NAME):
+                    base_tlt_files_dir = TELETHON_OPTIONS.TEMP_TG_DOWNLOADED_FILES_DIR
+                    temp_tlt_files_dir = get_full_dir_normal_path(
+                        [BASE_DIR, base_tlt_files_dir])
+                    os.makedirs(temp_tlt_files_dir, exist_ok=True)
+                    temp_file_path = await ev__client.download_media(
+                        ev_media_doc, file=temp_tlt_files_dir)  # tg file name
+                    # temp_file_path = await ev__client.download_media(ev_media_doc, file=bytes)
+                    if os.path.exists(temp_file_path):
+                        os.remove(temp_file_path)
+                    file_name_cst = os.path.basename(temp_file_path)
+                    video_params.update({"file_name_cst": file_name_cst})
                 handler_specific_params.update(video_params)
+            elif isinstance(cur_doc_attr_obj, DocumentAttributeAudio):
+                audio_params = await get_attrs_values_by_attr_chains(
+                    base_class_or_obj=cur_doc_attr_obj,
+                    attributes_chains_dict=get_doc_attr_audio_attr_chains(),
+                    section_separator_prefix=separator)
+                file_name_cst = audio_params["doc_attr_file_name"]
+                audio_params.update({"file_name_cst": file_name_cst})
+                handler_specific_params.update(audio_params)
             elif isinstance(cur_doc_attr_obj, DocumentAttributeFilename):
-                file_name_params = await get_attrs_values_by_attr_chains(
+                document_params = await get_attrs_values_by_attr_chains(
                     base_class_or_obj=cur_doc_attr_obj,
                     attributes_chains_dict=get_doc_attr_file_name_attr_chains(),
                     section_separator_prefix=separator)
-                handler_specific_params.update(file_name_params)
+                file_name_cst = document_params["doc_attr_file_name"]
+                document_params.update({"file_name_cst": file_name_cst})
+                handler_specific_params.update(document_params)
 
     handler_specific_params.update(
         {"action": ACTION_STATUS.NEW_MSG_ACTION_STR})
