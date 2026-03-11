@@ -15,18 +15,18 @@ class InFindTgUserData(BaseModel):
     def validate_fields(self):
         username_flag = bool(self.tg_username)
         phone_flag = bool(self.tg_phone)
-        valid_name_flag = bool(self.tg_first_name) and bool(self.tg_last_name)
+        first_name_flag = bool(self.tg_first_name)
+        last_name_flag = bool(self.tg_last_name)
 
         valid_combin_flag = any([username_flag,
                                  phone_flag,
-                                 valid_name_flag])
+                                 first_name_flag and last_name_flag])
 
-        invalid_name_combin_flag = all([username_flag or not username_flag,
-                                        phone_flag or not phone_flag,
-                                        not valid_name_flag])
+        partial_name_flag = all([first_name_flag or last_name_flag,
+                                 not (first_name_flag and last_name_flag)])
 
-        if invalid_name_combin_flag:
-            error_log = (f"\nProvide both params or leave them empty [ERROR]: "
+        if partial_name_flag:
+            error_log = (f"\nProvide both name params or leave empty [ERROR]: "
                          f"[tg_first_name AND!!! tg_last_name]\n"
                          f"tg_first_name: {self.tg_first_name}\n"
                          f"tg_last_name: {self.tg_last_name}\n")
@@ -35,7 +35,7 @@ class InFindTgUserData(BaseModel):
                                 detail=error_log)
 
         if not valid_combin_flag:
-            error_log = (f"\nEmpty parameters or wrong name combination [ERROR]: "
+            error_log = (f"\nAll empty parameters [ERROR]: "
                          f"[tg_username] OR/AND [tg_phone] OR/AND "
                          f"[tg_first_name AND!!! tg_last_name]\n"
                          f"tg_username: {self.tg_username}\n"
