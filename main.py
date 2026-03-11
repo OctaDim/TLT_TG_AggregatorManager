@@ -21,20 +21,23 @@ from db_postgres.postgres_init.db_create_sqladmin_users import (
     create_default_sqladmin_users)
 from db_postgres.postgres_init.db_tables_initialization import (
     sync_initialize_db_tables)
+from fast_api.app_find_telegram_user_id.router_find_telegram_user_id import rtr_find_telegram_user_id
 from fast_api.app_start_new_telethon_client.router_start_new_tlt_client import (
     rtr_start_new_telethon_client)
-from fast_api.app_telegram_tlt_status.router_telegram_tlt_status import (
-    rtr_telegram_tlt_status)
-from fast_api.app_tlt_fastapi_health_check.router_fastapi_health_check import (
-    rtr_fastapi_health_check)
+from fast_api.app_tlt_clients_tasks_status.router_tlt_clients_tasks_status import (
+    rtr_tlt_clients_tasks_status)
+from fast_api.app_tlt_api_health_check.router_tlt_api_health_check import (
+    rtr_tlt_api_health_check)
 from telethon_manager.telethon_clients_manager import (
     TelethonManagerSingleton)
 from telethon_manager.telethon_init_session_dir import init_telethon_sessions_dir
 
 routers_list = [
-    rtr_fastapi_health_check,
-    rtr_telegram_tlt_status,
+    rtr_tlt_api_health_check,
+    rtr_tlt_clients_tasks_status,
     rtr_start_new_telethon_client,
+    rtr_find_telegram_user_id,
+
 ]
 
 admin_panel_views = []
