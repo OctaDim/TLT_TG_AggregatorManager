@@ -5,21 +5,22 @@ from starlette.responses import JSONResponse
 from configs.console_colors import CONSOLE_COLORS
 from configs.settings import API_OPTIONS
 from fast_api.app_auth.funcs_auth import (
-    verify_tlt_auth_username_password)
+    verify_auth_username_password)
 from fast_api.app_auth.scheme_auth import (
     AuthData)
 from telethon_manager.telethon_clients_manager import (
     TelethonManagerSingleton)
 
 base_url_name = API_OPTIONS.API_BASE_URL_NAME
-rtr_telegram_tlt_status = APIRouter(prefix=f"/{base_url_name}",
-                                    tags=["TELEGRAM TLT ENDPOINTS"])
+rtr_tlt_clients_tasks_status = APIRouter(prefix=f"/{base_url_name}",
+                                         tags=["TELEGRAM TLT ENDPOINTS"])
 
 
-@rtr_telegram_tlt_status.post("/telegram_tlt_status")
-async def telegram_tlt_status_router(
-        auth_data: AuthData):
-    await verify_tlt_auth_username_password(
+@rtr_tlt_clients_tasks_status.post("/tlt_clients_tasks_status")
+async def tlt_clients_tasks_status_router(
+        auth_data: AuthData
+) -> JSONResponse:
+    await verify_auth_username_password(
         username=auth_data.username,
         password=auth_data.password)
 

@@ -14,7 +14,7 @@ from db_postgres.postgres_models.telethon_configs_model import (
 from db_postgres.postgres_queries.qry_cache_new_telethon_config_obj import (
     cache_new_telethon_config_qry)
 from fast_api.app_auth.funcs_auth import (
-    verify_tlt_auth_username_password)
+    verify_auth_username_password)
 from fast_api.app_auth.scheme_auth import (
     AuthData)
 from fast_api.app_start_new_telethon_client.scheme_start_new_tlt_client import (
@@ -33,7 +33,7 @@ async def start_new_telethon_client_router(
         auth_data: AuthData,
         new_client_data: InStartNewTelethonClient
 ) -> JSONResponse:
-    await verify_tlt_auth_username_password(
+    await verify_auth_username_password(
         username=auth_data.username,
         password=auth_data.password)
 

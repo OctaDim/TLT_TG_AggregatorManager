@@ -1,5 +1,5 @@
 from pydantic import BaseModel
 
 
-class InTelegramTltStatus(BaseModel):
+class InTltApiHealthCheck(BaseModel):
     pass

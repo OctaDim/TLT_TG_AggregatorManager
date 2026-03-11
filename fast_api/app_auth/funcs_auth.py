@@ -5,9 +5,10 @@ from fastapi import HTTPException, status
 from configs.settings import API_USERNAME, API_PASSWORD
 
 
-async def verify_tlt_auth_username_password(username: str,
-                                            password: str
-                                            ) -> Union[bool, HTTPException]:
+async def verify_auth_username_password(
+        username: str,
+        password: str
+) -> Union[bool, HTTPException]:
     if (username != API_USERNAME
             or password != API_PASSWORD):
         log_text = (f"Wrong Telethon FastAPI username or password [ERROR]: "
