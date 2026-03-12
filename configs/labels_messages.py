@@ -3,15 +3,24 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class ACTION_STATUS:
+    # Message statuses
     NEW_MSG_ACTION_STR: str = "new"
     EDIT_MSG_ACTION_STR: str = "edited"
     DELETE_MSG_ACTION_STR: str = "deleted"
     READ_MSG_ACTION_STR: str = "read"
+    # Message attachment statuses
+    PHOTO_ATTACH_ACTION_STR: str = "photo"
+    VIDEO_ATTACH_ACTION_STR: str = "video"
+    AUDIO_ATTACH_ACTION_STR: str = "audio"
+    DOC_ATTACH_ACTION_STR: str = "doc"
+    EMOJI_ATTACH_ACTION_STR: str = "emoji"
+    # Chat statuses
     CHAT_UNDEFINED_ACTION_STR: str = "chat action"
     CHAT_USER_ADDED_ACTION_STR: str = "user added"
     CHAT_USER_DELETED_ACTION_STR: str = "user deleted"
     CHAT_TITLE_RENAMED_ACTION_STR: str = "chat renamed"
     CHAT_NEW_CREATED_ACTION_STR: str = "chat created"
+    # User statuses
     USER_UNDEFINED_UPDATE_STR: str = "user update"
     USER_ONLINE_UPDATE_STATUS_STR: str = "user online"
     USER_OFFLINE_UPDATE_STATUS_STR: str = "user offline"

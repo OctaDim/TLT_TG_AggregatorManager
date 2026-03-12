@@ -39,6 +39,7 @@ async def new_message_handler_helper(
         return
 
     separator = TELETHON_OPTIONS.EVENT_ATTRS_SECTION_SEPARATOR_PREFIX
+    action_str = ACTION_STATUS.NEW_MSG_ACTION_STR
     handler_specific_params = {}
 
     # Getting event text params
@@ -78,6 +79,7 @@ async def new_message_handler_helper(
                 os.remove(temp_file_path)
             file_name_cst = os.path.basename(temp_file_path)
             handler_specific_params.update({"file_name_cst": file_name_cst})
+            action_str = f"{action_str}+{ACTION_STATUS.PHOTO_ATTACH_ACTION_STR}"
     elif ev_media_doc_attrs:
         for cur_doc_attr_obj in ev_media_doc_attrs:
             if isinstance(cur_doc_attr_obj, DocumentAttributeVideo):
@@ -100,6 +102,7 @@ async def new_message_handler_helper(
                     file_name_cst = os.path.basename(temp_file_path)
                     video_params.update({"file_name_cst": file_name_cst})
                 handler_specific_params.update(video_params)
+                action_str = f"{action_str}+{ACTION_STATUS.VIDEO_ATTACH_ACTION_STR}"
             elif isinstance(cur_doc_attr_obj, DocumentAttributeAudio):
                 audio_params = await get_attrs_values_by_attr_chains(
                     base_class_or_obj=cur_doc_attr_obj,
@@ -108,6 +111,7 @@ async def new_message_handler_helper(
                 file_name_cst = audio_params["doc_attr_file_name"]
                 audio_params.update({"file_name_cst": file_name_cst})
                 handler_specific_params.update(audio_params)
+                action_str = f"{action_str}+{ACTION_STATUS.AUDIO_ATTACH_ACTION_STR}"
             elif isinstance(cur_doc_attr_obj, DocumentAttributeFilename):
                 document_params = await get_attrs_values_by_attr_chains(
                     base_class_or_obj=cur_doc_attr_obj,
@@ -116,9 +120,9 @@ async def new_message_handler_helper(
                 file_name_cst = document_params["doc_attr_file_name"]
                 document_params.update({"file_name_cst": file_name_cst})
                 handler_specific_params.update(document_params)
+                action_str = f"{action_str}+{ACTION_STATUS.DOC_ATTACH_ACTION_STR}"
 
-    handler_specific_params.update(
-        {"action": ACTION_STATUS.NEW_MSG_ACTION_STR})
+    handler_specific_params.update({"action": action_str})
 
     # Separate function because handler function with its own params values
     # is enclosed by add_all_telethon_client_handlers()
