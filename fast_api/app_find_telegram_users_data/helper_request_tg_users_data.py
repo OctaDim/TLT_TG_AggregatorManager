@@ -16,13 +16,14 @@ async def get_tg_users_data_by_username(
     try:
         user_obj = await telethon_client.get_entity(username)
         if user_obj:
-            user_data = {"id": user_obj.id,
+            user_id_str = str(user_obj.id)
+            user_data = {"id": user_id_str,
                          "username": user_obj.username}
             matched_users_data[user_obj.username] = user_data
             if TELETHON_OPTIONS.LOG_TG_FOUND_USER_BY_USERNAME:
-                print(f"\nFound EXACT telegram user BY USERNAME:\n"
+                print(f"\nFound EXACT telegram user BY USERNAME [OK]:\n"
                       f"telethon_config_name: {telethon_config_name}\n"
-                      f"user_obj.id: {user_obj.id}\n"
+                      f"user_obj.id: {user_id_str}\n"
                       f"user_obj.username: {user_obj.username}\n"
                       f"user_obj.first_name: {user_obj.first_name}\n"
                       f"user_obj.last_name: {user_obj.last_name}\n"
@@ -54,16 +55,17 @@ async def request_tg_users_data_by_phone(
         request_res = await telethon_client(request_func)
         if request_res.users:
             for cur_user_obj in request_res.users:
-                user_data = {"id": cur_user_obj.id,
+                user_id_str = str(cur_user_obj.id)
+                user_data = {"id": user_id_str,
                              "username": cur_user_obj.username}
                 matched_users_data[cur_user_obj.username] = user_data
 
                 request_func = functions.contacts.DeleteContactsRequest([cur_user_obj])
                 await telethon_client(request_func)
                 if TELETHON_OPTIONS.LOG_TG_FOUND_USER_BY_PHONE:
-                    print(f"\nFound EXACT telegram user BY PHONE:\n"
+                    print(f"\nFound EXACT telegram user BY PHONE [OK]:\n"
                           f"telethon_config_name: {telethon_config_name}\n"
-                          f"cur_user_obj.id: {cur_user_obj.id}\n"
+                          f"cur_user_obj.id: {user_id_str}\n"
                           f"user_obj.username: {cur_user_obj.username}\n"
                           f"cur_user_obj.first_name: {cur_user_obj.first_name}\n"
                           f"cur_user_obj.last_name: {cur_user_obj.last_name}\n"
@@ -124,14 +126,15 @@ async def request_tg_users_data_by_name(
                         last_name_flag and (low_tg_last_name in cur_last_name)])  # exact last name
 
                     if name_match_flag:
-                        user_data = {"id": cur_user_obj.id,
+                        user_id_str = str(cur_user_obj.id)
+                        user_data = {"id": user_id_str,
                                      "username": cur_user_obj.username}
                         matched_users_data[cur_user_obj.username] = user_data
 
                         if TELETHON_OPTIONS.LOG_TG_FOUND_USER_BY_NAME:
-                            print(f"\nFound PROBABLE telegram user BY NAME:\n"
+                            print(f"\nFound PROBABLE telegram user BY NAME [OK]:\n"
                                   f"telethon_config_name: {telethon_config_name}\n"
-                                  f"cur_user_obj.id: {cur_user_obj.id}\n"
+                                  f"cur_user_obj.id: {user_id_str}\n"
                                   f"cur_user_obj.first_name: {cur_user_obj.first_name}\n"
                                   f"cur_user_obj.last_name: {cur_user_obj.last_name}\n"
                                   f"cur_user_obj.phone: {cur_user_obj.phone}\n")
