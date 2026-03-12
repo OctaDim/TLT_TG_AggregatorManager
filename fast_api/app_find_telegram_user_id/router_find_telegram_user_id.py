@@ -8,7 +8,7 @@ from fast_api.app_auth.funcs_auth import (
     verify_auth_username_password)
 from fast_api.app_auth.scheme_auth import (
     AuthData)
-from fast_api.app_find_telegram_user_id.hlpr_get_user_ids_requests import (
+from utils_specific.get_tlt_users_ids_requests import (
     request_tg_users_ids_by_phone, request_tg_users_ids_by_name,
     get_tg_users_ids_by_username)
 from fast_api.app_find_telegram_user_id.scheme_find_telegram_user_id import (

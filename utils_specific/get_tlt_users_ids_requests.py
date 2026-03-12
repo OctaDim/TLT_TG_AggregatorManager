@@ -7,8 +7,8 @@ from configs.settings import TELETHON_OPTIONS
 
 async def get_tg_users_ids_by_username(
         telethon_client: TelegramClient,
-        telethon_config_name: str,
-        username: str
+        username: str,
+        telethon_config_name: str = None,
 ) -> List[int]:
     matched_users_ids = []
     username = (username or "").lstrip("@").lower()
@@ -35,8 +35,8 @@ async def get_tg_users_ids_by_username(
 
 async def request_tg_users_ids_by_phone(
         telethon_client: TelegramClient,
-        telethon_config_name: str,
-        req_phone: str
+        req_phone: str,
+        telethon_config_name: str = None,
 ) -> List[int]:
     matched_users_ids = []
     req_phone = req_phone or ""
@@ -72,10 +72,10 @@ async def request_tg_users_ids_by_phone(
 
 async def request_tg_users_ids_by_name(
         telethon_client: TelegramClient,
-        telethon_config_name: str,
         req_first_name: str,
         req_last_name: str,
         # req_phone: str,
+        telethon_config_name: str = None,
 ) -> List[int]:
     matched_users_ids = []
 
