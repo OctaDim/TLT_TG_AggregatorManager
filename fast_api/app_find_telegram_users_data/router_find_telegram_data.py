@@ -3,11 +3,14 @@ from starlette import status
 from starlette.responses import JSONResponse
 
 from configs.console_colors import CONSOLE_COLORS
-from configs.settings import API_OPTIONS
+from configs.settings import API_OPTIONS, TELETHON_OPTIONS
 from fast_api.app_auth.funcs_auth import (
     verify_auth_username_password)
 from fast_api.app_auth.scheme_auth import (
     AuthData)
+from fast_api.app_find_telegram_users_data.helper_request_tg_users_data import (
+    request_tg_users_data_by_phone, request_tg_users_data_by_name,
+    get_tg_users_data_by_username)
 from fast_api.app_find_telegram_users_data.scheme_find_telegram_data import (
     InFindTelegramUserData)
 from fast_api.app_web_account.scheme_web_account import (
@@ -16,9 +19,6 @@ from telethon_manager.telethon_clients_manager import (
     TelethonManagerSingleton)
 from utils_specific.get_account_tlt_clients import (
     get_account_only_tlt_clients)
-from utils_specific.get_tlt_users_ids_requests import (
-    request_tg_users_data_by_phone, request_tg_users_data_by_name,
-    get_tg_users_data_by_username)
 
 base_url_name = API_OPTIONS.API_BASE_URL_NAME
 rtr_find_telegram_users_data = APIRouter(prefix=f"/{base_url_name}",
@@ -69,7 +69,8 @@ async def find_telegram_users_data_router(
                 if users_by_username:
                     found_users_usernames.extend(users_by_username.keys())
                     found_users_ids.extend([usr["id"] for usr in users_by_username.values()])
-                    # break  # As it's exact user by username. First found
+                    if TELETHON_OPTIONS.USE_FIRST_FOUND_USER_FOR_ALL_TLT_CLIENTS:
+                        break  # As exact user has been found in any client by username (first found only)
 
             if tg_phone:
                 users_by_phone = await request_tg_users_data_by_phone(
@@ -79,8 +80,8 @@ async def find_telegram_users_data_router(
                 if users_by_phone:
                     found_users_usernames.extend(users_by_phone.keys())
                     found_users_ids.extend([usr["id"] for usr in users_by_phone.values()])
-                    # break  # As it's exact user by phone. First found
-
+                    if TELETHON_OPTIONS.USE_FIRST_FOUND_USER_FOR_ALL_TLT_CLIENTS:
+                        break  # As exact user has been found in any client by phone (first found only)
             # if True:
             if tg_first_name and tg_last_name:
                 users_by_name = await request_tg_users_data_by_name(
@@ -91,10 +92,14 @@ async def find_telegram_users_data_router(
                 if users_by_name:
                     found_users_usernames.extend(users_by_name)
                     found_users_ids.extend([usr["id"] for usr in users_by_name.values()])
-                    # continue  # As it's probable and not exact user by name. All found
+                    if TELETHON_OPTIONS.USE_FIRST_FOUND_USERS_BY_NAME_ALL_TLT_CLIENTS:
+                        break  # Probable users has been found in any client by name (first found only)
 
         if found_users_usernames:
             found_users_usernames = list(set(found_users_usernames))
+        if found_users_ids:
+            found_users_ids = list(set(found_users_ids))
+
         json_response = JSONResponse(
             content={"message": "Telegram users ids found [OK]",
                      "username": auth_data.username,
