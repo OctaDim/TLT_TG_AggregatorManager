@@ -17,6 +17,8 @@ from fast_api.app_web_account.scheme_web_account import (
     InWebAccountData)
 from telethon_manager.telethon_clients_manager import (
     TelethonManagerSingleton)
+from utils_specific.get_account_tlt_clients import (
+    get_account_only_tlt_clients)
 
 base_url_name = API_OPTIONS.API_BASE_URL_NAME
 rtr_find_telegram_user_id = APIRouter(prefix=f"/{base_url_name}",
@@ -38,29 +40,26 @@ async def find_telegram_user_id_router(
     # telegram_phone = web_account_data.telegram_phone
     # bot_token = web_account_data.telegram_bot_token
     # bot_token_info = bot_token[:10] if bot_token else None
-    config_partly_name = f"_{web_account_id}_{web_account_username}"
 
     tg_username = user_data.tg_username
     tg_first_name = user_data.tg_first_name
     tg_last_name = user_data.tg_last_name
     tg_phone = user_data.tg_phone
 
-    account_only_clients = {}
-    account_only_configs = []
-    users_ids_by_username = []
-    users_ids_by_phone = []
-    users_ids_by_name = []
-    all_found_users_ids = []
-
     try:
-        telethon_manager = TelethonManagerSingleton()  # Singleton
-        tlt_manager_clients = telethon_manager.clients
-        for cur_config_name, cur_tlt_client in tlt_manager_clients.items():
-            if config_partly_name in cur_config_name:
-                account_only_clients[cur_config_name] = cur_tlt_client
-                account_only_configs.append(cur_config_name)
+        users_ids_by_username = []
+        users_ids_by_phone = []
+        users_ids_by_name = []
+        all_found_users_ids = []
 
-        for cur_config_name, cur_tlt_client in account_only_clients.items():
+        telethon_manager = TelethonManagerSingleton()  # Singleton
+        acc_only_tlt_clients = await get_account_only_tlt_clients(
+            telethon_manager=telethon_manager,
+            web_account_id=web_account_id,
+            web_account_username=web_account_username)
+        account_only_configs = list(acc_only_tlt_clients.keys())
+
+        for cur_config_name, cur_tlt_client in acc_only_tlt_clients.items():
             if tg_username:
                 users_ids_by_username = await get_tg_users_ids_by_username(
                     telethon_client=cur_tlt_client,
@@ -95,6 +94,8 @@ async def find_telegram_user_id_router(
         json_response = JSONResponse(
             content={"message": "Telegram users ids found [OK]",
                      "username": auth_data.username,
+                     "web_account_id": web_account_id,
+                     "web_account_username": web_account_username,
                      "account_only_configs": account_only_configs,
                      "users_ids_by_username": users_ids_by_username,
                      "users_ids_by_phone": users_ids_by_phone,
@@ -110,7 +111,9 @@ async def find_telegram_user_id_router(
         print(f"Response.body: {json_response.body}\n"
               f"Response.status_code: {json_response.status_code}\n"
               f"username: {auth_data.username}\n"
-              f"account_only_clients: {account_only_clients}\n"
+              f"web_account_id: {web_account_id}\n"
+              f"web_account_username: {web_account_username}\n"
+              f"acc_only_tlt_clients: {acc_only_tlt_clients}\n"
               f"account_only_configs: {account_only_configs}\n"
               f"users_ids_by_username: {magenta_clr}{users_ids_by_username}{reset_clr}\n"
               f"users_ids_by_phone: {green_clr}{users_ids_by_phone}{reset_clr}\n"

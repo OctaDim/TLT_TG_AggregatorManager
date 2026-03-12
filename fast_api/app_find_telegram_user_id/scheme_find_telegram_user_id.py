@@ -26,7 +26,8 @@ class InFindTgUserData(BaseModel):
                                  not (first_name_flag and last_name_flag)])
 
         if partial_name_flag:
-            error_log = (f"\nProvide both name params or leave empty [ERROR]: "
+            error_log = (f"\nProvide both name params or leave empty [ERROR]:\n"
+                         f"Possible name combination: "
                          f"[tg_first_name AND!!! tg_last_name]\n"
                          f"tg_first_name: {self.tg_first_name}\n"
                          f"tg_last_name: {self.tg_last_name}\n")
@@ -35,9 +36,9 @@ class InFindTgUserData(BaseModel):
                                 detail=error_log)
 
         if not valid_combin_flag:
-            error_log = (f"\nAll empty parameters [ERROR]: "
-                         f"[tg_username] OR/AND [tg_phone] OR/AND "
-                         f"[tg_first_name AND!!! tg_last_name]\n"
+            error_log = (f"\nEmpty parameters passed [ERROR]:\n"
+                         f"Possible combinations: [tg_username] OR/AND "
+                         f"[tg_phone] OR/AND [tg_first_name AND!!! tg_last_name]\n"
                          f"tg_username: {self.tg_username}\n"
                          f"tg_first_name: {self.tg_first_name}\n"
                          f"tg_last_name: {self.tg_last_name}\n"
