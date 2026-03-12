@@ -14,7 +14,7 @@ from fast_api.app_auth.funcs_auth import (
 from fast_api.app_auth.scheme_auth import (
     AuthData)
 from fast_api.app_find_telegram_user_id.scheme_find_telegram_user_id import (
-    InFindTgUserData)
+    InFindTelegramUserData)
 from fast_api.app_web_account.scheme_web_account import (
     InWebAccountData)
 from telethon_manager.telethon_clients_manager import (
@@ -26,10 +26,10 @@ rtr_find_telegram_user_id = APIRouter(prefix=f"/{base_url_name}",
 
 
 @rtr_find_telegram_user_id.post("/find_telegram_user_data")
-async def find_telegram_user_id_router(
+async def find_telegram_users_data_router(
         auth_data: AuthData,
         web_account_data: InWebAccountData,
-        user_data: InFindTgUserData
+        user_data: InFindTelegramUserData
 ) -> JSONResponse:
     await verify_auth_username_password(
         username=auth_data.username,

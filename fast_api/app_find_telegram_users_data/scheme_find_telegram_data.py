@@ -5,7 +5,7 @@ from pydantic import BaseModel, model_validator
 from starlette import status
 
 
-class InFindTgUserData(BaseModel):
+class InFindTelegramUserData(BaseModel):
     tg_username: Optional[str] = ""
     tg_first_name: Optional[str] = ""
     tg_last_name: Optional[str] = ""

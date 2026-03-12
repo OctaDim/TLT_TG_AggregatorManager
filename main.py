@@ -21,7 +21,7 @@ from db_postgres.postgres_init.db_create_sqladmin_users import (
     create_default_sqladmin_users)
 from db_postgres.postgres_init.db_tables_initialization import (
     sync_initialize_db_tables)
-from fast_api.app_find_telegram_user_id.router_find_telegram_user_id import rtr_find_telegram_user_id
+from fast_api.app_find_telegram_users_data.router_find_telegram_data import rtr_find_telegram_users_data
 from fast_api.app_start_new_telethon_client.router_start_new_tlt_client import (
     rtr_start_new_telethon_client)
 from fast_api.app_tlt_clients_tasks_status.router_tlt_clients_tasks_status import (
@@ -36,7 +36,7 @@ routers_list = [
     rtr_tlt_api_health_check,
     rtr_tlt_clients_tasks_status,
     rtr_start_new_telethon_client,
-    rtr_find_telegram_user_id,
+    rtr_find_telegram_users_data,
 
 ]
 

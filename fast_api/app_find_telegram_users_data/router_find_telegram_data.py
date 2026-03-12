@@ -8,28 +8,28 @@ from fast_api.app_auth.funcs_auth import (
     verify_auth_username_password)
 from fast_api.app_auth.scheme_auth import (
     AuthData)
-from utils_specific.get_tlt_users_ids_requests import (
-    request_tg_users_ids_by_phone, request_tg_users_ids_by_name,
-    get_tg_users_ids_by_username)
-from fast_api.app_find_telegram_user_id.scheme_find_telegram_user_id import (
-    InFindTgUserData)
+from fast_api.app_find_telegram_users_data.scheme_find_telegram_data import (
+    InFindTelegramUserData)
 from fast_api.app_web_account.scheme_web_account import (
     InWebAccountData)
 from telethon_manager.telethon_clients_manager import (
     TelethonManagerSingleton)
 from utils_specific.get_account_tlt_clients import (
     get_account_only_tlt_clients)
+from utils_specific.get_tlt_users_ids_requests import (
+    request_tg_users_data_by_phone, request_tg_users_data_by_name,
+    get_tg_users_data_by_username)
 
 base_url_name = API_OPTIONS.API_BASE_URL_NAME
-rtr_find_telegram_user_id = APIRouter(prefix=f"/{base_url_name}",
-                                      tags=["TELEGRAM TLT ENDPOINTS"])
+rtr_find_telegram_users_data = APIRouter(prefix=f"/{base_url_name}",
+                                         tags=["TELEGRAM TLT ENDPOINTS"])
 
 
-@rtr_find_telegram_user_id.post("/find_telegram_user_data")
-async def find_telegram_user_id_router(
+@rtr_find_telegram_users_data.post("/find_telegram_user_data")
+async def find_telegram_users_data_router(
         auth_data: AuthData,
         web_account_data: InWebAccountData,
-        user_data: InFindTgUserData
+        user_data: InFindTelegramUserData
 ) -> JSONResponse:
     await verify_auth_username_password(
         username=auth_data.username,
@@ -47,10 +47,11 @@ async def find_telegram_user_id_router(
     tg_phone = user_data.tg_phone
 
     try:
-        users_ids_by_username = []
-        users_ids_by_phone = []
-        users_ids_by_name = []
-        all_found_users_ids = []
+        users_by_username = []
+        users_by_phone = []
+        users_by_name = []
+        found_users_ids = []
+        found_users_usernames = []
 
         telethon_manager = TelethonManagerSingleton()  # Singleton
         acc_only_tlt_clients = await get_account_only_tlt_clients(
@@ -61,46 +62,50 @@ async def find_telegram_user_id_router(
 
         for cur_config_name, cur_tlt_client in acc_only_tlt_clients.items():
             if tg_username:
-                users_ids_by_username = await get_tg_users_ids_by_username(
+                users_by_username = await get_tg_users_data_by_username(
                     telethon_client=cur_tlt_client,
                     telethon_config_name=cur_config_name,
                     username=tg_username)
-                if users_ids_by_username:
-                    all_found_users_ids.extend(users_ids_by_username)
-                    # break  # As it's exact user by username
+                if users_by_username:
+                    found_users_usernames.extend(users_by_username.keys())
+                    found_users_ids.extend([usr["id"] for usr in users_by_username.values()])
+                    # break  # As it's exact user by username. First found
 
             if tg_phone:
-                users_ids_by_phone = await request_tg_users_ids_by_phone(
+                users_by_phone = await request_tg_users_data_by_phone(
                     telethon_client=cur_tlt_client,
                     telethon_config_name=cur_config_name,
                     req_phone=tg_phone)
-                if users_ids_by_phone:
-                    all_found_users_ids.extend(users_ids_by_phone)
-                    # break  # As it's exact user by phone
+                if users_by_phone:
+                    found_users_usernames.extend(users_by_phone.keys())
+                    found_users_ids.extend([usr["id"] for usr in users_by_phone.values()])
+                    # break  # As it's exact user by phone. First found
 
             # if True:
             if tg_first_name and tg_last_name:
-                users_ids_by_name = await request_tg_users_ids_by_name(
+                users_by_name = await request_tg_users_data_by_name(
                     telethon_client=cur_tlt_client,
                     telethon_config_name=cur_config_name,
                     req_first_name=tg_first_name,
                     req_last_name=tg_last_name)
-                if users_ids_by_name:
-                    all_found_users_ids.extend(users_ids_by_name)
-                    # continue  # As it's probable and not exact user by name
+                if users_by_name:
+                    found_users_usernames.extend(users_by_name)
+                    found_users_ids.extend([usr["id"] for usr in users_by_name.values()])
+                    # continue  # As it's probable and not exact user by name. All found
 
-        if all_found_users_ids:
-            all_found_users_ids = list(set(all_found_users_ids))
+        if found_users_usernames:
+            found_users_usernames = list(set(found_users_usernames))
         json_response = JSONResponse(
             content={"message": "Telegram users ids found [OK]",
                      "username": auth_data.username,
                      "web_account_id": web_account_id,
                      "web_account_username": web_account_username,
                      "account_only_configs": account_only_configs,
-                     "users_ids_by_username": users_ids_by_username,
-                     "users_ids_by_phone": users_ids_by_phone,
-                     "users_ids_by_name": users_ids_by_name,
-                     "all_found_users_ids": all_found_users_ids},
+                     "users_by_username": users_by_username,
+                     "users_by_phone": users_by_phone,
+                     "users_by_name": users_by_name,
+                     "found_users_ids": found_users_ids,
+                     "found_users_usernames": found_users_usernames},
             status_code=status.HTTP_200_OK)
 
         blue_clr = CONSOLE_COLORS.BRIGHT_BLUE
@@ -108,6 +113,7 @@ async def find_telegram_user_id_router(
         green_clr = CONSOLE_COLORS.BRIGHT_GREEN
         reset_clr = CONSOLE_COLORS.RESET
         magenta_clr = CONSOLE_COLORS.BRIGHT_MAGENTA
+        cyan_clr = CONSOLE_COLORS.BRIGHT_CYAN
         print(f"Response.body: {json_response.body}\n"
               f"Response.status_code: {json_response.status_code}\n"
               f"username: {auth_data.username}\n"
@@ -115,10 +121,11 @@ async def find_telegram_user_id_router(
               f"web_account_username: {web_account_username}\n"
               f"acc_only_tlt_clients: {acc_only_tlt_clients}\n"
               f"account_only_configs: {account_only_configs}\n"
-              f"users_ids_by_username: {magenta_clr}{users_ids_by_username}{reset_clr}\n"
-              f"users_ids_by_phone: {green_clr}{users_ids_by_phone}{reset_clr}\n"
-              f"users_ids_by_name: {blue_clr}{users_ids_by_name}{reset_clr}\n"
-              f"all_found_users_ids: {yellow_clr}{all_found_users_ids}{reset_clr}\n")
+              f"users_by_username: {magenta_clr}{users_by_username}{reset_clr}\n"
+              f"users_by_phone: {green_clr}{users_by_phone}{reset_clr}\n"
+              f"users_by_name: {blue_clr}{users_by_name}{reset_clr}\n"
+              f"found_users_ids: {cyan_clr}{found_users_ids}{reset_clr}\n"
+              f"found_users_usernames: {yellow_clr}{found_users_usernames}{reset_clr}\n")
         return json_response
     except Exception as error:
         log_text = (f"Router find telegram users ids [ERROR]: "
