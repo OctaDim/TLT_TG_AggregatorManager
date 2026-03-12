@@ -21,22 +21,27 @@ from db_postgres.postgres_init.db_create_sqladmin_users import (
     create_default_sqladmin_users)
 from db_postgres.postgres_init.db_tables_initialization import (
     sync_initialize_db_tables)
-from fast_api.app_find_telegram_users_data.router_find_telegram_data import rtr_find_telegram_users_data
+from fast_api.app_find_telegram_users_data.router_find_telegram_data import (
+    rtr_find_telegram_users_data)
+from fast_api.app_send_message_by_user_id.router_send_message import (
+    rtr_send_telegram_message)
 from fast_api.app_start_new_telethon_client.router_start_new_tlt_client import (
     rtr_start_new_telethon_client)
-from fast_api.app_tlt_clients_tasks_status.router_tlt_clients_tasks_status import (
-    rtr_tlt_clients_tasks_status)
 from fast_api.app_tlt_api_health_check.router_tlt_api_health_check import (
     rtr_tlt_api_health_check)
+from fast_api.app_tlt_clients_tasks_status.router_tlt_clients_tasks_status import (
+    rtr_tlt_clients_tasks_status)
 from telethon_manager.telethon_clients_manager import (
     TelethonManagerSingleton)
-from telethon_manager.telethon_init_session_dir import init_telethon_sessions_dir
+from telethon_manager.telethon_init_session_dir import (
+    init_telethon_sessions_dir)
 
 routers_list = [
     rtr_tlt_api_health_check,
     rtr_tlt_clients_tasks_status,
     rtr_start_new_telethon_client,
     rtr_find_telegram_users_data,
+    rtr_send_telegram_message,
 
 ]
 
