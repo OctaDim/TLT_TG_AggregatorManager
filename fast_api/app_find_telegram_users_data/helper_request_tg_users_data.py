@@ -17,9 +17,13 @@ async def get_tg_users_data_by_username(
         user_obj = await telethon_client.get_entity(username)
         if user_obj:
             user_id_str = str(user_obj.id)
-            user_data = {"id": user_id_str,
-                         "username": user_obj.username}
-            matched_users_data[user_obj.username] = user_data
+            user_data = {"username": user_obj.username,
+                         "id": user_id_str,
+                         "phone": user_obj.phone,
+                         "first_name": user_obj.first_name,
+                         "last_name": user_obj.last_name,
+                         "bot": user_obj.bot}
+            matched_users_data[user_id_str] = user_data
             if TELETHON_OPTIONS.LOG_TG_FOUND_USER_BY_USERNAME:
                 print(f"\nFound EXACT telegram user BY USERNAME [OK]:\n"
                       f"telethon_config_name: {telethon_config_name}\n"
@@ -48,27 +52,45 @@ async def request_tg_users_data_by_phone(
     try:
         contact_obj = types.InputPhoneContact(
             client_id=0,  # 0 or any number
-            first_name="",  # empty to get default orig contact first_name from telegram, not overridden
-            last_name="",  # empty to get default orig contact last_name from telegram, not overridden
+            first_name="[X] Temporary",  # Cannot be None, so temp used. Overrides orig tg contact first_name
+            last_name="[X] Temporary",  # Cannot be None, so temp used. Overrides orig tg contact last_name
             phone=req_phone)
-        request_func = functions.contacts.ImportContactsRequest([contact_obj])  # Imports users by !!!phone!!! only
-        request_res = await telethon_client(request_func)
-        if request_res.users:
-            for cur_user_obj in request_res.users:
-                user_id_str = str(cur_user_obj.id)
-                user_data = {"id": user_id_str,
-                             "username": cur_user_obj.username}
-                matched_users_data[cur_user_obj.username] = user_data
+        req_func = functions.contacts.ImportContactsRequest([contact_obj])  # Imports users by !!!phone!!! only
+        req_res = await telethon_client(req_func)
+        if hasattr(req_res, "users") and req_res.users:
+            req_res_user_obj = req_res.users[0]
 
-                request_func = functions.contacts.DeleteContactsRequest([cur_user_obj])
-                await telethon_client(request_func)
+            for cur_user_obj in req_res.users:
+                user_first_name = cur_user_obj.first_name
+                user_last_name = cur_user_obj.last_name
+
+                user_id_str = str(cur_user_obj.id)
+                user_data = {"username": cur_user_obj.username,
+                             "id": user_id_str,
+                             "phone": cur_user_obj.phone,
+                             "first_name": user_first_name,
+                             "last_name": user_last_name,
+                             "bot": cur_user_obj.bot}
+                matched_users_data[user_id_str] = user_data
+
+                req_func = functions.contacts.DeleteContactsRequest([cur_user_obj])
+                await telethon_client(req_func)
+
+                # if not user_first_name and not user_last_name:
+                #     sub_req_func = functions.users.GetFullUserRequest(id=cur_user_obj.id)
+                #     sub_req_res = await telethon_client(sub_req_func)
+                #     if hasattr(sub_req_res, 'users') and sub_req_res.users:
+                #         sub_req_user_obj = sub_req_res.users[0]
+                #         user_first_name = sub_req_user_obj.first_name
+                #         user_last_name = sub_req_user_obj.last_name
+
                 if TELETHON_OPTIONS.LOG_TG_FOUND_USER_BY_PHONE:
                     print(f"\nFound EXACT telegram user BY PHONE [OK]:\n"
                           f"telethon_config_name: {telethon_config_name}\n"
                           f"cur_user_obj.id: {user_id_str}\n"
                           f"user_obj.username: {cur_user_obj.username}\n"
-                          f"cur_user_obj.first_name: {cur_user_obj.first_name}\n"
-                          f"cur_user_obj.last_name: {cur_user_obj.last_name}\n"
+                          f"cur_user_obj.first_name: {user_first_name}\n"
+                          f"cur_user_obj.last_name: {user_last_name}\n"
                           f"cur_user_obj.phone: {cur_user_obj.phone}\n")
     except Exception as error:
         print(f"Getting tg users ids by phone via user import-delete request [ERROR]:\n"
@@ -101,43 +123,49 @@ async def request_tg_users_data_by_name(
         try:
             request_func = functions.contacts.SearchRequest(q=name_query_str, limit=300)  # Finds by !!!name!!! only
             request_res = await telethon_client(request_func)
+            if hasattr(request_res, "users") and request_res.users:
+                for cur_user_obj in request_res.users:
+                    real_user_obj_flag = all([
+                        isinstance(cur_user_obj, types.User),
+                        not cur_user_obj.bot,
+                        not cur_user_obj.deleted])
 
-            for cur_user_obj in request_res.users:
-                real_user_obj_flag = all([isinstance(cur_user_obj, types.User),
-                                          not cur_user_obj.bot,
-                                          not cur_user_obj.deleted])
-                if real_user_obj_flag:
-                    cur_first_name = (cur_user_obj.first_name or "").lower()
-                    cur_last_name = (cur_user_obj.last_name or "").lower()
-                    # cur_phone = cur_user_obj.phone or ""
+                    if real_user_obj_flag:
+                        cur_first_name = (cur_user_obj.first_name or "").lower()
+                        cur_last_name = (cur_user_obj.last_name or "").lower()
+                        # cur_phone = cur_user_obj.phone or ""
 
-                    low_tg_first_name = req_first_name.lower()
-                    low_tg_last_name = req_last_name.lower()
-                    # no_plus_tg_phone = req_phone.replace("+", "")
+                        low_tg_first_name = req_first_name.lower()
+                        low_tg_last_name = req_last_name.lower()
+                        # no_plus_tg_phone = req_phone.replace("+", "")
 
-                    first_name_flag = bool(req_first_name) and bool(cur_first_name)
-                    last_name_flag = bool(req_last_name) and bool(cur_last_name)
-                    # phone_flag = bool(req_phone) and bool(cur_phone)
+                        first_name_flag = bool(req_first_name) and bool(cur_first_name)
+                        last_name_flag = bool(req_last_name) and bool(cur_last_name)
+                        # phone_flag = bool(req_phone) and bool(cur_phone)
 
-                    name_match_flag = all([
-                        # first_name_flag and (low_tg_first_name in cur_first_name),  # including first name
-                        first_name_flag and (low_tg_first_name == cur_first_name),  # exact first name
-                        # last_name_flag and (low_tg_last_name == cur_last_name),  # including last name
-                        last_name_flag and (low_tg_last_name in cur_last_name)])  # exact last name
+                        name_match_flag = all([
+                            # first_name_flag and (low_tg_first_name in cur_first_name),  # including first name
+                            first_name_flag and (low_tg_first_name == cur_first_name),  # exact first name
+                            # last_name_flag and (low_tg_last_name == cur_last_name),  # including last name
+                            last_name_flag and (low_tg_last_name in cur_last_name)])  # exact last name
 
-                    if name_match_flag:
-                        user_id_str = str(cur_user_obj.id)
-                        user_data = {"id": user_id_str,
-                                     "username": cur_user_obj.username}
-                        matched_users_data[cur_user_obj.username] = user_data
+                        if name_match_flag:
+                            user_id_str = str(cur_user_obj.id)
+                            user_data = {"username": cur_user_obj.username,
+                                         "id": user_id_str,
+                                         "phone": cur_user_obj.phone,
+                                         "first_name": cur_user_obj.first_name,
+                                         "last_name": cur_user_obj.last_name,
+                                         "bot": cur_user_obj.bot}
+                            matched_users_data[user_id_str] = user_data
 
-                        if TELETHON_OPTIONS.LOG_TG_FOUND_USER_BY_NAME:
-                            print(f"\nFound PROBABLE telegram user BY NAME [OK]:\n"
-                                  f"telethon_config_name: {telethon_config_name}\n"
-                                  f"cur_user_obj.id: {user_id_str}\n"
-                                  f"cur_user_obj.first_name: {cur_user_obj.first_name}\n"
-                                  f"cur_user_obj.last_name: {cur_user_obj.last_name}\n"
-                                  f"cur_user_obj.phone: {cur_user_obj.phone}\n")
+                            if TELETHON_OPTIONS.LOG_TG_FOUND_USER_BY_NAME:
+                                print(f"\nFound PROBABLE telegram user BY NAME [OK]:\n"
+                                      f"telethon_config_name: {telethon_config_name}\n"
+                                      f"cur_user_obj.id: {user_id_str}\n"
+                                      f"cur_user_obj.first_name: {cur_user_obj.first_name}\n"
+                                      f"cur_user_obj.last_name: {cur_user_obj.last_name}\n"
+                                      f"cur_user_obj.phone: {cur_user_obj.phone}\n")
         except Exception as error:
             print(f"Getting tg users ids by name via search request [ERROR]:\n"
                   f"error: {error}\n"
