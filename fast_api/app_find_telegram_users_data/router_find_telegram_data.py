@@ -67,8 +67,11 @@ async def find_telegram_users_data_router(
                     telethon_config_name=cur_config_name,
                     username=tg_username)
                 if users_by_username:
-                    found_users_usernames.extend(users_by_username.keys())
-                    found_users_ids.extend([usr["id"] for usr in users_by_username.values()])
+                    for cur_user in users_by_username.values():
+                        cur_user_username = cur_user["username"]
+                        if cur_user_username:
+                            found_users_usernames.append(cur_user["username"])
+                    found_users_ids.extend(users_by_username.keys())
                     if TELETHON_OPTIONS.USE_FIRST_FOUND_USER_FOR_ALL_TLT_CLIENTS:
                         break  # As exact user has been found in any client by username (first found only)
 
@@ -78,8 +81,11 @@ async def find_telegram_users_data_router(
                     telethon_config_name=cur_config_name,
                     req_phone=tg_phone)
                 if users_by_phone:
-                    found_users_usernames.extend(users_by_phone.keys())
-                    found_users_ids.extend([usr["id"] for usr in users_by_phone.values()])
+                    for cur_user in users_by_phone.values():
+                        cur_user_username = cur_user["username"]
+                        if cur_user_username:
+                            found_users_usernames.append(cur_user["username"])
+                    found_users_ids.extend(users_by_phone.keys())
                     if TELETHON_OPTIONS.USE_FIRST_FOUND_USER_FOR_ALL_TLT_CLIENTS:
                         break  # As exact user has been found in any client by phone (first found only)
             # if True:
@@ -90,8 +96,11 @@ async def find_telegram_users_data_router(
                     req_first_name=tg_first_name,
                     req_last_name=tg_last_name)
                 if users_by_name:
-                    found_users_usernames.extend(users_by_name)
-                    found_users_ids.extend([usr["id"] for usr in users_by_name.values()])
+                    for cur_user in users_by_name.values():
+                        cur_user_username = cur_user["username"]
+                        if cur_user_username:
+                            found_users_usernames.append(cur_user["username"])
+                    found_users_ids.extend(users_by_name.keys())
                     if TELETHON_OPTIONS.USE_FIRST_FOUND_USERS_BY_NAME_ALL_TLT_CLIENTS:
                         break  # Probable users has been found in any client by name (first found only)
 
