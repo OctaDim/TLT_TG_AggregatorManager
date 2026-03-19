@@ -72,7 +72,7 @@ async def find_telegram_users_data_router(
                         if cur_user_username:
                             found_users_usernames.append(cur_user["username"])
                     found_users_ids.extend(users_by_username.keys())
-                    if TELETHON_OPTIONS.USE_FIRST_FOUND_USER_FOR_ALL_TLT_CLIENTS:
+                    if TELETHON_OPTIONS.FOUND_FIRST_USER_FOR_ALL_TLT_CLIENTS:
                         break  # As exact user has been found in any client by username (first found only)
             if tg_phone:  # By telegram phone
                 users_by_phone = await request_tg_users_data_by_phone(
@@ -85,7 +85,7 @@ async def find_telegram_users_data_router(
                         if cur_user_username:
                             found_users_usernames.append(cur_user["username"])
                     found_users_ids.extend(users_by_phone.keys())
-                    if TELETHON_OPTIONS.USE_FIRST_FOUND_USER_FOR_ALL_TLT_CLIENTS:
+                    if TELETHON_OPTIONS.FOUND_FIRST_USER_FOR_ALL_TLT_CLIENTS:
                         break  # As exact user has been found in any client by phone (first found only)
             if TELETHON_OPTIONS.FIND_USERS_BY_NAME_DATA:  # By telegram first name and/or last name
                 find_by_both_names_flag = all([
@@ -111,7 +111,7 @@ async def find_telegram_users_data_router(
                             if cur_user_username:
                                 found_users_usernames.append(cur_user["username"])
                         found_users_ids.extend(users_by_name.keys())
-                        if TELETHON_OPTIONS.USE_FIRST_FOUND_USERS_BY_NAME_ALL_TLT_CLIENTS:
+                        if TELETHON_OPTIONS.FOUND_FIRST_USER_BY_NAME_ALL_TLT_CLIENTS:
                             break  # Probable users has been found in any client by name (first found only)
 
         if found_users_usernames:
