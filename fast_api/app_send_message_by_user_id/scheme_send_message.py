@@ -6,9 +6,9 @@ from starlette import status
 
 
 class InSendMessageData(BaseModel):
-    tg_username: Optional[str]
-    tg_user_id: Optional[str]
-    message_text: Optional[str]
+    tg_username: Optional[str] = ""
+    tg_user_id: Optional[str] = ""
+    message_text: str
 
     @model_validator(mode="after")
     def validate_fields(self):
