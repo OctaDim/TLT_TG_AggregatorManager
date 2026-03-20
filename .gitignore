@@ -264,3 +264,7 @@ audio_samples/
 __temp/
 *.session
 *.session-journal
+TEMP_TELETHON_FILES/
+TEMP_TELETHON_FILES/*
+TELETHON_SESSIONS/
+TELETHON_SESSIONS/*
