@@ -28,7 +28,7 @@ rtr_send_telegram_message = APIRouter(prefix=f"/{base_url_name}",
 async def send_telegram_message_router(
         auth_data: AuthData,
         web_account_data: InWebAccountData,
-        send_msg_data: InSendMessageData
+        send_message_data: InSendMessageData
 ) -> JSONResponse:
     await verify_auth_username_password(
         username=auth_data.username,
@@ -40,14 +40,15 @@ async def send_telegram_message_router(
     # bot_token = web_account_data.telegram_bot_token
     # bot_token_info = bot_token[:10] if bot_token else None
 
-    tg_username = send_msg_data.tg_username
-    tg_user_id = send_msg_data.tg_user_id
+    tg_username = send_message_data.tg_username
+    tg_user_id = send_message_data.tg_user_id
     tg_user_id = int(tg_user_id) if tg_user_id else None
-    message_text = send_msg_data.message_text
+    message_text = send_message_data.message_text
 
     try:
-        all_msg_sent_usernames = []
-        all_msg_sent_users_ids = []
+        all_sent_msg_usernames = []
+        all_sent_msg_users_ids = []
+        all_msg_sent_users = []
 
         telethon_manager = TelethonManagerSingleton()  # Singleton
         acc_only_tlt_clients = await get_account_only_tlt_clients(
@@ -64,7 +65,9 @@ async def send_telegram_message_router(
                     username=tg_username,
                     message_text=message_text)
                 if message_obj:
-                    all_msg_sent_usernames.append(tg_username)
+                    all_msg_sent_users.append({"tg_username": tg_username,
+                                               "tg_user_id": tg_user_id})
+                    all_sent_msg_usernames.append(tg_username)
                     if TELETHON_OPTIONS.ALL_TLT_CLIENTS_SEND_MSG_ONCE:
                         break  # As message has already been sent in any client by username
 
@@ -75,14 +78,16 @@ async def send_telegram_message_router(
                     user_id=tg_user_id,
                     message_text=message_text)
                 if message_obj:
-                    all_msg_sent_users_ids.append(tg_user_id)
+                    all_msg_sent_users.append({"tg_username": tg_username,
+                                               "tg_user_id": tg_user_id})
+                    all_sent_msg_users_ids.append(tg_user_id)
                     if TELETHON_OPTIONS.ALL_TLT_CLIENTS_SEND_MSG_ONCE:
                         break  # As message has already been sent in any client by user_id
 
-        if all_msg_sent_usernames:
-            all_msg_sent_usernames = list(set(all_msg_sent_usernames))
-        if all_msg_sent_users_ids:
-            all_msg_sent_users_ids = list(set(all_msg_sent_users_ids))
+        # if all_sent_msg_usernames:
+        #     all_sent_msg_usernames = list(set(all_sent_msg_usernames))
+        # if all_sent_msg_users_ids:
+        #     all_sent_msg_users_ids = list(set(all_sent_msg_users_ids))
 
         json_response = JSONResponse(
             content={"message": "Telegram users ids found [OK]",
@@ -90,8 +95,9 @@ async def send_telegram_message_router(
                      "web_account_id": web_account_id,
                      "web_account_username": web_account_username,
                      "account_only_configs": account_only_configs,
-                     "all_msg_sent_usernames": all_msg_sent_usernames,
-                     "all_msg_sent_users_ids": all_msg_sent_users_ids,
+                     "all_sent_msg_usernames": all_sent_msg_usernames,
+                     "all_sent_msg_users_ids": all_sent_msg_users_ids,
+                     "all_msg_sent_users": all_msg_sent_users,
                      "message_text": message_text},
             status_code=status.HTTP_200_OK)
 
@@ -107,8 +113,9 @@ async def send_telegram_message_router(
               f"web_account_username: {web_account_username}\n"
               f"acc_only_tlt_clients: {acc_only_tlt_clients}\n"
               f"account_only_configs: {account_only_configs}\n"
-              f"all_msg_sent_usernames: {magenta_clr}{all_msg_sent_usernames}{reset_clr}\n"
-              f"all_msg_sent_users_ids: {yellow_clr}{all_msg_sent_users_ids}{reset_clr}\n"
+              f"all_sent_msg_usernames: {magenta_clr}{all_sent_msg_usernames}{reset_clr}\n"
+              f"all_sent_msg_users_ids: {yellow_clr}{all_sent_msg_users_ids}{reset_clr}\n"
+              f"all_msg_sent_users: {blue_clr}{all_msg_sent_users}{reset_clr}\n"
               f"message_text: {green_clr}{message_text}{reset_clr}\n")
         return json_response
     except Exception as error:
