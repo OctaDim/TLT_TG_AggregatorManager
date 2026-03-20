@@ -49,6 +49,11 @@ async def send_telegram_message_router(
         all_sent_msg_usernames = []
         all_sent_msg_users_ids = []
         all_msg_sent_users = []
+        all_sending_results = []
+        sent_by_username_flag = False
+        sent_by_user_id_flag = False
+        sent_by_username_err = ""
+        sent_by_user_id_err = ""
 
         telethon_manager = TelethonManagerSingleton()  # Singleton
         acc_only_tlt_clients = await get_account_only_tlt_clients(
@@ -59,35 +64,51 @@ async def send_telegram_message_router(
 
         for cur_config_name, cur_tlt_client in acc_only_tlt_clients.items():
             if tg_username:
-                message_obj = await send_tg_message_by_username(
+                sent_msg_res = await send_tg_message_by_username(
                     telethon_client=cur_tlt_client,
                     telethon_config_name=cur_config_name,
                     username=tg_username,
                     message_text=message_text)
+                message_obj = sent_msg_res["message_object"]
                 if message_obj:
+                    sent_by_username_flag = True
                     all_msg_sent_users.append({"tg_username": tg_username,
                                                "tg_user_id": tg_user_id})
                     all_sent_msg_usernames.append(tg_username)
                     if TELETHON_OPTIONS.ALL_TLT_CLIENTS_SEND_MSG_ONCE:
                         break  # As message has already been sent in any client by username
+                else:
+                    sent_by_username_err = sent_msg_res["sent_msg_error"]
 
             if tg_user_id:
-                message_obj = await send_tg_message_by_user_id(
+                sent_msg_res = await send_tg_message_by_user_id(
                     telethon_client=cur_tlt_client,
                     telethon_config_name=cur_config_name,
                     user_id=tg_user_id,
                     message_text=message_text)
+                message_obj = sent_msg_res["message_object"]
                 if message_obj:
+                    sent_by_user_id_flag = True
                     all_msg_sent_users.append({"tg_username": tg_username,
                                                "tg_user_id": tg_user_id})
                     all_sent_msg_users_ids.append(tg_user_id)
                     if TELETHON_OPTIONS.ALL_TLT_CLIENTS_SEND_MSG_ONCE:
                         break  # As message has already been sent in any client by user_id
+                else:
+                    sent_by_user_id_err = sent_msg_res["sent_msg_error"]
 
         # if all_sent_msg_usernames:
         #     all_sent_msg_usernames = list(set(all_sent_msg_usernames))
         # if all_sent_msg_users_ids:
         #     all_sent_msg_users_ids = list(set(all_sent_msg_users_ids))
+
+        all_sending_results.append({
+            "tg_username": tg_username,
+            "sent_by_username": sent_by_username_flag,
+            "sent_by_username_error": sent_by_username_err,
+            "tg_user_id": tg_user_id,
+            "sent_by_user_id": sent_by_user_id_flag,
+            "sent_by_user_id_error": sent_by_user_id_err})
 
         json_response = JSONResponse(
             content={"message": "Telegram users ids found [OK]",
@@ -98,6 +119,7 @@ async def send_telegram_message_router(
                      "all_sent_msg_usernames": all_sent_msg_usernames,
                      "all_sent_msg_users_ids": all_sent_msg_users_ids,
                      "all_msg_sent_users": all_msg_sent_users,
+                     "all_sending_results": all_sending_results,
                      "message_text": message_text},
             status_code=status.HTTP_200_OK)
 
@@ -113,10 +135,11 @@ async def send_telegram_message_router(
               f"web_account_username: {web_account_username}\n"
               f"acc_only_tlt_clients: {acc_only_tlt_clients}\n"
               f"account_only_configs: {account_only_configs}\n"
-              f"all_sent_msg_usernames: {magenta_clr}{all_sent_msg_usernames}{reset_clr}\n"
-              f"all_sent_msg_users_ids: {yellow_clr}{all_sent_msg_users_ids}{reset_clr}\n"
-              f"all_msg_sent_users: {blue_clr}{all_msg_sent_users}{reset_clr}\n"
-              f"message_text: {green_clr}{message_text}{reset_clr}\n")
+              f"all_sent_msg_usernames: {green_clr}{all_sent_msg_usernames}{reset_clr}\n"
+              f"all_sent_msg_users_ids: {blue_clr}{all_sent_msg_users_ids}{reset_clr}\n"
+              f"all_msg_sent_users: {magenta_clr}{all_msg_sent_users}{reset_clr}\n"
+              f"all_sending_results: {yellow_clr}{all_sending_results}{reset_clr}\n"
+              f"message_text: \"{message_text}\"\n")
         return json_response
     except Exception as error:
         log_text = (f"Router send telegram message [ERROR]: "

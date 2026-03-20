@@ -1,3 +1,5 @@
+from typing import Dict
+
 from telethon import TelegramClient
 from telethon.tl.types import Message
 
@@ -9,9 +11,10 @@ async def send_tg_message_by_username(
         username: str,
         message_text: str,
         telethon_config_name: str = None,
-) -> Message | None:
+) -> Dict[str, Message | str]:
     username = (username or "").lstrip("@").lower()
     message_obj = None
+    message_error = ""
 
     try:
         message_obj = await telethon_client.send_message(
@@ -30,7 +33,11 @@ async def send_tg_message_by_username(
               f"username: {username}\n"
               f"message_text: {message_text}\n"
               f"message_obj: {message_obj}\n")
-    return message_obj
+        message_error = error
+
+    sent_msg_result = {"message_object": message_obj,
+                       "sent_msg_error": message_error}
+    return sent_msg_result
 
 
 async def send_tg_message_by_user_id(
@@ -38,8 +45,9 @@ async def send_tg_message_by_user_id(
         user_id: int,
         message_text: str,
         telethon_config_name: str = None,
-) -> Message | None:
+) -> Dict[str, Message | str]:
     message_obj = None
+    message_error = ""
 
     try:
         message_obj = await telethon_client.send_message(
@@ -58,4 +66,8 @@ async def send_tg_message_by_user_id(
               f"user_id: {user_id}\n"
               f"message_text: {message_text}\n"
               f"message_obj: {message_obj}\n")
-    return message_obj
+        message_error = error
+
+    sent_msg_result = {"message_object": message_obj,
+                       "sent_msg_error": message_error}
+    return sent_msg_result
