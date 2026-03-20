@@ -97,18 +97,21 @@ async def send_telegram_message_router(
                 else:
                     sent_by_user_id_err = sent_msg_res["sent_msg_error"]
 
+            all_sending_results.append({
+                "tg_username": tg_username,
+                "sent_by_username": sent_by_username_flag,
+                "sent_by_username_error": sent_by_username_err,
+                "tg_user_id": tg_user_id,
+                "sent_by_user_id": sent_by_user_id_flag,
+                "sent_by_user_id_error": sent_by_user_id_err,
+                "cur_config_name": cur_config_name,
+                "client_is_connected": cur_tlt_client.is_connected(),
+                "client_is_authorized": cur_tlt_client.is_user_authorized()})
+
         # if all_sent_msg_usernames:
         #     all_sent_msg_usernames = list(set(all_sent_msg_usernames))
         # if all_sent_msg_users_ids:
         #     all_sent_msg_users_ids = list(set(all_sent_msg_users_ids))
-
-        all_sending_results.append({
-            "tg_username": tg_username,
-            "sent_by_username": sent_by_username_flag,
-            "sent_by_username_error": sent_by_username_err,
-            "tg_user_id": tg_user_id,
-            "sent_by_user_id": sent_by_user_id_flag,
-            "sent_by_user_id_error": sent_by_user_id_err})
 
         json_response = JSONResponse(
             content={"message": "Telegram users ids found [OK]",
