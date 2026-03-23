@@ -22,6 +22,7 @@ from telethon_manager.telethon_client_config import TelethonConfig
 from telethon_manager.telethon_register_handlers import (
     add_all_telethon_client_handlers)
 from utils_common.normalized_path import get_full_file_normal_path
+from utils_specific.get_valid_proxy_config import get_valid_proxy_tuple
 
 
 class TelethonManagerSingleton(metaclass=SingletonMeta):
@@ -226,11 +227,11 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
         except Exception as error:
             error_log = (f"Run single Telethon client [ERROR]:\n"
                          f"error: {error}\n"
+                         f"config_name: {config_name}\n"
                          f"telethon_config_id: {telethon_config_id}\n"
                          f"account_type: {account_type}\n"
                          f"telegram_phone: {telegram_phone}\n"
-                         f"bot_token_info: {bot_token_info}\n"
-                         f"config_name: {config_name}\n")
+                         f"bot_token_info: {bot_token_info}\n")
             print(error_log)
 
     async def start_tlt_user_client(
@@ -263,11 +264,17 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                   f"session_full_file_path: {session_full_file_path}\n"
                   f"session: {session}\n")
 
+        if telethon_config.proxy:
+            valid_proxy_config = await get_valid_proxy_tuple(
+                raw_proxy_config=telethon_config.proxy)
+        else:
+            valid_proxy_config = None
+
         user_client = TelegramClient(
             session=session,
             api_id=telethon_config.api_id,
             api_hash=telethon_config.api_hash,
-            proxy=telethon_config.proxy,
+            proxy=valid_proxy_config,
             connection_retries=TELETHON_OPTIONS.TELEGRAM_CLIENT_CONNECT_RETRIES,
             request_retries=TELETHON_OPTIONS.TELEGRAM_CLIENT_REQUEST_RETRIES,
             flood_sleep_threshold=TELETHON_OPTIONS.FLOOD_SLEEP_THRESHOLD, )
@@ -435,11 +442,17 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
             all_dir_str_parts=[BASE_DIR, telethon_sessions_dir],
             file_name_with_ext=new_session_id)
 
+        if telethon_config.proxy:
+            valid_proxy_config = await get_valid_proxy_tuple(
+                raw_proxy_config=telethon_config.proxy)
+        else:
+            valid_proxy_config = None
+
         bot_client = TelegramClient(
             session=session_full_file_path,
             api_id=telethon_config.api_id,
             api_hash=telethon_config.api_hash,
-            proxy=telethon_config.proxy,
+            proxy=valid_proxy_config,
             connection_retries=TELETHON_OPTIONS.TELEGRAM_CLIENT_CONNECT_RETRIES,
             request_retries=TELETHON_OPTIONS.TELEGRAM_CLIENT_REQUEST_RETRIES,
             flood_sleep_threshold=TELETHON_OPTIONS.FLOOD_SLEEP_THRESHOLD, )
