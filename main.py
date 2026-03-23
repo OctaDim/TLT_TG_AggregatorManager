@@ -1,4 +1,5 @@
 import asyncio
+import sys
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -154,7 +155,6 @@ async def run_uvicorn_fastapi_server():  # If used itself without any other asyn
                 use_colors=FASTAPI_OPTIONS.USE_COLORS, )
     print("Uvicorn and FastAPI server started [OK]")
 
-
 async def create_run_uvicorn_fastapi_server():  # If used together with other async tasks
     uvicorn_config = uvicorn.Config(
         app=create_fastapi_application(),
@@ -164,7 +164,7 @@ async def create_run_uvicorn_fastapi_server():  # If used together with other as
         # factory=True,
         log_level=FASTAPI_OPTIONS.LOG_LEVEL,
         use_colors=FASTAPI_OPTIONS.USE_COLORS,
-        loop="asyncio",  # Existing Telethon loop used
+        loop="asyncio",
         lifespan="on", )  # Lifespan events can be used if necessary
     server = uvicorn.Server(config=uvicorn_config)
     await server.serve()

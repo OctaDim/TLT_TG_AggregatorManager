@@ -137,10 +137,10 @@ async def send_telegram_message_router(
               f"web_account_id: {web_account_id}\n"
               f"web_account_username: {web_account_username}\n"
               f"acc_only_tlt_clients: {acc_only_tlt_clients}\n"
-              f"account_only_configs: {account_only_configs}\n"
-              f"all_sent_msg_usernames: {green_clr}{all_sent_msg_usernames}{reset_clr}\n"
-              f"all_sent_msg_users_ids: {blue_clr}{all_sent_msg_users_ids}{reset_clr}\n"
-              f"all_msg_sent_users: {magenta_clr}{all_msg_sent_users}{reset_clr}\n"
+              f"account_only_configs: {magenta_clr}{account_only_configs}{reset_clr}\n"
+              f"all_sent_msg_usernames: {all_sent_msg_usernames}\n"
+              f"all_sent_msg_users_ids: {all_sent_msg_users_ids}\n"
+              f"all_msg_sent_users: {blue_clr}{all_msg_sent_users}{reset_clr}\n"
               f"all_sending_results: {yellow_clr}{all_sending_results}{reset_clr}\n"
               f"message_text: \"{message_text}\"\n")
         return json_response
