@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 
 from sqlalchemy import JSON
 from sqlalchemy.orm import Mapped, mapped_column
@@ -24,5 +24,5 @@ class TelethonConfigModel(Base, ActiveMix, CreateUpdateMix):
     telethon_session_str: Mapped[Optional[str]]
     tg_bot_token: Mapped[Optional[str]]
     tg_personal_phone: Mapped[Optional[str]]
-    telethon_proxy_config: Mapped[Optional[dict]] = mapped_column(JSON)
+    telethon_proxy_config: Mapped[Optional[Union[tuple]]] = mapped_column(JSON)  # Postgres: list! => tlt proxy: tuple!
     telethon_is_active: Mapped[bool] = mapped_column(default=False)
