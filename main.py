@@ -12,7 +12,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from admin_panel.admin_views.admin_auth_role_backend import (
     AdminAuthRoleAuthBackend)
 from configs.labels_messages import LABELS
-from configs.settings import (
+from configs.environments import (
     API_HOST, API_PORT,
     FASTAPI_SESSION_KEY)
 from configs.options import FASTAPI_OPTIONS, SQLADMIN_OPTIONS

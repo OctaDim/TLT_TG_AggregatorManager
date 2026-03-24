@@ -1,4 +1,4 @@
-from configs.settings import AGGREGATOR_API_SEVER_PORT
+from configs.environments import AGGREGATOR_API_SEVER_PORT
 
 # ######################################################################
 # ############# AGGREGATOR API end-points to send webhooks #############

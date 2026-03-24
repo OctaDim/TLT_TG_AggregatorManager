@@ -9,7 +9,7 @@ from telethon.sessions import StringSession, SQLiteSession
 
 from configs.enums import (
     TELEGRAM_ACCOUNT_TYPE, QR_CODE_ERROR_CORRECTION)
-from configs.settings import (
+from configs.environments import (
     BASE_DIR)
 from configs.options import ALCHEMY_OPTIONS, TELETHON_OPTIONS
 from db_postgres.postgres_conn.pgs_connection import PgsAsyncConnection

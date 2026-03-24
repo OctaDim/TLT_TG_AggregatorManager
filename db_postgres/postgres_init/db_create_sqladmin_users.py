@@ -1,5 +1,5 @@
 from configs.enums import USER_ROLE
-from configs.settings import (
+from configs.environments import (
     SQLADMIN_SUPERADMIN_PASSWORD, SQLADMIN_ADMIN_PASSWORD, SQLADMIN_ADMIN_USERNAME,
     SQLADMIN_SUPERADMIN_USERNAME)
 from configs.options import ALCHEMY_OPTIONS, SQLADMIN_OPTIONS

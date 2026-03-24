@@ -4,7 +4,7 @@ from sqlalchemy import Engine, create_engine
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
 from sqlalchemy.sql import text
 
-from configs.settings import (
+from configs.environments import (
     POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT,
     POSTGRES_DB_NAME)
 from configs.options import ALCHEMY_OPTIONS

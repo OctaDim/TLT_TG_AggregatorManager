@@ -5,7 +5,7 @@ from httpx import Response
 
 from configs.aggregator_api_urls import (
     AGGREGATOR_API_WEBHOOKS_URL)
-from configs.settings import (
+from configs.environments import (
     AGGREGATOR_USERNAME, AGGREGATOR_PASSWORD)
 from configs.options import AGGREGATOR_API_OPTIONS
 

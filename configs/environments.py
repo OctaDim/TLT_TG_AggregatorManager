@@ -99,6 +99,55 @@ TELEGRAM_OFFICIAL_APP_API_HASH = telegram_api_conf_parser.get(
     section=telegram_api_conf_name, option="TG_OFFICIAL_APP_API_HASH")
 
 
+# GETTING PROXY INI CONFIGS ##############################################
+@dataclass(frozen=True)
+class PROXY_CONFIG_NAMES:
+    PROXY_PRODUCT_SERVER_IP = "PROXY_production"
+    PROXY_HAKASIA_PROD_SERVER_IP = "PROXY_Hakasia_product_server"
+    PROXY_TEST_176_124_136_22_IP = "PROXY_test_server_176_124_136_22_8000"
+    PROXY_TEST_192_168_21_22_IP = "PROXY_test_server_192_168_21_22_8000"
+    PROXY_TEST_PORT_ANY_IP = "PROXY_port_all_ips_0_0_0_0_8000"
+    PROXY_TEST_WIN_LOCALHOST = "PROXY_win_localhost_127_0_0_1_8000"
+    PROXY_TEST_UNIX_LOCALHOST = "PROXY_unix_localhost_127_0_1_1_8000"
+    PROXY_TEST_DEXP_1_IP = "PROXY_dexp_ip_192_168_0_117_8000"
+    PROXY_TEST_DEXP_2_IP = "PROXY_dexp_ip_192_168_0_106_8000"
+
+
+proxy_ini_normal_path = get_full_file_normal_path(
+    all_dir_str_parts=[BASE_DIR],
+    file_name_with_ext=".configs_proxy.ini")
+proxy_conf_parser = ConfigParser()
+proxy_conf_parser.read(filenames=proxy_ini_normal_path)
+
+if cur_external_ip == "___.___.___.___":  # Just example
+    proxy_conf_name = PROXY_CONFIG_NAMES.PROXY_TEST_PORT_ANY_IP
+elif cur_external_ip == "172.19.201.24":
+    proxy_conf_name = PROXY_CONFIG_NAMES.PROXY_PRODUCT_SERVER_IP
+elif cur_external_ip == "172.19.201.24":
+    proxy_conf_name = PROXY_CONFIG_NAMES.PROXY_HAKASIA_PROD_SERVER_IP
+elif cur_external_ip == "176.124.136.22":
+    proxy_conf_name = PROXY_CONFIG_NAMES.PROXY_TEST_176_124_136_22_IP
+elif cur_external_ip == "192.168.21.22":
+    proxy_conf_name = PROXY_CONFIG_NAMES.PROXY_TEST_192_168_21_22_IP
+elif cur_external_ip == "192.168.0.117":
+    proxy_conf_name = PROXY_CONFIG_NAMES.PROXY_TEST_DEXP_1_IP
+elif cur_external_ip == "192.168.0.106":
+    proxy_conf_name = PROXY_CONFIG_NAMES.PROXY_TEST_DEXP_2_IP
+elif sys.platform == "linux":
+    proxy_conf_name = PROXY_CONFIG_NAMES.PROXY_TEST_UNIX_LOCALHOST
+elif sys.platform == "win32":
+    proxy_conf_name = PROXY_CONFIG_NAMES.PROXY_TEST_WIN_LOCALHOST
+else:
+    proxy_conf_name = PROXY_CONFIG_NAMES.PROXY_TEST_PORT_ANY_IP
+
+PROXY_TYPE: str = proxy_conf_parser.get(section=proxy_conf_name, option="PROXY_TYPE")
+PROXY_ADDR: str = proxy_conf_parser.get(section=proxy_conf_name, option="PROXY_ADDR")
+PROXY_PORT: int = int(proxy_conf_parser.get(section=proxy_conf_name, option="PROXY_PORT"))
+PROXY_RDNS: int = bool(proxy_conf_parser.get(section=proxy_conf_name, option="PROXY_RDNS"))
+PROXY_USERNAME: str = proxy_conf_parser.get(section=proxy_conf_name, option="PROXY_USERNAME")
+PROXY_PASSWORD: str = proxy_conf_parser.get(section=proxy_conf_name, option="PROXY_PASSWORD")
+
+
 # GETTING SQLADMIN INI CONFIGS #########################################
 @dataclass(frozen=True)
 class SQLADMIN_CONFIG_NAMES:

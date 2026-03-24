@@ -6,7 +6,7 @@ from starlette.responses import JSONResponse
 
 from configs.console_colors import CONSOLE_COLORS
 from configs.enums import TELEGRAM_ACCOUNT_TYPE
-from configs.settings import (
+from configs.environments import (
     TELEGRAM_OFFICIAL_APP_API_ID,
     TELEGRAM_OFFICIAL_APP_API_HASH)
 from configs.options import API_OPTIONS

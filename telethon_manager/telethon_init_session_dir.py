@@ -1,6 +1,6 @@
 import os
 
-from configs.settings import BASE_DIR
+from configs.environments import BASE_DIR
 from configs.options import TELETHON_OPTIONS
 from utils_common.normalized_path import get_full_dir_normal_path
 
