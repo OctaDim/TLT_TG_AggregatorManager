@@ -6,7 +6,8 @@ from httpx import Response
 from configs.aggregator_api_urls import (
     AGGREGATOR_API_WEBHOOKS_URL)
 from configs.settings import (
-    AGGREGATOR_USERNAME, AGGREGATOR_PASSWORD, AGGREGATOR_API_OPTIONS)
+    AGGREGATOR_USERNAME, AGGREGATOR_PASSWORD)
+from configs.options import AGGREGATOR_API_OPTIONS
 
 
 async def send_event_data_webhook_req(

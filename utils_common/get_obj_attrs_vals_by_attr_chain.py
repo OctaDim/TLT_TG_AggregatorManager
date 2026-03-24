@@ -1,7 +1,7 @@
 from typing import Union, Type, List, Any, Tuple, Dict
 
 from configs.console_colors import CONSOLE_COLORS
-from configs.settings import TELETHON_OPTIONS
+from configs.options import TELETHON_OPTIONS
 from utils_common.exec_time_decorator import execution_time_decorator
 
 

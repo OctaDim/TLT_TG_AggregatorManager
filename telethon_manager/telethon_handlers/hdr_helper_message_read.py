@@ -1,7 +1,7 @@
 from telethon import events, TelegramClient
 
 from configs.labels_messages import ACTION_STATUS
-from configs.settings import TELETHON_OPTIONS
+from configs.options import TELETHON_OPTIONS
 from telethon_manager.telethon_attrs_chains.chain_message_read import (
     get_msg_read_attr_chains)
 from telethon_manager.telethon_client_config import TelethonConfig

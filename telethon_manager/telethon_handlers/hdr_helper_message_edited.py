@@ -6,7 +6,8 @@ from telethon.tl.types import (
     DocumentAttributeFilename, MessageMediaPhoto)
 
 from configs.labels_messages import ACTION_STATUS
-from configs.settings import TELETHON_OPTIONS, BASE_DIR
+from configs.settings import BASE_DIR
+from configs.options import TELETHON_OPTIONS
 from telethon_manager.telethon_attrs_chains.chain_doc_attr_audio import (
     get_doc_attr_audio_attr_chains)
 from telethon_manager.telethon_attrs_chains.chain_doc_attr_file_name import (

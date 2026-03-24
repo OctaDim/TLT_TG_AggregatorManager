@@ -4,7 +4,7 @@ from fastapi import HTTPException
 from sqlalchemy import Row
 from starlette import status
 
-from configs.settings import ALCHEMY_OPTIONS, TELETHON_OPTIONS
+from configs.options import ALCHEMY_OPTIONS, TELETHON_OPTIONS
 from db_postgres.postgres_conn.pgs_connection import PgsAsyncConnection
 from db_postgres.postgres_conn.postgres_session import PgsAsyncSession
 from db_postgres.postgres_models.telethon_configs_model import (

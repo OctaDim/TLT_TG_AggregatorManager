@@ -6,7 +6,8 @@ from sqlalchemy.sql import text
 
 from configs.settings import (
     POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT,
-    POSTGRES_DB_NAME, ALCHEMY_OPTIONS)
+    POSTGRES_DB_NAME)
+from configs.options import ALCHEMY_OPTIONS
 from meta_classes.singlton_meta import SingletonMeta
 
 

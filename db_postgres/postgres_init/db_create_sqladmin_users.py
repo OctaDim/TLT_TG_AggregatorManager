@@ -1,8 +1,8 @@
 from configs.enums import USER_ROLE
 from configs.settings import (
-    ALCHEMY_OPTIONS, SQLADMIN_SUPERADMIN_PASSWORD, SQLADMIN_OPTIONS,
-    SQLADMIN_ADMIN_PASSWORD, SQLADMIN_ADMIN_USERNAME,
+    SQLADMIN_SUPERADMIN_PASSWORD, SQLADMIN_ADMIN_PASSWORD, SQLADMIN_ADMIN_USERNAME,
     SQLADMIN_SUPERADMIN_USERNAME)
+from configs.options import ALCHEMY_OPTIONS, SQLADMIN_OPTIONS
 from db_postgres.postgres_conn.pgs_connection import PgsAsyncConnection
 from db_postgres.postgres_conn.postgres_session import PgsAsyncSession
 from db_postgres.postgres_models.auth_role_model import AuthRoleModel

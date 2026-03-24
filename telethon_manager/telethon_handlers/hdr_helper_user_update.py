@@ -5,7 +5,7 @@ from telethon.tl.types import (
     SendMessageTypingAction)
 
 from configs.labels_messages import ACTION_STATUS
-from configs.settings import TELETHON_OPTIONS
+from configs.options import TELETHON_OPTIONS
 from telethon_manager.telethon_attrs_chains.chain_user_data import (
     get_user_data_attr_chains)
 from telethon_manager.telethon_attrs_chains.chain_user_update import (

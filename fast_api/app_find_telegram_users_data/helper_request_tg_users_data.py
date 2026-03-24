@@ -2,7 +2,7 @@ from typing import Dict, Union
 
 from telethon import TelegramClient, types, functions
 
-from configs.settings import TELETHON_OPTIONS
+from configs.options import TELETHON_OPTIONS
 
 
 async def get_tg_users_data_by_username(

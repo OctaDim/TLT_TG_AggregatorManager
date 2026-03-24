@@ -13,8 +13,9 @@ from admin_panel.admin_views.admin_auth_role_backend import (
     AdminAuthRoleAuthBackend)
 from configs.labels_messages import LABELS
 from configs.settings import (
-    FASTAPI_OPTIONS, API_HOST, API_PORT,
-    SQLADMIN_OPTIONS, FASTAPI_SESSION_KEY)
+    API_HOST, API_PORT,
+    FASTAPI_SESSION_KEY)
+from configs.options import FASTAPI_OPTIONS, SQLADMIN_OPTIONS
 from db_postgres.postgres_conn.pgs_connection import (
     PgsAsyncConnection, close_all_async_pgs_connections,
     close_all_sync_pgs_connections)

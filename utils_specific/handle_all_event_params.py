@@ -3,7 +3,7 @@ from typing import Dict, Any
 from telethon import events, TelegramClient
 
 from configs.aggregator_api_urls import AGGREGATOR_API_WEBHOOKS_URL
-from configs.settings import TELETHON_OPTIONS, AGGREGATOR_API_OPTIONS
+from configs.options import TELETHON_OPTIONS, AGGREGATOR_API_OPTIONS
 from telethon_manager.telethon_client_config import TelethonConfig
 from utils_common.serialize_custom_json import get_only_jsonable_values
 from utils_specific.event_params_detailed_log import (

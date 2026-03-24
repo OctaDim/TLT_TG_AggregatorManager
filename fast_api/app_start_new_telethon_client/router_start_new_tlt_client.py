@@ -7,8 +7,9 @@ from starlette.responses import JSONResponse
 from configs.console_colors import CONSOLE_COLORS
 from configs.enums import TELEGRAM_ACCOUNT_TYPE
 from configs.settings import (
-    API_OPTIONS, TELEGRAM_OFFICIAL_APP_API_ID,
+    TELEGRAM_OFFICIAL_APP_API_ID,
     TELEGRAM_OFFICIAL_APP_API_HASH)
+from configs.options import API_OPTIONS
 from db_postgres.postgres_models.telethon_configs_model import (
     TelethonConfigModel)
 from db_postgres.postgres_queries.qry_cache_new_telethon_config_obj import (

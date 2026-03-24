@@ -3,7 +3,7 @@ from starlette import status
 from starlette.responses import JSONResponse
 
 from configs.console_colors import CONSOLE_COLORS
-from configs.settings import API_OPTIONS
+from configs.options import API_OPTIONS
 from fast_api.app_auth.funcs_auth import (
     verify_auth_username_password)
 from fast_api.app_auth.scheme_auth import (

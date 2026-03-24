@@ -1,4 +1,4 @@
-from configs.settings import TELETHON_OPTIONS
+from configs.options import TELETHON_OPTIONS
 
 
 async def log_all_event_params(

@@ -3,7 +3,7 @@ from typing import Dict
 from telethon import TelegramClient
 from telethon.tl.types import Message
 
-from configs.settings import TELETHON_OPTIONS
+from configs.options import TELETHON_OPTIONS
 
 
 async def send_tg_message_by_username(
