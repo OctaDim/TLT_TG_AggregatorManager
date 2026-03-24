@@ -7,7 +7,8 @@ from utils_common.get_bool_or_none_from_str import get_bool_none_from_str
 
 
 async def get_valid_proxy_tuple(
-        raw_proxy_config: tuple | list | dict
+        raw_proxy_config: tuple | list | dict,
+        use_socks_objs: bool = True
 ) -> Tuple[str, str, int, bool, str, str]:
     _PROXY_TYPE_ASSOC = {"socks4": python_socks.ProxyType.SOCKS4,
                          "socks5": python_socks.ProxyType.SOCKS5,
@@ -15,7 +16,7 @@ async def get_valid_proxy_tuple(
 
     if isinstance(raw_proxy_config, (list, tuple)):
         raw_proxy_type = raw_proxy_config[0].lower()
-        if raw_proxy_type in _PROXY_TYPE_ASSOC.keys():
+        if use_socks_objs and (raw_proxy_type in _PROXY_TYPE_ASSOC.keys()):
             valid_proxy_type = _PROXY_TYPE_ASSOC[raw_proxy_type]
         else:
             valid_proxy_type = raw_proxy_type
@@ -29,7 +30,7 @@ async def get_valid_proxy_tuple(
         valid_proxy_config = tuple(valid_proxy_config)
     elif isinstance(raw_proxy_config, dict):
         raw_proxy_type = raw_proxy_config["proxy_type"]
-        if raw_proxy_type in _PROXY_TYPE_ASSOC.keys():
+        if use_socks_objs and (raw_proxy_type in _PROXY_TYPE_ASSOC.keys()):
             valid_proxy_type = _PROXY_TYPE_ASSOC[raw_proxy_type]
         else:
             valid_proxy_type = raw_proxy_type
@@ -44,5 +45,4 @@ async def get_valid_proxy_tuple(
                               raw_proxy_config["password"])
     else:
         valid_proxy_config = raw_proxy_config
-    print("################################################################### valid_proxy_config", valid_proxy_config)
     return valid_proxy_config
