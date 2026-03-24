@@ -23,6 +23,7 @@ from telethon_manager.telethon_client_config import TelethonConfig
 from telethon_manager.telethon_register_handlers import (
     add_all_telethon_client_handlers)
 from utils_common.normalized_path import get_full_file_normal_path
+from utils_specific.get_proxy_environ_conf import get_proxy_environ_config
 from utils_specific.get_valid_proxy_config import get_valid_proxy_tuple
 
 
@@ -202,6 +203,7 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                       f"bot_token_info: {bot_token_info}\n"
                       f"config_name: {config_name}\n")
                 return None
+
             print(f"Telethon client created and authorised [OK]:\n"
                   f"single_tlt_client: {single_tlt_client}\n"
                   f"telethon_config_id: {telethon_config_id}\n"
@@ -211,6 +213,13 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                   f"config_name: {config_name}\n")
 
             print("Telethon client PGS-SQLite session saving:")
+            proxy_environ_config = await get_proxy_environ_config()
+            if proxy_environ_config:
+                valid_proxy_config = await get_valid_proxy_tuple(
+                    raw_proxy_config=proxy_environ_config,
+                    use_socks_objs=False)
+                telethon_config.proxy = valid_proxy_config
+
             # session_str = StringSession.save(single_tlt_client.session)  # Obtain session str from tlt client for PGS
             await self.postgres_db_save_tlt_session(
                 telethon_client=single_tlt_client,
@@ -265,11 +274,20 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                   f"session_full_file_path: {session_full_file_path}\n"
                   f"session: {session}\n")
 
-        if telethon_config.proxy:
-            valid_proxy_config = await get_valid_proxy_tuple(
-                raw_proxy_config=telethon_config.proxy)
-        else:
+        if not TELETHON_OPTIONS.USE_TELETHON_PROXY:
             valid_proxy_config = None
+        else:
+            proxy_environ_config = await get_proxy_environ_config()
+            if proxy_environ_config:  # Environments proxy config exists
+                valid_proxy_config = await get_valid_proxy_tuple(
+                    raw_proxy_config=proxy_environ_config,
+                    use_socks_objs=True)
+            elif telethon_config.proxy:  # DB proxy config exists
+                valid_proxy_config = await get_valid_proxy_tuple(
+                    raw_proxy_config=telethon_config.proxy,
+                    use_socks_objs=True)
+            else:
+                valid_proxy_config = None
 
         user_client = TelegramClient(
             session=session,
@@ -321,7 +339,9 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
         print(f"Telethon session string obtained from tlt client[OK]:\n"
               f"session_str_info: {session_str_info}\n")
 
-        session_update_data = {"telethon_session_str": session_str}
+        session_update_data = {
+            "telethon_session_str": session_str,
+            "telethon_proxy_config": telethon_config.proxy}
         session_is_updated = await update_telethon_session_data_qry(
             # Non Telethon standard Postgres saving session string
             telethon_config_id=telethon_config.telethon_config_id,
@@ -443,11 +463,20 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
             all_dir_str_parts=[BASE_DIR, telethon_sessions_dir],
             file_name_with_ext=new_session_id)
 
-        if telethon_config.proxy:
-            valid_proxy_config = await get_valid_proxy_tuple(
-                raw_proxy_config=telethon_config.proxy)
-        else:
+        if not TELETHON_OPTIONS.USE_TELETHON_PROXY:
             valid_proxy_config = None
+        else:
+            proxy_environ_config = await get_proxy_environ_config()
+            if proxy_environ_config:  # Environments proxy config exists
+                valid_proxy_config = await get_valid_proxy_tuple(
+                    raw_proxy_config=proxy_environ_config,
+                    use_socks_objs=True)
+            elif telethon_config.proxy:  # DB proxy config exists
+                valid_proxy_config = await get_valid_proxy_tuple(
+                    raw_proxy_config=telethon_config.proxy,
+                    use_socks_objs=True)
+            else:
+                valid_proxy_config = None
 
         bot_client = TelegramClient(
             session=session_full_file_path,
