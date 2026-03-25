@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Literal, Union
 
 
 @dataclass(frozen=True)
@@ -77,7 +78,7 @@ class TELETHON_OPTIONS:
     HANDLE_MESSAGE_DELETED_EVENT: bool = True
     HANDLE_MESSAGE_READ_EVENT: bool = True
     HANDLE_CHAT_ACTION_EVENT: bool = True
-    HANDLE_USER_UPDATE_EVENT: bool = False
+    HANDLE_USER_UPDATE_EVENT: bool = True
     HANDLE_RAW_EVENT: bool = False
     HANDLE_INLINE_QUERY_EVENT: bool = False
     HANDLE_CALLBACK_QUERY_EVENT: bool = False
@@ -101,6 +102,8 @@ class TELETHON_OPTIONS:
 
     LOG_TG_SEND_MSG_BY_USERNAME: bool = True
     LOG_TG_SEND_MSG_BY_USER_ID: bool = True
+
+    MESSAGES_PARSING_MODE: Literal["markdown", "html"] = "markdown"
 
 
 @dataclass(frozen=True)
