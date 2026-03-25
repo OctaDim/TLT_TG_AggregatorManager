@@ -52,6 +52,7 @@ async def send_telegram_message_router(
         all_sending_results = []
         sent_by_username_flag = False
         sent_by_user_id_flag = False
+        message_sent_flag = False
         sent_by_username_err = ""
         sent_by_user_id_err = ""
 
@@ -71,14 +72,13 @@ async def send_telegram_message_router(
                     message_text=message_text)
                 message_obj = sent_msg_res["message_object"]
                 if message_obj:
-                    sent_by_username_flag = True
                     all_msg_sent_users.append({"tg_username": tg_username,
                                                "tg_user_id": tg_user_id})
                     all_sent_msg_usernames.append(tg_username)
-                    if TELETHON_OPTIONS.ALL_TLT_CLIENTS_SEND_MSG_ONCE:
-                        break  # As message has already been sent in any client by username
+                    sent_by_username_flag = True
+                    message_sent_flag = True  # As message has already been sent in any client by username
                 else:
-                    sent_by_username_err = sent_msg_res["sent_msg_error"]
+                    sent_by_username_err = sent_msg_res["message_error"]
 
             if tg_user_id:
                 sent_msg_res = await send_tg_message_by_user_id(
@@ -88,14 +88,16 @@ async def send_telegram_message_router(
                     message_text=message_text)
                 message_obj = sent_msg_res["message_object"]
                 if message_obj:
-                    sent_by_user_id_flag = True
                     all_msg_sent_users.append({"tg_username": tg_username,
                                                "tg_user_id": tg_user_id})
                     all_sent_msg_users_ids.append(tg_user_id)
-                    if TELETHON_OPTIONS.ALL_TLT_CLIENTS_SEND_MSG_ONCE:
-                        break  # As message has already been sent in any client by user_id
+                    sent_by_user_id_flag = True
+                    message_sent_flag = True  # As message has already been sent in any client by user_id
                 else:
-                    sent_by_user_id_err = sent_msg_res["sent_msg_error"]
+                    sent_by_user_id_err = sent_msg_res["message_error"]
+
+            client_is_authorised = await cur_tlt_client.is_user_authorized()
+            client_is_connected = cur_tlt_client.is_connected()
 
             all_sending_results.append({
                 "tg_username": tg_username,
@@ -105,13 +107,21 @@ async def send_telegram_message_router(
                 "sent_by_user_id": sent_by_user_id_flag,
                 "sent_by_user_id_error": sent_by_user_id_err,
                 "cur_config_name": cur_config_name,
-                "client_is_connected": cur_tlt_client.is_connected(),
-                "client_is_authorized": cur_tlt_client.is_user_authorized()})
+                "client_is_connected": client_is_authorised,
+                "client_is_authorized": client_is_connected,
+                "message_sent_flag": message_sent_flag})
 
-        # if all_sent_msg_usernames:
-        #     all_sent_msg_usernames = list(set(all_sent_msg_usernames))
-        # if all_sent_msg_users_ids:
-        #     all_sent_msg_users_ids = list(set(all_sent_msg_users_ids))
+            # For only unique values
+            # if all_sent_msg_usernames:
+            #     all_sent_msg_usernames = list(set(all_sent_msg_usernames))
+            # if all_sent_msg_users_ids:
+            #     all_sent_msg_users_ids = list(set(all_sent_msg_users_ids))
+            # if all_sending_results:
+            #     all_sending_results = list(set(all_sending_results))
+
+            if (message_sent_flag and
+                    TELETHON_OPTIONS.ALL_TLT_CLIENTS_SEND_MSG_ONCE):
+                break
 
         json_response = JSONResponse(
             content={"message": "Telegram users ids found [OK]",
@@ -143,6 +153,9 @@ async def send_telegram_message_router(
               f"all_msg_sent_users: {blue_clr}{all_msg_sent_users}{reset_clr}\n"
               f"all_sending_results: {yellow_clr}{all_sending_results}{reset_clr}\n"
               f"message_text: \"{message_text}\"\n")
+        print(f"{yellow_clr}All_sending_results:{reset_clr}")
+        for cur_result in all_sending_results:
+            print(f"{yellow_clr}{cur_result}{reset_clr}")
         return json_response
     except Exception as error:
         log_text = (f"Router send telegram message [ERROR]: "
