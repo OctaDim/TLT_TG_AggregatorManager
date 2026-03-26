@@ -46,16 +46,6 @@ async def send_telegram_message_router(
     message_text = send_message_data.message_text
 
     try:
-        all_sent_msg_usernames = []
-        all_sent_msg_users_ids = []
-        all_msg_sent_users = []
-        all_sending_results = []
-        sent_by_username_flag = False
-        sent_by_user_id_flag = False
-        message_sent_flag = False
-        sent_by_username_err = ""
-        sent_by_user_id_err = ""
-
         telethon_manager = TelethonManagerSingleton()  # Singleton
         acc_only_tlt_clients = await get_account_only_tlt_clients(
             telethon_manager=telethon_manager,
@@ -63,8 +53,22 @@ async def send_telegram_message_router(
             web_account_username=web_account_username)
         account_only_configs = list(acc_only_tlt_clients.keys())
 
+        all_sent_msg_usernames = []
+        all_sent_msg_users_ids = []
+        all_msg_sent_users = []
+        all_sending_results = []
+
+        sent_by_username_flag = False
+        sent_by_user_id_flag = False
+        msg_sent_flag = False
+
+        sent_by_username_err = ""
+        sent_by_user_id_err = ""
+
+        send_msg_once_option = TELETHON_OPTIONS.ALL_TLT_CLIENTS_SEND_MSG_ONCE
+
         for cur_config_name, cur_tlt_client in acc_only_tlt_clients.items():
-            if tg_username:
+            if tg_username and (not send_msg_once_option or not msg_sent_flag):
                 sent_msg_res = await send_tg_message_by_username(
                     telethon_client=cur_tlt_client,
                     telethon_config_name=cur_config_name,
@@ -76,11 +80,11 @@ async def send_telegram_message_router(
                                                "tg_user_id": tg_user_id})
                     all_sent_msg_usernames.append(tg_username)
                     sent_by_username_flag = True
-                    message_sent_flag = True  # As message has already been sent in any client by username
+                    msg_sent_flag = True  # As message has already been sent in any client by username
                 else:
                     sent_by_username_err = sent_msg_res["message_error"]
 
-            if tg_user_id:
+            if tg_user_id and (not send_msg_once_option or not msg_sent_flag):
                 sent_msg_res = await send_tg_message_by_user_id(
                     telethon_client=cur_tlt_client,
                     telethon_config_name=cur_config_name,
@@ -92,7 +96,7 @@ async def send_telegram_message_router(
                                                "tg_user_id": tg_user_id})
                     all_sent_msg_users_ids.append(tg_user_id)
                     sent_by_user_id_flag = True
-                    message_sent_flag = True  # As message has already been sent in any client by user_id
+                    msg_sent_flag = True  # As message has already been sent in any client by user_id
                 else:
                     sent_by_user_id_err = sent_msg_res["message_error"]
 
@@ -109,7 +113,7 @@ async def send_telegram_message_router(
                 "cur_config_name": cur_config_name,
                 "client_is_connected": client_is_authorised,
                 "client_is_authorized": client_is_connected,
-                "message_sent_flag": message_sent_flag})
+                "message_sent_flag": msg_sent_flag})
 
             # For only unique values
             # if all_sent_msg_usernames:
@@ -119,7 +123,7 @@ async def send_telegram_message_router(
             # if all_sending_results:
             #     all_sending_results = list(set(all_sending_results))
 
-            if (message_sent_flag and
+            if (msg_sent_flag and
                     TELETHON_OPTIONS.ALL_TLT_CLIENTS_SEND_MSG_ONCE):
                 break
 
