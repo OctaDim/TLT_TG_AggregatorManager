@@ -4,6 +4,7 @@ from asyncio import Task
 from typing import Dict, List, Literal, Callable
 
 import qrcode
+import socks
 from telethon import TelegramClient
 from telethon.sessions import StringSession, SQLiteSession
 
@@ -295,6 +296,8 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
             api_hash=telethon_config.api_hash,
             proxy=valid_proxy_config,
             connection_retries=TELETHON_OPTIONS.TELEGRAM_CLIENT_CONNECT_RETRIES,
+            retry_delay=TELETHON_OPTIONS.TELEGRAM_CLIENT_CONNECT_RETRY_DELAY,
+            timeout=TELETHON_OPTIONS.TELEGRAM_CLIENT_CONNECT_TIMEOUT,
             request_retries=TELETHON_OPTIONS.TELEGRAM_CLIENT_REQUEST_RETRIES,
             flood_sleep_threshold=TELETHON_OPTIONS.FLOOD_SLEEP_THRESHOLD, )
 
@@ -484,6 +487,8 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
             api_hash=telethon_config.api_hash,
             proxy=valid_proxy_config,
             connection_retries=TELETHON_OPTIONS.TELEGRAM_CLIENT_CONNECT_RETRIES,
+            retry_delay=TELETHON_OPTIONS.TELEGRAM_CLIENT_CONNECT_RETRY_DELAY,
+            timeout=TELETHON_OPTIONS.TELEGRAM_CLIENT_CONNECT_TIMEOUT,
             request_retries=TELETHON_OPTIONS.TELEGRAM_CLIENT_REQUEST_RETRIES,
             flood_sleep_threshold=TELETHON_OPTIONS.FLOOD_SLEEP_THRESHOLD, )
 
