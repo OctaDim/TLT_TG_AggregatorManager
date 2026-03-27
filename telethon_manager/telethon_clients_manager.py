@@ -4,7 +4,6 @@ from asyncio import Task
 from typing import Dict, List, Literal, Callable
 
 import qrcode
-import socks
 from telethon import TelegramClient
 from telethon.sessions import StringSession, SQLiteSession
 
@@ -33,6 +32,7 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
 
     def __init__(self):
         self.clients: Dict[str, TelegramClient] = {}
+        self.not_started_configs: Dict[str, TelethonConfig] = {}
         self.event_handlers: Dict[str, List[Callable]] = {}
         self.running_tasks: Dict[str, asyncio.Task] = {}
         self.running_state = False
@@ -138,6 +138,7 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                       f"telegram_phone: {telegram_phone}\n"
                       f"bot_token_info: {bot_token_info}\n"
                       f"config_name: {config_name}\n")
+                self.not_started_configs[config_name] = cur_config
                 continue
 
             cur_client = await self.run_single_telethon_client(
@@ -145,10 +146,18 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
             if not cur_client:
                 print(f"Current Telethon client not authorised and skipped [ERROR]\n"
                       f"cur_client: {cur_client}\n")
+                self.not_started_configs[config_name] = cur_config
                 continue  # Not necessary
 
+        if self.not_started_configs:
+            print(f"\nTelethon clients start failure [ERROR]:")
+            counter = 1
+            for cur_conf_name, cur_tlt_conf in self.not_started_configs.items():
+                print(f"{counter}. cur_conf_name: {cur_conf_name}, "
+                      f"cur_tlt_conf: {cur_tlt_conf}")
+
         if self.clients:
-            print(f"\nTelethon clients started successfully:")
+            print(f"\nTelethon clients started successfully [SUCCESS]:")
             counter = 1
             for cur_tlt_config, cur_tlt_client in self.clients.items():
                 print(f"{counter}. cur_telethon_config: {cur_tlt_config}, "
