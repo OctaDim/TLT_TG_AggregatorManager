@@ -40,17 +40,26 @@ async def chat_action_handler_helper(
 
     event_client_obj = event_main_params["ev__client"]
     from_id_user = event_main_params["ev_act_msg_from_id"]
-    entity_user_obj = await event_client_obj.get_entity(from_id_user)
-    user_data_params = await get_attrs_values_by_attr_chains(
-        base_class_or_obj=entity_user_obj,
-        attributes_chains_dict=get_user_data_attr_chains(),
-        section_separator_prefix=separator)
-    handler_specific_params.update({
-        "user_username": user_data_params["user_username"],
-        "user_first_name": user_data_params["user_first_name"],
-        "user_last_name": user_data_params["user_last_name"],
-        "user_phone": user_data_params["user_phone"],
-        "user_bot": user_data_params["user_bot"], })
+
+    try:
+        entity_user_obj = await event_client_obj.get_entity(from_id_user)
+        user_data_params = await get_attrs_values_by_attr_chains(
+            base_class_or_obj=entity_user_obj,
+            attributes_chains_dict=get_user_data_attr_chains(),
+            section_separator_prefix=separator)
+        handler_specific_params.update({
+            "user_username": user_data_params["user_username"],
+            "user_first_name": user_data_params["user_first_name"],
+            "user_last_name": user_data_params["user_last_name"],
+            "user_phone": user_data_params["user_phone"],
+            "user_bot": user_data_params["user_bot"], })
+    except Exception as error:
+        handler_specific_params.update({
+            "user_username": None,
+            "user_first_name": None,
+            "user_last_name": None,
+            "user_phone": None,
+            "user_bot": None, })
 
     ev_act_msg_action = event_main_params["ev_act_msg_action"]
     if isinstance(ev_act_msg_action, MessageActionChatAddUser):
