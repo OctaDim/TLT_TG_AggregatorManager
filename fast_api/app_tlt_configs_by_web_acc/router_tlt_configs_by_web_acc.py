@@ -13,11 +13,12 @@ from fast_api.app_web_account.scheme_web_account import (
 from telethon_manager.telethon_clients_manager import (
     TelethonManagerSingleton)
 from utils_specific.get_account_tlt_clients import (
-    get_account_only_tlt_clients)
+    get_account_only_tlt_clients, get_acc_only_not_started_configs)
 
 base_url_name = API_OPTIONS.API_BASE_URL_NAME
 rtr_tlt_configs_by_web_account = APIRouter(prefix=f"/{base_url_name}",
                                            tags=["TELEGRAM TLT ENDPOINTS"])
+
 
 @rtr_tlt_configs_by_web_account.post("/get_tg_configs_by_web_acc")
 async def tlt_configs_by_web_account_router(
@@ -39,12 +40,27 @@ async def tlt_configs_by_web_account_router(
             web_account_username=web_account_username)
         account_only_configs = list(acc_only_tlt_clients.keys())
 
+        not_started_configs = await get_acc_only_not_started_configs(
+            telethon_manager=telethon_manager,
+            web_account_id=web_account_id,
+            web_account_username=web_account_username)
+
+        all_configs_data = []
+        for cur_config in account_only_configs:
+            all_configs_data.append({"config_name": cur_config,
+                                     "status": True})
+        for cur_config in not_started_configs.keys():
+            all_configs_data.append({"config_name": cur_config,
+                                     "status": False})
+
         json_response = JSONResponse(
-            content={"message": "Telegram configurations found [OK]",
-                     "username": auth_data.username,
-                     "web_account_id": web_account_id,
-                     "web_account_username": web_account_username,
-                     "account_only_configs": account_only_configs},
+            content={
+                "message": "Telegram configurations found [OK]",
+                "username": auth_data.username,
+                "web_account_id": web_account_id,
+                "web_account_username": web_account_username,
+                "account_only_configs": account_only_configs,
+                "all_configs_data": all_configs_data},
             status_code=status.HTTP_200_OK)
 
         blue_clr = CONSOLE_COLORS.BRIGHT_BLUE
@@ -58,10 +74,18 @@ async def tlt_configs_by_web_account_router(
               f"web_account_id: {web_account_id}\n"
               f"web_account_username: {web_account_username}\n"
               f"acc_only_tlt_clients: {acc_only_tlt_clients}\n"
-              f"account_only_configs: {magenta_clr}{account_only_configs}{reset_clr}\n")
-        print(f"{yellow_clr}All_sending_results:{reset_clr}")
+              f"account_only_configs: {yellow_clr}{account_only_configs}{reset_clr}\n"
+              f"all_configs_data: {magenta_clr}{all_configs_data}{reset_clr}\n")
+        print(f"\n{yellow_clr}All_running_configs:{reset_clr}")
         for cur_config in account_only_configs:
             print(f"{yellow_clr}{cur_config}{reset_clr}")
+
+        print(f"\n{magenta_clr}All_configs_data:{reset_clr}")
+        for cur_config in all_configs_data:
+            print(f"{magenta_clr}"
+                  f"cur_config: {cur_config['config_name']}, "
+                  f"status: {cur_config['status']}"
+                  f"{reset_clr}")
         return json_response
     except Exception as error:
         log_text = (f"Router TLT configs by web account [ERROR]: "
