@@ -33,6 +33,7 @@ from fast_api.app_tlt_api_health_check.router_tlt_api_health_check import (
     rtr_tlt_api_health_check)
 from fast_api.app_tlt_clients_tasks_status.router_tlt_clients_tasks_status import (
     rtr_tlt_clients_tasks_status)
+from fast_api.app_tlt_configs_by_web_acc.router_tlt_configs_by_web_acc import rtr_tlt_configs_by_web_account
 from telethon_manager.telethon_clients_manager import (
     TelethonManagerSingleton)
 from telethon_manager.telethon_init_session_dir import (
@@ -44,6 +45,7 @@ routers_list = [
     rtr_start_new_telethon_client,
     rtr_find_telegram_users_data,
     rtr_send_telegram_message,
+    rtr_tlt_configs_by_web_account,
 
 ]
 
