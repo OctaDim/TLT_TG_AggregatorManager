@@ -372,8 +372,38 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
               f"session_str_info: {session_str_info}\n")
         return session_str
 
-    @staticmethod
     async def authorise_tlt_user_client(
+            self,
+            telethon_user_client: TelegramClient,
+            telethon_config: TelethonConfig
+    ) -> bool:
+        auth_thread_timeout = TELETHON_OPTIONS.WAIT_FOR_TG_AUTH_TREADS_TIMEOUT_SEC
+
+        config_name = telethon_config.name
+        telegram_phone = telethon_config.phone
+        user_client = telethon_user_client
+        client_is_user_authorised = await user_client.is_user_authorized()
+
+        try:
+            thread_wrapped_result = await asyncio.wait_for(
+                fut=self._authorise_tlt_user_client_thread_wrapped(
+                    telethon_user_client=telethon_user_client,
+                    telethon_config=telethon_config),
+                timeout=auth_thread_timeout)
+            return thread_wrapped_result
+        except asyncio.TimeoutError as thread_timeout_error:
+            error_log = (f"\nThread Timeout for Telethon User Client auth [ERROR]:\n"
+                         f"error: {thread_timeout_error}\n"
+                         f"auth_thread_timeout: {auth_thread_timeout}\n"
+                         f"config_name: {config_name}\n"
+                         f"telegram_phone: {telegram_phone}\n"
+                         f"user_client: {user_client}\n"
+                         f"client_is_user_authorised: {client_is_user_authorised}\n")
+            print(error_log)
+            return False
+
+    async def _authorise_tlt_user_client_thread_wrapped(
+            self,
             telethon_user_client: TelegramClient,
             telethon_config: TelethonConfig
     ) -> bool:
@@ -450,7 +480,7 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
             else:  # auth_type_choice == "3": or any other value
                 return False
         except Exception as error:
-            error_log = (f"Telethon User Client authorisation [ERROR]: \n"
+            error_log = (f"\nTelethon User Client authorisation [ERROR]: \n"
                          f"error: {error}\n"
                          f"auth_type_choice: {auth_type_choice}\n"
                          f"request_sent_code: {request_sent_code}\n"
