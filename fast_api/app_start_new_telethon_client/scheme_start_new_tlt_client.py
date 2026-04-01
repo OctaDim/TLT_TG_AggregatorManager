@@ -4,8 +4,6 @@ from starlette import status
 
 
 class InStartNewTelethonClient(BaseModel):
-    web_account_id: str
-    web_account_username: str
     telegram_phone: str = None
     telegram_bot_token: str = None
 
