@@ -20,6 +20,7 @@ from fast_api.app_auth.scheme_auth import (
     AuthData)
 from fast_api.app_start_new_telethon_client.scheme_start_new_tlt_client import (
     InStartNewTelethonClient)
+from fast_api.app_web_account.scheme_web_account import InWebAccountData
 from telethon_manager.telethon_client_config import TelethonConfig
 from telethon_manager.telethon_clients_manager import (
     TelethonManagerSingleton)
@@ -32,14 +33,16 @@ rtr_start_new_telethon_client = APIRouter(prefix=f"/{base_url_name}",
 @rtr_start_new_telethon_client.post("/start_new_telegram_tlt_client")
 async def start_new_telethon_client_router(
         auth_data: AuthData,
+        web_account_data: InWebAccountData,
         new_client_data: InStartNewTelethonClient
 ) -> JSONResponse:
     await verify_auth_username_password(
         username=auth_data.username,
         password=auth_data.password)
 
-    web_account_id = new_client_data.web_account_id
-    web_account_username = new_client_data.web_account_username
+    web_account_id = web_account_data.web_account_id
+    web_account_username = web_account_data.web_account_username
+
     telegram_phone = new_client_data.telegram_phone
     bot_token = new_client_data.telegram_bot_token
     bot_token_info = bot_token[:10] if bot_token else None
