@@ -18,7 +18,7 @@ from fast_api.app_web_account.scheme_web_account import (
 from telethon_manager.telethon_clients_manager import (
     TelethonManagerSingleton)
 from utils_specific.get_account_tlt_clients import (
-    get_account_only_tlt_clients)
+    get_acc_only_started_tlt_clients)
 
 base_url_name = API_OPTIONS.API_BASE_URL_NAME
 rtr_find_telegram_users_data = APIRouter(prefix=f"/{base_url_name}",
@@ -55,7 +55,7 @@ async def find_telegram_users_data_router(
         found_users_data = {}
 
         telethon_manager = TelethonManagerSingleton()  # Singleton
-        acc_only_tlt_clients = await get_account_only_tlt_clients(
+        acc_only_tlt_clients = await get_acc_only_started_tlt_clients(
             telethon_manager=telethon_manager,
             web_account_id=web_account_id,
             web_account_username=web_account_username)

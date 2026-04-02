@@ -7,7 +7,7 @@ from telethon_manager.telethon_clients_manager import (
     TelethonManagerSingleton)
 
 
-async def get_account_only_tlt_clients(
+async def get_acc_only_started_tlt_clients(
         telethon_manager: TelethonManagerSingleton,
         web_account_id: str,
         web_account_username: str
@@ -22,7 +22,7 @@ async def get_account_only_tlt_clients(
     return account_only_clients
 
 
-async def get_acc_only_not_started_configs(
+async def get_acc_only_stopped_tlt_configs(
         telethon_manager: TelethonManagerSingleton,
         web_account_id: str,
         web_account_username: str
