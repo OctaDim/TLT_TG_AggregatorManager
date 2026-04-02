@@ -155,6 +155,7 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
             for cur_conf_name, cur_tlt_conf in self.not_started_configs.items():
                 print(f"{counter}. cur_conf_name: {cur_conf_name}, "
                       f"cur_tlt_conf: {cur_tlt_conf}")
+                counter += 1
 
         if self.clients:
             print(f"\nTelethon clients started successfully [SUCCESS]:")
@@ -383,34 +384,6 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
         telegram_phone = telethon_config.phone
         user_client = telethon_user_client
         client_is_user_authorised = await user_client.is_user_authorized()
-
-        try:
-            thread_wrapped_result = await asyncio.wait_for(
-                fut=self._authorise_tlt_user_client_thread_wrapped(
-                    telethon_user_client=telethon_user_client,
-                    telethon_config=telethon_config),
-                timeout=auth_thread_timeout)
-            return thread_wrapped_result
-        except asyncio.TimeoutError as thread_timeout_error:
-            error_log = (f"\nThread Timeout for Telethon User Client auth [ERROR]:\n"
-                         f"error: {thread_timeout_error}\n"
-                         f"auth_thread_timeout: {auth_thread_timeout}\n"
-                         f"config_name: {config_name}\n"
-                         f"telegram_phone: {telegram_phone}\n"
-                         f"user_client: {user_client}\n"
-                         f"client_is_user_authorised: {client_is_user_authorised}\n")
-            print(error_log)
-            return False
-
-    async def _authorise_tlt_user_client_thread_wrapped(
-            self,
-            telethon_user_client: TelegramClient,
-            telethon_config: TelethonConfig
-    ) -> bool:
-        config_name = telethon_config.name
-        telegram_phone = telethon_config.phone
-        user_client = telethon_user_client
-        client_is_user_authorised = await user_client.is_user_authorized()
         if client_is_user_authorised:
             return True
 
@@ -429,8 +402,9 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                           f"2 - by QR code \n"
                           f"3 - skip client\n"
                           f"Enter your choice: ")
-            auth_type_choice = await asyncio.to_thread(
-                input, input_text)
+            auth_type_choice = await asyncio.wait_for(
+                fut=asyncio.to_thread(input, input_text),
+                timeout=auth_thread_timeout)
 
             if auth_type_choice == "1" and telegram_phone:
                 print("Telethon user client authorising via phone")
@@ -442,8 +416,10 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                       f"request_sent_code: {request_sent_code}\n")
 
                 input_text = "Enter Telegram code: "
-                phone_auth_code = await asyncio.to_thread(
-                    input, input_text)
+                phone_auth_code = await asyncio.wait_for(
+                    fut=asyncio.to_thread(input, input_text),
+                    timeout=auth_thread_timeout)
+
                 phone_signed_in_user = await user_client.sign_in(
                     phone=telegram_phone,
                     code=phone_auth_code,
@@ -479,8 +455,26 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                 return True
             else:  # auth_type_choice == "3": or any other value
                 return False
+        except asyncio.TimeoutError as thread_timeout_error:
+            error_log = (f"\n\n⚠️⚠️⚠️ Thread Timeout for Telethon User Client auth [ERROR]:\n"
+                         f"error: {thread_timeout_error}\n"
+                         f"auth_thread_timeout: {auth_thread_timeout}\n"
+                         f"config_name: {config_name}\n"
+                         f"telegram_phone: {telegram_phone}\n"
+                         f"user_client: {user_client}\n"
+                         f"client_is_user_authorised: {client_is_user_authorised}\n"
+                         f"auth_type_choice: {auth_type_choice}\n"
+                         f"request_sent_code: {request_sent_code}\n"
+                         f"phone_signed_in_user: {phone_signed_in_user}\n"
+                         f"qr_code_login: {qr_code_login}\n"
+                         f"qr_code: {qr_code}\n"
+                         f"qrcode_signed_in_user: {qrcode_signed_in_user}\n"
+                         f"session_str_info: {session_str_info}\n"
+                         f"auth_type_choice: {auth_type_choice}\n")
+            print(error_log)
+            return False
         except Exception as error:
-            error_log = (f"\nTelethon User Client authorisation [ERROR]: \n"
+            error_log = (f"\n\n⚠️⚠️⚠️ Telethon User Client authorisation [ERROR]: \n"
                          f"error: {error}\n"
                          f"auth_type_choice: {auth_type_choice}\n"
                          f"request_sent_code: {request_sent_code}\n"
