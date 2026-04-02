@@ -1,6 +1,6 @@
 from typing import Optional, Union
 
-from sqlalchemy import JSON
+from sqlalchemy import JSON, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from db_postgres.postgres_init.declarative_base_model import Base
@@ -26,3 +26,4 @@ class TelethonConfigModel(Base, ActiveMix, CreateUpdateMix):
     tg_personal_phone: Mapped[Optional[str]]
     telethon_proxy_config: Mapped[Optional[Union[tuple]]] = mapped_column(JSON)  # Postgres: list! => tlt proxy: tuple!
     telethon_is_active: Mapped[bool] = mapped_column(default=False)
+    authorisation_type: Mapped[str] = mapped_column(String(30))

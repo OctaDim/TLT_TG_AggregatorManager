@@ -1,4 +1,4 @@
-from typing import Optional, Union, Tuple, TypeAlias
+from typing import Optional, Union, Tuple, TypeAlias, Literal
 
 import python_socks
 import socks
@@ -23,6 +23,7 @@ class TelethonConfig(BaseModel):
     phone: Optional[str] = None
     proxy: Optional[Union[_PROXY_TUPLE_ALIAS]] = None
     is_active: bool = True
+    authorisation_type: Literal["console", "web"] = "web"
 
     @field_validator("proxy")
     @classmethod

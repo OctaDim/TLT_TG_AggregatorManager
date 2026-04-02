@@ -46,6 +46,7 @@ async def start_new_telethon_client_router(
     telegram_phone = new_client_data.telegram_phone
     bot_token = new_client_data.telegram_bot_token
     bot_token_info = bot_token[:10] if bot_token else None
+    auth_type = new_client_data.auth_via_console
 
     if telegram_phone:
         account_type = TELEGRAM_ACCOUNT_TYPE.ACCOUNT
@@ -94,7 +95,8 @@ async def start_new_telethon_client_router(
             bot_token=bot_token,
             phone=telegram_phone,
             proxy=None,
-            is_active=True)
+            is_active=True,
+            authorisation_type=auth_type)
 
         new_client = await telethon_manager.run_single_telethon_client(
             telethon_config=new_client_config)
