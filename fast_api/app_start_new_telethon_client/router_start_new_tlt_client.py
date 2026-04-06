@@ -46,7 +46,7 @@ async def start_new_telethon_client_router(
     telegram_phone = new_client_data.telegram_phone
     bot_token = new_client_data.telegram_bot_token
     bot_token_info = bot_token[:10] if bot_token else None
-    auth_type = new_client_data.auth_via_console
+    auth_type = new_client_data.authorisation_type
 
     if telegram_phone:
         account_type = TELEGRAM_ACCOUNT_TYPE.ACCOUNT
@@ -57,6 +57,7 @@ async def start_new_telethon_client_router(
     new_tlt_config_id = None
     new_config_name = None
     new_client = None
+
     try:
         new_tlt_config_data = {
             "web_account_id": web_account_id,
@@ -65,17 +66,18 @@ async def start_new_telethon_client_router(
             "tg_api_id": TELEGRAM_OFFICIAL_APP_API_ID,
             "tg_api_hash": TELEGRAM_OFFICIAL_APP_API_HASH,
             "tg_personal_phone": telegram_phone,
-            "tg_bot_token": bot_token_info,
-            "telethon_is_active": True}
+            "tg_bot_token": bot_token,
+            "telethon_is_active": True,
+            "authorisation_type": auth_type}
 
         new_tlt_config_obj: TelethonConfigModel  # just to fix Pycharm annotation warning bug
         new_tlt_config_obj = await cache_new_telethon_config_qry(
             new_telethon_config_data=new_tlt_config_data)
         new_tlt_config_id = new_tlt_config_obj.id
 
-        telethon_manager = TelethonManagerSingleton()  # Singleton
+        tlt_manager = TelethonManagerSingleton()  # Singleton
 
-        new_config_name = await telethon_manager.create_session_name(
+        new_config_name = await tlt_manager.create_session_name(
             telethon_db_config_id=new_tlt_config_id,
             web_account_id=web_account_id,
             web_account_username=web_account_username,
@@ -98,12 +100,12 @@ async def start_new_telethon_client_router(
             is_active=True,
             authorisation_type=auth_type)
 
-        new_client = await telethon_manager.run_single_telethon_client(
+        new_client, auth_resp = await tlt_manager.run_telethon_client(
             telethon_config=new_client_config)
 
         if not new_client:
             print(f"{'>' * 55}\n{'>' * 55}\n"
-                  f"New Telethon client not authorised and skipped [ERROR]\n"
+                  f"New Telethon client not created [ERROR]\n"
                   f"web_account_id: {web_account_id}\n"
                   f"web_account_username: {web_account_username}\n"
                   f"account_type: {account_type}\n"
@@ -115,7 +117,7 @@ async def start_new_telethon_client_router(
                   f"new_client: {new_client}\n")
 
             json_response = JSONResponse(
-                content={"message": "Telethon client not authorised and skipped:",
+                content={"message": "Telethon client not created:",
                          "username": auth_data.username,
                          "web_account_id": web_account_id,
                          "web_account_username": web_account_username,
@@ -124,12 +126,12 @@ async def start_new_telethon_client_router(
                          "new_config_name": new_config_name,
                          "telegram_phone": telegram_phone,
                          "bot_token_info": bot_token_info,
-                         "new_client": auth_data.username},
+                         "new_client": new_client},
                 status_code=status.HTTP_203_NON_AUTHORITATIVE_INFORMATION)
             return json_response
 
         print(f"{'>' * 55}\n{'>' * 55}\n"
-              "New Telethon client created and authorised [OK]:\n"
+              "New Telethon client created successfully [OK]:\n"
               f"web_account_id: {web_account_id}\n"
               f"web_account_username: {web_account_username}\n"
               f"account_type: {account_type}\n"
@@ -141,13 +143,14 @@ async def start_new_telethon_client_router(
               f"bot_token_info: {bot_token_info}\n"
               f"new_client: {new_client}\n")
 
-        new_client_task = asyncio.create_task(
-            coro=new_client.run_until_disconnected(),
-            name=new_config_name,
-            context=None)
-        telethon_manager.clients[new_config_name] = new_client
-        telethon_manager.running_tasks[new_config_name] = new_client_task
+        if new_client and auth_resp.is_authorised:
+            new_client_task = asyncio.create_task(
+                coro=new_client.run_until_disconnected(),
+                name=new_config_name,
+                context=None)
+            tlt_manager.running_tasks[new_config_name] = new_client_task
 
+        tlt_manager_clients = list(tlt_manager.clients.keys())
         json_response = JSONResponse(
             content={"message": "Telethon client authorised and started:",
                      "username": auth_data.username,
@@ -158,7 +161,9 @@ async def start_new_telethon_client_router(
                      "new_config_name": new_config_name,
                      "telegram_phone": telegram_phone,
                      "bot_token_info": bot_token_info,
-                     "new_client": auth_data.username},
+                     "new_client": auth_data.username,
+                     "auth_resp.is_authorised": auth_resp.is_authorised,
+                     "tlt_manager_clients": tlt_manager_clients},
             status_code=status.HTTP_200_OK)
 
         blue_clr = CONSOLE_COLORS.BRIGHT_BLUE
@@ -173,10 +178,13 @@ async def start_new_telethon_client_router(
               f"new_tlt_config_id: {yellow_clr}{new_tlt_config_id}{reset_clr}\n",
               f"new_config_name: {blue_clr}{new_config_name}{reset_clr}\n",
               f"telegram_phone: {telegram_phone}\n",
-              f"bot_token_info: {bot_token_info}\n")
+              f"bot_token_info: {bot_token_info}\n",
+              f"new_client: {new_client}\n",
+              f"auth_resp.is_authorised: {auth_resp.is_authorised}\n",
+              f"tlt_manager_clients: {tlt_manager_clients}\n")
         return json_response
     except Exception as error:
-        log_text = (f"Router Start single Telethon client [ERROR]:\n"
+        log_text = (f"Router Start new single Telethon client [ERROR]:\n"
                     f"error: {error}\n"
                     f"web_account_id: {web_account_id}\n"
                     f"web_account_username: {web_account_username}\n"

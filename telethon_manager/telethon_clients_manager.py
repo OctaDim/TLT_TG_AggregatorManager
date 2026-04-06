@@ -1,14 +1,13 @@
 import asyncio
 import weakref
 from asyncio import Task
-from typing import Dict, List, Literal, Callable
+from typing import Dict, List, Literal, Callable, Tuple, Union
 
-import qrcode
 from telethon import TelegramClient
 from telethon.sessions import StringSession, SQLiteSession
 
 from configs.enums import (
-    TELEGRAM_ACCOUNT_TYPE, QR_CODE_ERROR_CORRECTION)
+    TELEGRAM_ACCOUNT_TYPE)
 from configs.environments import (
     BASE_DIR)
 from configs.options import ALCHEMY_OPTIONS, TELETHON_OPTIONS
@@ -19,6 +18,9 @@ from db_postgres.postgres_queries.qry_get_telethon_configs_objs import (
 from db_postgres.postgres_queries.qry_update_telethon_session_data import (
     update_telethon_session_data_qry)
 from meta_classes.singlton_meta import SingletonMeta
+from telethon_manager.telethon_auth_drivers import (
+    AuthDriver, TltAuthConsoleDriver, TltAuthWebPhoneDriver,
+    TltAuthWebQRCodeDriver, AuthResponse)
 from telethon_manager.telethon_client_config import TelethonConfig
 from telethon_manager.telethon_register_handlers import (
     add_all_telethon_client_handlers)
@@ -70,7 +72,8 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                 bot_token=cur_config_obj.tg_bot_token,
                 phone=cur_config_obj.tg_personal_phone,
                 proxy=cur_config_obj.telethon_proxy_config,
-                is_active=cur_config_obj.telethon_is_active)
+                is_active=cur_config_obj.telethon_is_active,
+                authorisation_type=cur_config_obj.authorisation_type)
             pgs_telethon_configs_list.append(cur_telethon_config)
         return pgs_telethon_configs_list
 
@@ -141,16 +144,25 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                 self.not_started_configs[config_name] = cur_config
                 continue
 
-            cur_client = await self.run_single_telethon_client(
+            cur_client, auth_resp = await self.run_telethon_client(
                 telethon_config=cur_config)
-            if not cur_client:
-                print(f"Current Telethon client not authorised and skipped [ERROR]\n"
-                      f"cur_client: {cur_client}\n")
+
+            if cur_client and auth_resp.is_authorised:
+                self.clients[config_name] = cur_client
+            else:
                 self.not_started_configs[config_name] = cur_config
-                continue  # Not necessary
+                print(f"Telethon client not created [ERROR]\n"
+                      f"telethon_config_id: {telethon_config_id}\n"
+                      f"account_type: {account_type}\n"
+                      f"telegram_phone: {telegram_phone}\n"
+                      f"bot_token_info: {bot_token_info}\n"
+                      f"config_name: {config_name}\n"
+                      f"cur_client: {cur_client}\n"
+                      f"auth_resp.is_authorised: {auth_resp.is_authorised}\n")
+            continue  # Not necessary, just to show loop border
 
         if self.not_started_configs:
-            print(f"\nTelethon clients start failure [ERROR]:")
+            print(f"\nTELETHON CLIENTS NOT CREATED [ERROR]:")
             counter = 1
             for cur_conf_name, cur_tlt_conf in self.not_started_configs.items():
                 print(f"{counter}. cur_conf_name: {cur_conf_name}, "
@@ -158,16 +170,16 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                 counter += 1
 
         if self.clients:
-            print(f"\nTelethon clients started successfully [SUCCESS]:")
+            print(f"\nTELETHON CLIENTS CREATED [SUCCESS]:")
             counter = 1
             for cur_tlt_config, cur_tlt_client in self.clients.items():
                 print(f"{counter}. cur_telethon_config: {cur_tlt_config}, "
                       f"cur_telethon_client: {cur_tlt_client}")
                 counter += 1
 
-    async def run_single_telethon_client(
+    async def run_telethon_client(
             self, telethon_config: TelethonConfig
-    ) -> TelegramClient | None:
+    ) -> Tuple[Union[TelegramClient | None], AuthResponse]:
         telethon_config_id = telethon_config.telethon_config_id
         account_type = telethon_config.account_type
         config_name = telethon_config.name
@@ -184,7 +196,7 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                       f"telegram_phone: {telegram_phone}\n"
                       f"bot_token_info: {bot_token_info}\n"
                       f"config_name: {config_name}\n")
-                single_tlt_client = await self.start_tlt_user_client(
+                tlt_client, auth_resp = await self.start_user_client(
                     telethon_config=telethon_config)
             elif account_type == TELEGRAM_ACCOUNT_TYPE.BOT:
                 print(f"{'>' * 55}\n{'>' * 55}\n"
@@ -194,29 +206,31 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                       f"telegram_phone: {telegram_phone}\n"
                       f"bot_token_info: {bot_token_info}\n"
                       f"config_name: {config_name}\n")
-                single_tlt_client = await self.start_tlt_bot_client(
+                tlt_client, auth_resp = await self.start_bot_client(
                     telethon_config=telethon_config)
             else:  # Telethon account type not defined
+                tlt_client = None
+                auth_resp = AuthResponse(
+                    is_authorised=False,
+                    is_auth_error=True,
+                    auth_message="",
+                    auth_error="Tlt account type not defined error")
                 print(f"Telethon client with empty account_type [ERROR]\n"
                       f"telethon_config_id: {telethon_config_id}\n"
                       f"account_type: {account_type}\n"
                       f"telegram_phone: {telegram_phone}\n"
                       f"bot_token_info: {bot_token_info}\n"
                       f"config_name: {config_name}\n")
-                return None
+                return tlt_client, auth_resp
 
-            if not single_tlt_client:
-                print(f"Not created or not authorised Telethon client [ERROR]:\n"
-                      f"single_tlt_client: {single_tlt_client}\n"
-                      f"telethon_config_id: {telethon_config_id}\n"
-                      f"account_type: {account_type}\n"
-                      f"telegram_phone: {telegram_phone}\n"
-                      f"bot_token_info: {bot_token_info}\n"
-                      f"config_name: {config_name}\n")
-                return None
+            if tlt_client:
+                log_text = "Telethon client created successfully [OK]:"
+            else:
+                log_text = "Telethon client not created [ERROR]:"
 
-            print(f"Telethon client created and authorised [OK]:\n"
-                  f"single_tlt_client: {single_tlt_client}\n"
+            print(f"{log_text}\n"
+                  f"tlt_client: {tlt_client}\n"
+                  f"auth_resp: {auth_resp}\n"
                   f"telethon_config_id: {telethon_config_id}\n"
                   f"account_type: {account_type}\n"
                   f"telegram_phone: {telegram_phone}\n"
@@ -231,20 +245,19 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                     use_socks_objs=False)
                 telethon_config.proxy = valid_proxy_config
 
-            # session_str = StringSession.save(single_tlt_client.session)  # Obtain session str from tlt client for PGS
-            await self.postgres_db_save_tlt_session(
-                telethon_client=single_tlt_client,
-                telethon_config=telethon_config)
-            print("Telethon client PGS-SQLite session saved [OK]\n")
+            if tlt_client:
+                # session_str = StringSession.save(tlt_client.session)  # Obtain session str from tlt client for PGS
+                await self.postgres_db_save_tlt_session(
+                    telethon_client=tlt_client,
+                    telethon_config=telethon_config)
+                print("Telethon client PGS-SQLite session saved [OK]\n")
 
-            self.clients[config_name] = single_tlt_client
-
-            print("Telethon client all handlers registering:")
-            await self.register_tlt_client_handlers(
-                telethon_client=single_tlt_client,
-                telethon_config=telethon_config)
-            print("Telethon client all handlers registered [OK]\n")
-            return single_tlt_client
+                print("Telethon client all handlers registering:")
+                await self.register_tlt_client_handlers(
+                    telethon_client=tlt_client,
+                    telethon_config=telethon_config)
+                print("Telethon client all handlers registered [OK]\n")
+            return tlt_client, auth_resp
         except Exception as error:
             error_log = (f"Run single Telethon client [ERROR]:\n"
                          f"error: {error}\n"
@@ -254,11 +267,17 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                          f"telegram_phone: {telegram_phone}\n"
                          f"bot_token_info: {bot_token_info}\n")
             print(error_log)
+            tlt_client = None
+            auth_resp = AuthResponse(
+                is_authorised=False,
+                is_auth_error=True,
+                auth_message="",
+                auth_error=error_log)
+            return tlt_client, auth_resp
 
-    async def start_tlt_user_client(
-            self,
-            telethon_config: TelethonConfig
-    ) -> TelegramClient | None:
+    async def start_user_client(
+            self, telethon_config: TelethonConfig
+    ) -> Tuple[Union[TelegramClient | None], AuthResponse]:
         print("Creating existing or new Telethon session:")
         session_str = telethon_config.session_string
         session_str_info = f"...{session_str[-15:]}" if session_str else None
@@ -276,7 +295,6 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
             session_full_file_path = get_full_file_normal_path(
                 all_dir_str_parts=[BASE_DIR, telethon_sessions_dir],
                 file_name_with_ext=new_session_id)
-
             session = SQLiteSession(session_id=session_full_file_path)
             print(f"New Telethon session created via SQLiteSession [OK]:\n"
                   f"session_str_info: {session_str_info}\n"
@@ -314,7 +332,6 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
         before_connect_is_connected = user_client.is_connected()
         print(f"Telethon User client state before connect():\n"
               f"before_connect_is_connected: {before_connect_is_connected}\n")
-
         if not before_connect_is_connected:
             await user_client.connect()
 
@@ -324,23 +341,38 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
               f"after_connect_is_connected: {after_connect_is_connected}\n"
               f"after_connect_is_authorised: {after_connect_is_authorised}\n")
 
-        if not after_connect_is_authorised:
-            await self.authorise_tlt_user_client(
-                telethon_user_client=user_client,
-                telethon_config=telethon_config)
-            after_auth_is_connected = user_client.is_connected()
-            after_auth_is_authorised = await user_client.is_user_authorized()
-            print(f"Telethon User client state after authorise_tlt_user_client():\n"
-                  f"after_auth_is_connected: {after_auth_is_connected}\n"
-                  f"after_auth_is_authorised: {after_auth_is_authorised}\n")
-            if after_auth_is_authorised:
-                return user_client
-            # return None  # Not necessary
-        else:
+        if after_connect_is_authorised:
             print(f"Telethon User client initially authorised:\n"
                   f"after_connect_is_connected: {after_connect_is_connected}\n"
                   f"after_connect_is_authorised: {after_connect_is_authorised}\n")
-            return user_client
+            auth_resp = AuthResponse(
+                is_authorised=True,
+                auth_message="Start User Client: User authorised initially")
+            return user_client, auth_resp  # Return tlt client immediately as it is authorised
+
+        _AUTH_DRIVER = {"console": TltAuthConsoleDriver,
+                        "phone": TltAuthWebPhoneDriver,
+                        "qrcode": TltAuthWebQRCodeDriver}
+        auth_type = telethon_config.authorisation_type
+        auth_driver_class = _AUTH_DRIVER[auth_type]
+        auth_driver_obj = auth_driver_class(
+            telethon_user_client=user_client,
+            telethon_config=telethon_config)
+        auth_resp = await self.authorise_tlt_user_client(
+            auth_driver=auth_driver_obj)
+        after_auth_is_connected = user_client.is_connected()
+        after_auth_is_authorised = await user_client.is_user_authorized()
+
+        if after_auth_is_connected and after_auth_is_authorised:
+            self.clients[telethon_config.name] = user_client
+            auth_resp.is_authorised = True  # Double
+        else:
+            self.not_started_configs[telethon_config.name] = telethon_config
+            auth_resp.is_authorised = False  # Double
+        print(f"Telethon User client state after authorise_tlt_user_client():\n"
+              f"after_auth_is_connected: {after_auth_is_connected}\n"
+              f"after_auth_is_authorised: {after_auth_is_authorised}\n")
+        return user_client, auth_resp  # Return tlt client creation result after authorisation attempt
 
     @staticmethod
     async def postgres_db_save_tlt_session(
@@ -375,122 +407,15 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
 
     async def authorise_tlt_user_client(
             self,
-            telethon_user_client: TelegramClient,
-            telethon_config: TelethonConfig
-    ) -> bool:
-        auth_thread_timeout = TELETHON_OPTIONS.WAIT_FOR_TG_AUTH_TREADS_TIMEOUT_SEC
+            auth_driver: AuthDriver
+    ) -> AuthResponse:
+        """Authorisation via various drivers: console, phone, qrcode"""
+        auth_result = await auth_driver.auth_user_client_via_driver()
+        return auth_result
 
-        config_name = telethon_config.name
-        telegram_phone = telethon_config.phone
-        user_client = telethon_user_client
-        client_is_user_authorised = await user_client.is_user_authorized()
-        if client_is_user_authorised:
-            return True
-
-        auth_type_choice = None
-        request_sent_code = None
-        phone_signed_in_user = None
-        qr_code_login = None
-        qr_code = None
-        qrcode_signed_in_user = None
-        session_str = None
-        session_str_info = f"...{session_str[-15:]}" if session_str else None
-        try:
-            input_text = (f"Choose authorisation type for "
-                          f"phone: {telegram_phone}, config name: {config_name}:\n"
-                          f"1 - by telephone \n"
-                          f"2 - by QR code \n"
-                          f"3 - skip client\n"
-                          f"Enter your choice: ")
-            auth_type_choice = await asyncio.wait_for(
-                fut=asyncio.to_thread(input, input_text),
-                timeout=auth_thread_timeout)
-
-            if auth_type_choice == "1" and telegram_phone:
-                print("Telethon user client authorising via phone")
-                request_sent_code = await user_client.send_code_request(
-                    phone=telegram_phone,
-                    force_sms=False,  # Deprecated
-                    _retry_count=0)
-                print(f"Phone authorisation code sent to phone [OK]:\n"
-                      f"request_sent_code: {request_sent_code}\n")
-
-                input_text = "Enter Telegram code: "
-                phone_auth_code = await asyncio.wait_for(
-                    fut=asyncio.to_thread(input, input_text),
-                    timeout=auth_thread_timeout)
-
-                phone_signed_in_user = await user_client.sign_in(
-                    phone=telegram_phone,
-                    code=phone_auth_code,
-                    password=None,
-                    bot_token=None,
-                    phone_code_hash=None)
-                print(f"Phone user client authorised successfully [OK]:\n"
-                      f"request_sent_code: {request_sent_code}\n"
-                      f"phone_signed_in_user: {phone_signed_in_user}\n")
-                return True
-            elif auth_type_choice == "2":
-                print("Telethon user client authorisation via QR code")
-                qr_code_login = await user_client.qr_login(
-                    ignored_ids=None)
-                print(f"####### QR Сode object: {qr_code_login}")
-                print(f"####### QR Code url: {qr_code_login.url}")
-
-                print("Generating QR code in console")
-                qr_code = qrcode.main.QRCode(
-                    version=None,
-                    error_correction=QR_CODE_ERROR_CORRECTION.LEVEL_M.value,
-                    box_size=10,
-                    border=4,
-                    image_factory=None,
-                    mask_pattern=None, )
-                qr_code.add_data(qr_code_login.url, optimize=20)
-                await asyncio.to_thread(qr_code.print_ascii)
-                qrcode_signed_in_user = await qr_code_login.wait()
-                print(f"QR Code user client authorised successfully [OK]:\n"
-                      f"qr_code_login: {qr_code_login}\n"
-                      f"qr_code: {qr_code}\n"
-                      f"qrcode_signed_in_user: {qrcode_signed_in_user}\n")
-                return True
-            else:  # auth_type_choice == "3": or any other value
-                return False
-        except asyncio.TimeoutError as thread_timeout_error:
-            error_log = (f"\n\n⚠️⚠️⚠️ Thread Timeout for Telethon User Client auth [ERROR]:\n"
-                         f"error: {thread_timeout_error}\n"
-                         f"auth_thread_timeout: {auth_thread_timeout}\n"
-                         f"config_name: {config_name}\n"
-                         f"telegram_phone: {telegram_phone}\n"
-                         f"user_client: {user_client}\n"
-                         f"client_is_user_authorised: {client_is_user_authorised}\n"
-                         f"auth_type_choice: {auth_type_choice}\n"
-                         f"request_sent_code: {request_sent_code}\n"
-                         f"phone_signed_in_user: {phone_signed_in_user}\n"
-                         f"qr_code_login: {qr_code_login}\n"
-                         f"qr_code: {qr_code}\n"
-                         f"qrcode_signed_in_user: {qrcode_signed_in_user}\n"
-                         f"session_str_info: {session_str_info}\n"
-                         f"auth_type_choice: {auth_type_choice}\n")
-            print(error_log)
-            return False
-        except Exception as error:
-            error_log = (f"\n\n⚠️⚠️⚠️ Telethon User Client authorisation [ERROR]: \n"
-                         f"error: {error}\n"
-                         f"auth_type_choice: {auth_type_choice}\n"
-                         f"request_sent_code: {request_sent_code}\n"
-                         f"phone_signed_in_user: {phone_signed_in_user}\n"
-                         f"qr_code_login: {qr_code_login}\n"
-                         f"qr_code: {qr_code}\n"
-                         f"qrcode_signed_in_user: {qrcode_signed_in_user}\n"
-                         f"session_str_info: {session_str_info}\n"
-                         f"auth_type_choice: {auth_type_choice}\n")
-            print(error_log)
-            return False
-
-    @staticmethod
-    async def start_tlt_bot_client(
-            telethon_config: TelethonConfig
-    ) -> TelegramClient | None:
+    async def start_bot_client(
+            self, telethon_config: TelethonConfig
+    ) -> Tuple[Union[TelegramClient | None], AuthResponse]:
         session_prefix = TELETHON_OPTIONS.BOT_SESSION_FILE_PREFIX
         config_name = telethon_config.name
         new_session_id = f"{session_prefix}{config_name}"
@@ -540,31 +465,49 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
               f"after_connect_is_authorised: {after_connect_is_authorised}\n"
               f"after_connect_is_bot: {after_connect_is_bot}\n")
 
-        if not after_connect_is_authorised:
+        if after_connect_is_authorised:
+            auth_resp = AuthResponse(
+                is_authorised=True,
+                auth_message="Start Bot Client: Bot authorised initially")
+            print(f"Telethon Bot client initially authorised:\n"
+                  f"after_connect_is_connected: {after_connect_is_connected}\n"
+                  f"after_connect_is_authorised: {after_connect_is_authorised}\n"
+                  f"after_connect_is_bot: {after_connect_is_bot}\n")
+            return bot_client, auth_resp  # Return tlt bot client immediately as it is authorised
+
+        try:
             await bot_client.start(  # Telethon bug: await is necessary. Error without await but sync start()
                 bot_token=telethon_config.bot_token,
                 force_sms=False,
                 code_callback=None,
                 first_name=telethon_config.web_account_id,
                 last_name=telethon_config.web_account_username,
-                max_attempts=3)
+                max_attempts=TELETHON_OPTIONS.TELEGRAM_BOT_CLIENT_START_ATTEMPTS)
+        except Exception as error:
+            print(f"Telethon Bot client start [ERROR]:\n"
+                  f"error: {error}\n")
 
-            after_start_is_connected = bot_client.is_connected()
-            after_start_is_authorised = await bot_client.is_user_authorized()
-            after_start_is_bot = await bot_client.is_bot()
-            print(f"Telethon Bot client state after start():\n"
-                  f"after_start_is_connected: {after_start_is_connected}\n"
-                  f"after_start_is_authorised: {after_start_is_authorised}\n"
-                  f"after_start_is_bot: {after_start_is_bot}\n")
-            if after_start_is_authorised:
-                return bot_client
-            # return None  # Not necessary
+        after_start_is_connected = bot_client.is_connected()
+        after_start_is_authorised = await bot_client.is_user_authorized()
+        after_start_is_bot = await bot_client.is_bot()
+
+        if after_start_is_connected and after_start_is_authorised:
+            self.clients[telethon_config.name] = bot_client
+            auth_resp = AuthResponse(
+                is_authorised=True,
+                auth_message="Start Bot Client: Bot authorised after start")
         else:
-            print(f"Telethon Bot client initially authorised:\n"
-                  f"after_connect_is_connected: {after_connect_is_connected}\n"
-                  f"after_connect_is_authorised: {after_connect_is_authorised}\n"
-                  f"after_connect_is_bot: {after_connect_is_bot}\n")
-            return bot_client
+            self.not_started_configs[telethon_config.name] = telethon_config
+            auth_resp = AuthResponse(
+                is_authorised=False,
+                is_auth_error=True,
+                auth_error="Start Bot Client: Bot not authorised after start error")
+
+        print(f"Telethon Bot client state after start():\n"
+              f"after_start_is_connected: {after_start_is_connected}\n"
+              f"after_start_is_authorised: {after_start_is_authorised}\n"
+              f"after_start_is_bot: {after_start_is_bot}\n")
+        return bot_client, auth_resp  # Return tlt bot client after authorisation attempt
 
     async def register_tlt_client_handlers(
             self,
