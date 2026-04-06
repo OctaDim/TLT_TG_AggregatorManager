@@ -1,5 +1,4 @@
 import asyncio
-import sys
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -11,10 +10,10 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from admin_panel.admin_views.admin_auth_role_backend import (
     AdminAuthRoleAuthBackend)
-from configs.labels_messages import LABELS
 from configs.environments import (
     API_HOST, API_PORT,
     FASTAPI_SESSION_KEY)
+from configs.labels_messages import LABELS
 from configs.options import FASTAPI_OPTIONS, SQLADMIN_OPTIONS
 from db_postgres.postgres_conn.pgs_connection import (
     PgsAsyncConnection, close_all_async_pgs_connections,
@@ -29,11 +28,14 @@ from fast_api.app_send_message_by_user_id.router_send_message import (
     rtr_send_telegram_message)
 from fast_api.app_start_new_telethon_client.router_start_new_tlt_client import (
     rtr_start_new_telethon_client)
+from fast_api.app_start_new_web_telethon_client.router_start_new_web_tlt_client import (
+    rtr_start_new_web_tlt_client)
 from fast_api.app_tlt_api_health_check.router_tlt_api_health_check import (
     rtr_tlt_api_health_check)
 from fast_api.app_tlt_clients_tasks_status.router_tlt_clients_tasks_status import (
     rtr_tlt_clients_tasks_status)
-from fast_api.app_tlt_configs_by_web_acc.router_tlt_configs_by_web_acc import rtr_tlt_configs_by_web_account
+from fast_api.app_tlt_configs_by_web_acc.router_tlt_configs_by_web_acc import (
+    rtr_tlt_configs_by_web_account)
 from telethon_manager.telethon_clients_manager import (
     TelethonManagerSingleton)
 from telethon_manager.telethon_init_session_dir import (
@@ -46,6 +48,7 @@ routers_list = [
     rtr_find_telegram_users_data,
     rtr_send_telegram_message,
     rtr_tlt_configs_by_web_account,
+    rtr_start_new_web_tlt_client,
 
 ]
 
@@ -157,6 +160,7 @@ async def run_uvicorn_fastapi_server():  # If used itself without any other asyn
                 log_level=FASTAPI_OPTIONS.LOG_LEVEL,
                 use_colors=FASTAPI_OPTIONS.USE_COLORS, )
     print("Uvicorn and FastAPI server started [OK]")
+
 
 async def create_run_uvicorn_fastapi_server():  # If used together with other async tasks
     uvicorn_config = uvicorn.Config(
