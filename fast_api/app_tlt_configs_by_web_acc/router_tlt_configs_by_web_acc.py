@@ -1,5 +1,3 @@
-from idlelib.debugger_r import start_debugger
-
 from fastapi import APIRouter, HTTPException
 from starlette import status
 from starlette.responses import JSONResponse
@@ -36,59 +34,59 @@ async def tlt_configs_by_web_account_router(
 
     try:
         telethon_manager = TelethonManagerSingleton()  # Singleton
-        started_tlt_clients_dict = await get_acc_only_started_tlt_clients(
+        started_clients_dict = await get_acc_only_started_tlt_clients(
             telethon_manager=telethon_manager,
             web_account_id=web_account_id,
             web_account_username=web_account_username)
-        started_tlt_configs_list = list(started_tlt_clients_dict.keys())
+        started_clients_list = list(started_clients_dict.keys())
 
-        stopped_tlt_configs_dict = await get_acc_only_stopped_tlt_configs(
+        not_started_configs_dict = await get_acc_only_stopped_tlt_configs(
             telethon_manager=telethon_manager,
             web_account_id=web_account_id,
             web_account_username=web_account_username)
-        stopped_tlt_configs_list = list(stopped_tlt_configs_dict.keys())
+        not_started_configs_list = list(not_started_configs_dict.keys())
 
         all_configs_data = []
-        started_configs_total = 0
-        stopped_configs_total = 0
-        for cur_config in started_tlt_configs_list:
-            cur_tlt_client = telethon_manager.clients[cur_config]
-            cur_client_is_connected = cur_tlt_client.is_connected()
-            cur_client_is_authorised = await cur_tlt_client.is_user_authorized()
+        authorised_configs = []
+        stopped_configs = []
 
-            if cur_client_is_connected and cur_client_is_authorised:
-                started_tlt_configs_list.remove(cur_config)
-                started_configs_total += 1
-                status_state = True
-            else:
-                stopped_tlt_configs_list.append(cur_config)
-                stopped_configs_total += 1
-                status_state = False
-
-            all_configs_data.append({
-                "config_name": cur_config,
-                "is_connected": cur_client_is_connected,
-                "is_authorised": cur_client_is_authorised,
-                "status": status_state})
-
-        for cur_config in stopped_tlt_configs_list:
-            stopped_configs_total += 1
+        for cur_config in not_started_configs_list:
             all_configs_data.append({
                 "config_name": cur_config,
                 "is_connected": False,
                 "is_authorised": False,
                 "status": False})
 
-        all_configs_total = started_configs_total + stopped_configs_total
+        for cur_config in started_clients_list:
+            cur_tlt_client = telethon_manager.clients[cur_config]
+            cur_client_is_connected = cur_tlt_client.is_connected()
+            cur_client_is_authed = await cur_tlt_client.is_user_authorized()
+
+            if cur_client_is_connected and cur_client_is_authed:
+                authorised_configs.append(cur_config)
+                status_state = True
+            else:
+                stopped_configs.append(cur_config)
+                status_state = False
+
+            all_configs_data.append({
+                "config_name": cur_config,
+                "is_connected": cur_client_is_connected,
+                "is_authorised": cur_client_is_authed,
+                "status": status_state})
+
+        all_configs_total = len(all_configs_data)
+        authed_configs_total = len(authorised_configs)
+        stopped_configs_total = len(stopped_configs)
         json_response = JSONResponse(
             content={
                 "message": "Telegram configurations found [OK]",
                 "username": auth_data.username,
                 "web_account_id": web_account_id,
                 "web_account_username": web_account_username,
-                "started_tlt_configs": started_tlt_configs_list,
-                "stopped_tlt_configs": stopped_tlt_configs_list,
-                "started_configs_total": started_configs_total,
+                "started_tlt_configs": authorised_configs,
+                "stopped_tlt_configs": stopped_configs,
+                "started_configs_total": authed_configs_total,
                 "stopped_configs_total": stopped_configs_total,
                 "all_configs_data": all_configs_data,
                 "all_configs_total": all_configs_total},
@@ -104,22 +102,22 @@ async def tlt_configs_by_web_account_router(
               f"username: {auth_data.username}\n"
               f"web_account_id: {web_account_id}\n"
               f"web_account_username: {web_account_username}\n"
-              f"started_tlt_clients_dict: {yellow_clr}{started_tlt_clients_dict}{yellow_clr}\n"
-              f"started_tlt_configs_list: {yellow_clr}{started_tlt_configs_list}{reset_clr}\n"
-              f"started_configs_total: {yellow_clr}{started_configs_total}{reset_clr}\n"
-              f"stopped_tlt_configs_dict: {magenta_clr}{stopped_tlt_configs_dict}{yellow_clr}\n"
-              f"stopped_tlt_configs_list: {magenta_clr}{stopped_tlt_configs_list}{reset_clr}\n"
+              f"started_clients_dict: {yellow_clr}{started_clients_dict}{yellow_clr}\n"
+              f"authorised_configs: {yellow_clr}{authorised_configs}{reset_clr}\n"
+              f"authed_configs_total: {yellow_clr}{authed_configs_total}{reset_clr}\n"
+              f"not_started_configs_dict: {magenta_clr}{not_started_configs_dict}{yellow_clr}\n"
+              f"stopped_configs: {magenta_clr}{stopped_configs}{reset_clr}\n"
               f"stopped_configs_total: {magenta_clr}{stopped_configs_total}{reset_clr}\n"
               f"all_configs_data: {blue_clr}{all_configs_data}{reset_clr}\n")
 
-        print(f"\n{yellow_clr}All_started_configs "
-              f"[{started_configs_total}]:{reset_clr}")
-        for cur_config in started_tlt_configs_list:
-            print(f"{yellow_clr}{cur_config}{reset_clr}")
+        print(f"\n{yellow_clr}All authorised configs:"
+              f"[{authed_configs_total}]:{reset_clr}")
+        for cur_authed_config in authorised_configs:
+            print(f"{yellow_clr}{cur_authed_config}{reset_clr}")
 
-        print(f"\n{magenta_clr}All_stopped_configs "
+        print(f"\n{magenta_clr}All stopped configs:"
               f"[{stopped_configs_total}]:{reset_clr}")
-        for cur_config in started_tlt_configs_list:
+        for cur_config in stopped_configs:
             print(f"{magenta_clr}{cur_config}{reset_clr}")
 
         print(f"\n{blue_clr}All_configs_data "
