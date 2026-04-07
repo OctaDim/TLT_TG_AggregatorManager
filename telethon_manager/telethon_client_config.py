@@ -23,7 +23,7 @@ class TelethonConfig(BaseModel):
     phone: Optional[str] = None
     proxy: Optional[Union[_PROXY_TUPLE_ALIAS]] = None
     is_active: bool = True
-    authorisation_type: Literal["console", "phone", "qrcode"]
+    authorisation_type: Literal["console", "phone", "qrcode", "qr+phone"]
 
     @field_validator("proxy")
     @classmethod

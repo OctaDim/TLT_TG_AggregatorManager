@@ -155,6 +155,8 @@ async def start_new_telethon_client_router(
         is_authorised = auth_resp.is_authorised
         requires_action = auth_resp.requires_action
         auth_by_phone = auth_resp.auth_by_phone
+        auth_by_qrcode = auth_resp.auth_by_qrcode
+        auth_via_console = auth_resp.auth_via_console
         qrcode_url = auth_resp.qrcode_url
         is_auth_error = auth_resp.is_auth_error
         auth_message = auth_resp.auth_message
@@ -176,6 +178,8 @@ async def start_new_telethon_client_router(
                      "is_authorised": is_authorised,
                      "requires_action": requires_action,
                      "auth_by_phone": auth_by_phone,
+                     "auth_by_qrcode": auth_by_qrcode,
+                     "auth_via_console": auth_via_console,
                      "qrcode_url": qrcode_url,
                      "is_auth_error": is_auth_error,
                      "auth_message": auth_message,
@@ -200,6 +204,8 @@ async def start_new_telethon_client_router(
               f"is_authorised: {is_authorised}\n",
               f"requires_action: {requires_action}\n",
               f"auth_by_phone: {auth_by_phone}\n",
+              f"auth_by_qrcode: {auth_by_qrcode}\n",
+              f"auth_via_console: {auth_via_console}\n",
               f"is_auth_error: {is_auth_error}\n",
               f"auth_message: {auth_message}\n",
               f"auth_error: {auth_error}\n")

@@ -20,7 +20,7 @@ from db_postgres.postgres_queries.qry_update_telethon_session_data import (
 from meta_classes.singlton_meta import SingletonMeta
 from telethon_manager.telethon_auth_drivers import (
     AuthDriver, TltAuthConsoleDriver, TltAuthWebPhoneDriver,
-    TltAuthWebQRCodeDriver, AuthResponse)
+    TltAuthWebQRCodeDriver, AuthResponse, TltAuthWebQRAndPhoneDriver)
 from telethon_manager.telethon_client_config import TelethonConfig
 from telethon_manager.telethon_register_handlers import (
     add_all_telethon_client_handlers)
@@ -216,6 +216,8 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                 auth_resp = AuthResponse(is_authorised=False,
                                          requires_action=False,
                                          auth_by_phone=False,
+                                         auth_by_qrcode=False,
+                                         auth_via_console=False,
                                          qrcode_url=None,
                                          is_auth_error=True,
                                          auth_message="",
@@ -275,6 +277,8 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
             auth_resp = AuthResponse(is_authorised=False,
                                      requires_action=False,
                                      auth_by_phone=False,
+                                     auth_by_qrcode=False,
+                                     auth_via_console=False,
                                      qrcode_url=None,
                                      is_auth_error=True,
                                      auth_message="",
@@ -354,6 +358,8 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
             auth_resp = AuthResponse(is_authorised=True,
                                      requires_action=False,
                                      auth_by_phone=False,
+                                     auth_by_qrcode=False,
+                                     auth_via_console=False,
                                      qrcode_url=None,
                                      is_auth_error=False,
                                      auth_message=auth_message,
@@ -365,7 +371,8 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
 
         _AUTH_DRIVER = {"console": TltAuthConsoleDriver,
                         "phone": TltAuthWebPhoneDriver,
-                        "qrcode": TltAuthWebQRCodeDriver}
+                        "qrcode": TltAuthWebQRCodeDriver,
+                        "qr+phone": TltAuthWebQRAndPhoneDriver}
         auth_type = telethon_config.authorisation_type
         auth_driver_class = _AUTH_DRIVER[auth_type]
         auth_driver_obj = auth_driver_class(
@@ -484,6 +491,8 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
             auth_resp = AuthResponse(is_authorised=True,
                                      requires_action=False,
                                      auth_by_phone=False,
+                                     auth_by_qrcode=False,
+                                     auth_via_console=False,
                                      qrcode_url=None,
                                      is_auth_error=False,
                                      auth_message=auth_message,
@@ -516,6 +525,8 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
             auth_resp = AuthResponse(is_authorised=True,
                                      requires_action=False,
                                      auth_by_phone=False,
+                                     auth_by_qrcode=False,
+                                     auth_via_console=False,
                                      qrcode_url=None,
                                      is_auth_error=False,
                                      auth_message=auth_message,
@@ -526,6 +537,8 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
             auth_resp = AuthResponse(is_authorised=False,
                                      requires_action=False,
                                      auth_by_phone=False,
+                                     auth_by_qrcode=False,
+                                     auth_via_console=False,
                                      qrcode_url=None,
                                      is_auth_error=True,
                                      auth_message="",

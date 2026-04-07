@@ -15,6 +15,8 @@ class AuthResponse:
     is_authorised: bool = False
     requires_action: bool = False
     auth_by_phone: bool = False
+    auth_by_qrcode: bool = False
+    auth_via_console: bool = False
     qrcode_url: str | None = None
     is_auth_error: bool = False
     auth_message: str = ""
@@ -32,6 +34,86 @@ class AuthDriver(ABC):
         pass
 
 
+class TltAuthWebQRAndPhoneDriver(AuthDriver):
+    async def auth_user_client_via_driver(self) -> AuthResponse:
+        """QRCode plus Phone authorisation driver method"""
+        config_name = self.telethon_config.name
+        session_str = self.telethon_config.session_string
+        session_str_info = f"...{session_str[-15:]}" if session_str else None
+        telegram_phone = self.telethon_config.phone
+        auth_type = self.telethon_config.authorisation_type
+        user_client = self.telethon_user_client
+
+        client_is_user_authorised = await user_client.is_user_authorized()  # Redundant
+        if client_is_user_authorised:
+            auth_msg = "WEB QR+Phone Auth Driver: Client authorised initially"
+            auth_resp = AuthResponse(is_authorised=True,
+                                     requires_action=False,
+                                     auth_by_phone=True,
+                                     auth_by_qrcode=True,
+                                     auth_via_console=False,
+                                     qrcode_url=None,
+                                     is_auth_error=False,
+                                     auth_message=auth_msg,
+                                     auth_error="")
+            return auth_resp
+
+        qr_code_login = None
+        qr_code_url = None
+        try:
+            print("Telethon user client auth via WEB QR+Phone driver:")
+            # By QRCode
+            qr_code_login = await user_client.qr_login(
+                ignored_ids=None)
+            qr_code_url = qr_code_login.url
+            print(f"Authorisation QRCode created successfully [OK]:\n"
+                  f"qr_code_login: {qr_code_login}\n"
+                  f"qr_code_url: {qr_code_url}\n")
+
+            # By Phone code
+            request_sent_code = await user_client.send_code_request(
+                phone=telegram_phone,
+                force_sms=False,  # Deprecated
+                _retry_count=0)
+            print(f"Phone authorisation code sent to phone [OK]:\n"
+                  f"request_sent_code: {request_sent_code}\n")
+
+            auth_msg = ("WEB QR+Phone Auth Driver: QRCode created, Phone code sent, "
+                        "waiting scanning qrcode or entering phone code")
+            auth_resp = AuthResponse(is_authorised=False,
+                                     requires_action=True,
+                                     auth_by_phone=True,
+                                     auth_by_qrcode=True,
+                                     auth_via_console=False,
+                                     qrcode_url=qr_code_url,
+                                     is_auth_error=False,
+                                     auth_message=auth_msg,
+                                     auth_error="")
+            return auth_resp
+        except Exception as error:
+            error_log = (f"\n\n⚠️ Web QR+Phone Auth Driver [ERROR]:\n"
+                         f"error: {error}\n"
+                         f"config_name: {config_name}\n"
+                         f"telegram_phone: {telegram_phone}\n"
+                         f"user_client: {user_client}\n"
+                         f"client_is_user_authorised: {client_is_user_authorised}\n"
+                         f"auth_type: {auth_type}\n"
+                         f"qr_code_login: {qr_code_login}\n"
+                         f"qr_code_url: {qr_code_url}\n"
+                         f"session_str_info: {session_str_info}\n")
+            auth_resp = AuthResponse(is_authorised=False,
+                                     requires_action=False,
+                                     auth_by_phone=True,
+                                     auth_by_qrcode=True,
+                                     auth_via_console=False,
+                                     qrcode_url=None,
+                                     is_auth_error=True,
+                                     auth_message="",
+                                     auth_error=error_log)
+            print(error_log)
+            return auth_resp
+
+
 class TltAuthWebQRCodeDriver(AuthDriver):
     async def auth_user_client_via_driver(self) -> AuthResponse:
         """QRCode authorisation driver method"""
@@ -44,10 +126,12 @@ class TltAuthWebQRCodeDriver(AuthDriver):
 
         client_is_user_authorised = await user_client.is_user_authorized()  # Redundant
         if client_is_user_authorised:
-            auth_msg="WEB QRCode Auth Driver: Client authorised initially"
+            auth_msg = "WEB QRCode Auth Driver: Client authorised initially"
             auth_resp = AuthResponse(is_authorised=True,
                                      requires_action=False,
                                      auth_by_phone=False,
+                                     auth_by_qrcode=True,
+                                     auth_via_console=False,
                                      qrcode_url=None,
                                      is_auth_error=False,
                                      auth_message=auth_msg,
@@ -65,10 +149,12 @@ class TltAuthWebQRCodeDriver(AuthDriver):
                   f"qr_code_login: {qr_code_login}\n"
                   f"qr_code_url: {qr_code_url}\n")
 
-            auth_msg="WEB QRCode Auth Driver: QRCode created, waiting scanning"
+            auth_msg = "WEB QRCode Auth Driver: QRCode created, waiting scanning"
             auth_resp = AuthResponse(is_authorised=False,
                                      requires_action=True,
                                      auth_by_phone=False,
+                                     auth_by_qrcode=True,
+                                     auth_via_console=False,
                                      qrcode_url=qr_code_url,
                                      is_auth_error=False,
                                      auth_message=auth_msg,
@@ -88,6 +174,8 @@ class TltAuthWebQRCodeDriver(AuthDriver):
             auth_resp = AuthResponse(is_authorised=False,
                                      requires_action=False,
                                      auth_by_phone=False,
+                                     auth_by_qrcode=True,
+                                     auth_via_console=False,
                                      qrcode_url=None,
                                      is_auth_error=True,
                                      auth_message="",
@@ -108,10 +196,12 @@ class TltAuthWebPhoneDriver(AuthDriver):
 
         client_is_user_authorised = await user_client.is_user_authorized()  # Redundant
         if client_is_user_authorised:
-            auth_msg="WEB Phone Auth Driver: Client authorised initially"
+            auth_msg = "WEB Phone Auth Driver: Client authorised initially"
             auth_resp = AuthResponse(is_authorised=True,
                                      requires_action=False,
-                                     auth_by_phone=False,
+                                     auth_by_phone=True,
+                                     auth_by_qrcode=False,
+                                     auth_via_console=False,
                                      qrcode_url=None,
                                      is_auth_error=False,
                                      auth_message=auth_msg,
@@ -128,10 +218,12 @@ class TltAuthWebPhoneDriver(AuthDriver):
                 _retry_count=0)
             print(f"Phone authorisation code sent to phone [OK]:\n"
                   f"request_sent_code: {request_sent_code}\n")
-            auth_msg="WEB Phone Auth:  Phone code sent to telegram"
+            auth_msg = "WEB Phone Auth:  Phone code sent to telegram"
             auth_resp = AuthResponse(is_authorised=False,
                                      requires_action=True,
                                      auth_by_phone=True,
+                                     auth_by_qrcode=False,
+                                     auth_via_console=False,
                                      qrcode_url=None,
                                      is_auth_error=False,
                                      auth_message=auth_msg,
@@ -150,7 +242,9 @@ class TltAuthWebPhoneDriver(AuthDriver):
                          f"session_str_info: {session_str_info}\n")
             auth_resp = AuthResponse(is_authorised=False,
                                      requires_action=False,
-                                     auth_by_phone=False,
+                                     auth_by_phone=True,
+                                     auth_by_qrcode=False,
+                                     auth_via_console=False,
                                      qrcode_url=None,
                                      is_auth_error=True,
                                      auth_message="",
@@ -172,10 +266,12 @@ class TltAuthConsoleDriver(AuthDriver):
 
         client_is_user_authorised = await user_client.is_user_authorized()
         if client_is_user_authorised:
-            auth_msg="Console Auth Driver: Client authorised initially"
+            auth_msg = "Console Auth Driver: Client authorised initially"
             auth_resp = AuthResponse(is_authorised=True,
                                      requires_action=False,
                                      auth_by_phone=False,
+                                     auth_by_qrcode=False,
+                                     auth_via_console=True,
                                      qrcode_url=None,
                                      is_auth_error=False,
                                      auth_message=auth_msg,
@@ -228,6 +324,8 @@ class TltAuthConsoleDriver(AuthDriver):
                 auth_resp = AuthResponse(is_authorised=True,
                                          requires_action=False,
                                          auth_by_phone=True,
+                                         auth_by_qrcode=False,
+                                         auth_via_console=True,
                                          qrcode_url=None,
                                          is_auth_error=False,
                                          auth_message=auth_msg,
@@ -262,6 +360,8 @@ class TltAuthConsoleDriver(AuthDriver):
                 auth_resp = AuthResponse(is_authorised=True,
                                          requires_action=False,
                                          auth_by_phone=False,
+                                         auth_by_qrcode=True,
+                                         auth_via_console=True,
                                          qrcode_url=qr_code_url,
                                          is_auth_error=False,
                                          auth_message=auth_msg,
@@ -273,6 +373,8 @@ class TltAuthConsoleDriver(AuthDriver):
                 auth_resp = AuthResponse(is_authorised=False,
                                          requires_action=False,
                                          auth_by_phone=False,
+                                         auth_by_qrcode=False,
+                                         auth_via_console=True,
                                          qrcode_url=qr_code_url,
                                          is_auth_error=True,
                                          auth_message="",
@@ -299,6 +401,8 @@ class TltAuthConsoleDriver(AuthDriver):
             auth_resp = AuthResponse(is_authorised=False,
                                      requires_action=False,
                                      auth_by_phone=False,
+                                     auth_by_qrcode=False,
+                                     auth_via_console=True,
                                      qrcode_url=qr_code_url,
                                      is_auth_error=True,
                                      auth_message="",
@@ -322,6 +426,8 @@ class TltAuthConsoleDriver(AuthDriver):
             auth_resp = AuthResponse(is_authorised=False,
                                      requires_action=False,
                                      auth_by_phone=False,
+                                     auth_by_qrcode=False,
+                                     auth_via_console=True,
                                      qrcode_url=qr_code_url,
                                      is_auth_error=True,
                                      auth_message="",
