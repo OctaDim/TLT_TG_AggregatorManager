@@ -148,9 +148,11 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                 telethon_config=cur_config)
 
             if cur_client and auth_resp.is_authorised:
-                self.clients[config_name] = cur_client
+                self.clients[config_name] = cur_client  # Double. First check and assignment in start User, Bot client
             else:
-                self.not_started_configs[config_name] = cur_config
+                self.not_started_configs[config_name] = cur_config  # Double. First assignment in start User, Bot client
+
+            if not cur_client:
                 print(f"Telethon client not created [ERROR]\n"
                       f"telethon_config_id: {telethon_config_id}\n"
                       f"account_type: {account_type}\n"
@@ -159,7 +161,7 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                       f"config_name: {config_name}\n"
                       f"cur_client: {cur_client}\n"
                       f"auth_resp.is_authorised: {auth_resp.is_authorised}\n")
-            continue  # Not necessary, just to show loop border
+            continue  # Not necessary, just to show bottom loop border
 
         if self.not_started_configs:
             print(f"\nTELETHON CLIENTS NOT CREATED [ERROR]:")

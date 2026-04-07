@@ -103,29 +103,7 @@ async def start_new_telethon_client_router(
         new_client, auth_resp = await tlt_manager.run_telethon_client(
             telethon_config=new_client_config)
 
-        is_authorised = auth_resp.is_authorised
-        requires_action = auth_resp.is_authorised
-        auth_by_phone = auth_resp.is_authorised
-        qrcode_url = auth_resp.is_authorised
-        auth_message = auth_resp.is_authorised
-        is_auth_error = auth_resp.is_authorised
-        auth_error = auth_resp.is_authorised
-
-
-
         if not new_client:
-            print(f"{'>' * 55}\n{'>' * 55}\n"
-                  f"New Telethon client not created [ERROR]\n"
-                  f"web_account_id: {web_account_id}\n"
-                  f"web_account_username: {web_account_username}\n"
-                  f"account_type: {account_type}\n"
-                  f"account_type_str: {account_type_str}\n"
-                  f"new_tlt_config_id: {new_tlt_config_id}\n"
-                  f"new_config_name: {new_config_name}\n"
-                  f"telegram_phone: {telegram_phone}\n"
-                  f"bot_token_info: {bot_token_info}\n"
-                  f"new_client: {new_client}\n")
-
             json_response = JSONResponse(
                 content={"message": "Telethon client not created:",
                          "username": auth_data.username,
@@ -138,6 +116,17 @@ async def start_new_telethon_client_router(
                          "bot_token_info": bot_token_info,
                          "new_client": new_client},
                 status_code=status.HTTP_203_NON_AUTHORITATIVE_INFORMATION)
+            print(f"{'>' * 55}\n{'>' * 55}\n"
+                  f"New Telethon client not created [ERROR]\n"
+                  f"web_account_id: {web_account_id}\n"
+                  f"web_account_username: {web_account_username}\n"
+                  f"account_type: {account_type}\n"
+                  f"account_type_str: {account_type_str}\n"
+                  f"new_tlt_config_id: {new_tlt_config_id}\n"
+                  f"new_config_name: {new_config_name}\n"
+                  f"telegram_phone: {telegram_phone}\n"
+                  f"bot_token_info: {bot_token_info}\n"
+                  f"new_client: {new_client}\n")
             return json_response
 
         print(f"{'>' * 55}\n{'>' * 55}\n"
@@ -154,11 +143,14 @@ async def start_new_telethon_client_router(
               f"new_client: {new_client}\n")
 
         if new_client and auth_resp.is_authorised:
+            tlt_manager.clients[new_config_name] = new_client  # Double. First assignment in start User, Bot client
             new_client_task = asyncio.create_task(
                 coro=new_client.run_until_disconnected(),
                 name=new_config_name,
                 context=None)
             tlt_manager.running_tasks[new_config_name] = new_client_task
+        else:
+            tlt_manager.not_started_configs[new_config_name] = new_client_config  # Double. First in start User, Bot
 
         tlt_manager_clients = list(tlt_manager.clients.keys())
         json_response = JSONResponse(
