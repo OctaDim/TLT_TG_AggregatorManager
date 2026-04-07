@@ -103,6 +103,16 @@ async def start_new_telethon_client_router(
         new_client, auth_resp = await tlt_manager.run_telethon_client(
             telethon_config=new_client_config)
 
+        is_authorised = auth_resp.is_authorised
+        requires_action = auth_resp.is_authorised
+        auth_by_phone = auth_resp.is_authorised
+        qrcode_url = auth_resp.is_authorised
+        auth_message = auth_resp.is_authorised
+        is_auth_error = auth_resp.is_authorised
+        auth_error = auth_resp.is_authorised
+
+
+
         if not new_client:
             print(f"{'>' * 55}\n{'>' * 55}\n"
                   f"New Telethon client not created [ERROR]\n"
