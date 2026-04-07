@@ -5,10 +5,10 @@ from pydantic import BaseModel, model_validator
 from starlette import status
 
 
-class InStartNewTelethonClient(BaseModel):
+class InStartNewWebTelethonClient(BaseModel):
     telegram_phone: str = None
     telegram_bot_token: str = None
-    authorisation_type: Literal["console", "phone", "qrcode", "qr+phone"]
+    authorisation_type: Literal["console", "web"] = "phone"
 
     @model_validator(mode="after")
     def validate_fields(self):
