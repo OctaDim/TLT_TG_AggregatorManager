@@ -119,25 +119,3 @@ class AGGREGATOR_API_OPTIONS:
     OUTGOING_EXT_API_REQ_TIMEOUT: int = 60
     SOURCE_STRING_FOR_EXT_AGGREGATOR: str = "telegram_tlt"
     LOG_EXT_AGGREGATOR_API_RESPONSE: bool = True
-
-
-# @dataclass(frozen=True)
-# class WEBHOOKS_OPTIONS:
-#     WEBHOOKS_API_URL_BASE_NAME: str = "aggregator_api"
-#     DEBUG_SKIP_COMPANY_IDS_LIST: tuple[str] = (123456789,)  # (100179,)
-#     OUTGOING_EXT_API_REQ_TIMEOUT: float = 120
-#     LOG_WEBHOOK_INCOMING_REQ_DATA: bool = False
-#     LOG_WEBHOOK_INCOMING_OBJ_DATA: bool = False
-#     LOG_WEBHOOK_INCOMING_EXTRA_DATA: bool = False
-#     LOG_WEBHOOK_NEW_AUTH_DATA: bool = False
-#     LOG_NEW_CONVERSATION_DATA: bool = False
-#     LOG_NEW_MESSAGE_DATA: bool = False
-#     LOG_NEW_ATTACHMENT_DATA: bool = False
-#     MAKE_EMERGENCY_CALL: bool = False
-
-
-# @dataclass(frozen=True)
-# class EMERGENCY_CALL_OPTIONS:
-#     EMERGENCY_CALL_URL = "https://samara.softats.ru/account/pact/emergency_call"
-#     EMERGENCY_CALL_REQUEST_TIMEOUT: float = 120
-#     LOG_EMERGENCY_CALL_REQ_RESPONSE: bool = True
