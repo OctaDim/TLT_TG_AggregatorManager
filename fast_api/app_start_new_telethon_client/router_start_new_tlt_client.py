@@ -152,6 +152,14 @@ async def start_new_telethon_client_router(
         else:
             tlt_manager.not_started_configs[new_config_name] = new_client_config  # Double. First in start User, Bot
 
+        is_authorised = auth_resp.is_authorised
+        requires_action = auth_resp.requires_action
+        auth_by_phone = auth_resp.auth_by_phone
+        qrcode_url = auth_resp.qrcode_url
+        is_auth_error = auth_resp.is_auth_error
+        auth_message = auth_resp.auth_message
+        auth_error = auth_resp.auth_error
+
         tlt_manager_clients = list(tlt_manager.clients.keys())
         json_response = JSONResponse(
             content={"message": "Telethon client authorised and started:",
@@ -163,9 +171,15 @@ async def start_new_telethon_client_router(
                      "new_config_name": new_config_name,
                      "telegram_phone": telegram_phone,
                      "bot_token_info": bot_token_info,
+                     "tlt_manager_clients": tlt_manager_clients,
                      "new_client": auth_data.username,
-                     "auth_resp.is_authorised": auth_resp.is_authorised,
-                     "tlt_manager_clients": tlt_manager_clients},
+                     "is_authorised": is_authorised,
+                     "requires_action": requires_action,
+                     "auth_by_phone": auth_by_phone,
+                     "qrcode_url": qrcode_url,
+                     "is_auth_error": is_auth_error,
+                     "auth_message": auth_message,
+                     "auth_error": auth_error},
             status_code=status.HTTP_200_OK)
 
         blue_clr = CONSOLE_COLORS.BRIGHT_BLUE
@@ -181,9 +195,14 @@ async def start_new_telethon_client_router(
               f"new_config_name: {blue_clr}{new_config_name}{reset_clr}\n",
               f"telegram_phone: {telegram_phone}\n",
               f"bot_token_info: {bot_token_info}\n",
+              f"tlt_manager_clients: {tlt_manager_clients}\n"
               f"new_client: {new_client}\n",
-              f"auth_resp.is_authorised: {auth_resp.is_authorised}\n",
-              f"tlt_manager_clients: {tlt_manager_clients}\n")
+              f"is_authorised: {is_authorised}\n",
+              f"requires_action: {requires_action}\n",
+              f"auth_by_phone: {auth_by_phone}\n",
+              f"is_auth_error: {is_auth_error}\n",
+              f"auth_message: {auth_message}\n",
+              f"auth_error: {auth_error}\n")
         return json_response
     except Exception as error:
         log_text = (f"Router Start new single Telethon client [ERROR]:\n"
