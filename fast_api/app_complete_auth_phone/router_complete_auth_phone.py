@@ -36,9 +36,12 @@ async def complete_tlt_client_phone_auth_router(
     telegram_phone_code = complete_auth_data.telegram_phone_code
     phone_code_hash = complete_auth_data.phone_code_hash
 
+    tlt_manager_client = None
     tlt_client = None
     before_sign_in_is_authorised = False
     after_sign_in_is_authorised = False
+    auth_message = ""
+    auth_error = ""
 
     try:
         tlt_manager = TelethonManagerSingleton()  # Singleton
@@ -46,8 +49,9 @@ async def complete_tlt_client_phone_auth_router(
         tlt_not_started_config = tlt_manager.not_started_configs.get(tlt_config_name)
 
         if not tlt_manager_client and not tlt_not_started_config:
+            complete_auth_msg = "TLT client and TLT config not found [ERROR]:"
             json_response = JSONResponse(
-                content={"message": "TLT client and TLT config not found [ERROR]:",
+                content={"complete_auth_msg": complete_auth_msg,
                          "username": auth_data.username,
                          "web_account_id": web_account_id,
                          "web_account_username": web_account_username,
@@ -55,12 +59,16 @@ async def complete_tlt_client_phone_auth_router(
                          "telegram_phone": telegram_phone,
                          "telegram_phone_code": telegram_phone_code,
                          "before_sign_in_is_authorised": before_sign_in_is_authorised,
-                         "after_sign_in_is_authorised": after_sign_in_is_authorised},
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            print(f"TLT client not found [ERROR]:\n"
+                         "after_sign_in_is_authorised": after_sign_in_is_authorised,
+                         "auth_message": auth_message,
+                         "auth_error": auth_error},
+                status_code=status.HTTP_200_OK)
+            print(f"{complete_auth_msg}\n"
                   f"tlt_config_name: {tlt_config_name}\n"
                   f"telegram_phone: {telegram_phone}"
-                  f"telegram_phone_code: {telegram_phone_code}\n")
+                  f"telegram_phone_code: {telegram_phone_code}\n"
+                  f"tlt_manager_client: {tlt_manager_client}\n"
+                  f"tlt_not_started_config: {tlt_not_started_config}\n")
             return json_response
 
         if tlt_manager_client:
@@ -69,10 +77,13 @@ async def complete_tlt_client_phone_auth_router(
             tlt_client, auth_resp = await tlt_manager.start_user_client(
                 telethon_config=tlt_not_started_config,
                 skip_authorisation=True)
+            auth_message = auth_resp.auth_message
+            auth_error = auth_resp.auth_error
 
         if not tlt_client:
+            complete_auth_msg = "TLT client not found or not created [ERROR]:"
             json_response = JSONResponse(
-                content={"message": "TLT client not found or not created [ERROR]:",
+                content={"complete_auth_msg": complete_auth_msg,
                          "username": auth_data.username,
                          "web_account_id": web_account_id,
                          "web_account_username": web_account_username,
@@ -80,21 +91,27 @@ async def complete_tlt_client_phone_auth_router(
                          "telegram_phone": telegram_phone,
                          "telegram_phone_code": telegram_phone_code,
                          "before_sign_in_is_authorised": before_sign_in_is_authorised,
-                         "after_sign_in_is_authorised": after_sign_in_is_authorised},
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            print(f"TLT client not found or not created [ERROR]:\n"
+                         "after_sign_in_is_authorised": after_sign_in_is_authorised,
+                         "auth_message": auth_message,
+                         "auth_error": auth_error},
+                status_code=status.HTTP_200_OK)
+            print(f"{complete_auth_msg}\n"
                   f"tlt_config_name: {tlt_config_name}\n"
                   f"telegram_phone: {telegram_phone}"
                   f"telegram_phone_code: {telegram_phone_code}\n"
-                  f"tlt_client: {tlt_client}\n")
+                  f"tlt_manager_client: {tlt_manager_client}\n"
+                  f"tlt_client: {tlt_client}\n"
+                  f"auth_message: {auth_message}\n"
+                  f"auth_error: {auth_error}\n")
             return json_response
 
         before_sign_in_is_authorised = await tlt_client.is_user_authorized()
         if before_sign_in_is_authorised:
             tlt_manager.clients[tlt_config_name] = tlt_client
             tlt_manager.not_started_configs.pop(tlt_config_name, None)
+            complete_auth_msg = "TLT client authorised initially [OK]:"
             json_response = JSONResponse(
-                content={"message": "TLT client authorised initially [OK]:",
+                content={"complete_auth_msg": complete_auth_msg,
                          "username": auth_data.username,
                          "web_account_id": web_account_id,
                          "web_account_username": web_account_username,
@@ -102,14 +119,19 @@ async def complete_tlt_client_phone_auth_router(
                          "telegram_phone": telegram_phone,
                          "telegram_phone_code": telegram_phone_code,
                          "before_sign_in_is_authorised": before_sign_in_is_authorised,
-                         "after_sign_in_is_authorised": after_sign_in_is_authorised},
+                         "after_sign_in_is_authorised": after_sign_in_is_authorised,
+                         "auth_message": auth_message,
+                         "auth_error": auth_error},
                 status_code=status.HTTP_200_OK)
-            print(f"TLT client authorised  initially [OK]:\n"
+            print(f"{complete_auth_msg}\n"
                   f"tlt_config_name: {tlt_config_name}\n"
                   f"telegram_phone: {telegram_phone}"
                   f"telegram_phone_code: {telegram_phone_code}\n"
+                  f"tlt_manager_client: {tlt_manager_client}\n"
                   f"tlt_client: {tlt_client}\n"
-                  f"before_sign_in_is_authorised: {before_sign_in_is_authorised}\n")
+                  f"before_sign_in_is_authorised: {before_sign_in_is_authorised}\n"
+                  f"auth_message: {auth_message}\n"
+                  f"auth_error: {auth_error}\n")
             return json_response
 
         phone_signed_in_user = await tlt_client.sign_in(
@@ -123,13 +145,13 @@ async def complete_tlt_client_phone_auth_router(
         if after_sign_in_is_authorised:
             tlt_manager.clients[tlt_config_name] = tlt_client
             tlt_manager.not_started_configs.pop(tlt_config_name, None)
-            auth_message = "TLT client signed in and authed by phone [OK]:"
+            complete_auth_msg = "TLT client signed in and authed by phone [OK]:"
         else:
             tlt_manager.not_started_configs.pop(tlt_config_name, None)
-            auth_message = "TLT client signed in and NOT authed by phone [OK]:"
+            complete_auth_msg = "TLT client signed in and NOT authed by phone [OK]:"
 
         json_response = JSONResponse(
-            content={"message": auth_message,
+            content={"complete_auth_msg": complete_auth_msg,
                      "username": auth_data.username,
                      "web_account_id": web_account_id,
                      "web_account_username": web_account_username,
@@ -137,16 +159,21 @@ async def complete_tlt_client_phone_auth_router(
                      "telegram_phone": telegram_phone,
                      "telegram_phone_code": telegram_phone_code,
                      "before_sign_in_is_authorised": before_sign_in_is_authorised,
-                     "after_sign_in_is_authorised": after_sign_in_is_authorised},
+                     "after_sign_in_is_authorised": after_sign_in_is_authorised,
+                     "auth_message": auth_message,
+                     "auth_error": auth_error},
             status_code=status.HTTP_200_OK)
-        print(f"{auth_message}"
+        print(f"{complete_auth_msg}"
               f"tlt_config_name: {tlt_config_name}\n"
               f"telegram_phone: {telegram_phone}"
               f"telegram_phone_code: {telegram_phone_code}\n"
+              f"tlt_manager_client: {tlt_manager_client}\n"
               f"tlt_client: {tlt_client}\n"
               f"phone_signed_in_user: {phone_signed_in_user}\n"
               f"before_sign_in_is_authorised: {before_sign_in_is_authorised}\n"
-              f"after_sign_in_is_authorised: {after_sign_in_is_authorised}\n")
+              f"after_sign_in_is_authorised: {after_sign_in_is_authorised}\n"
+              f"auth_message: {auth_message}\n"
+              f"auth_error: {auth_error}\n")
         return json_response
     except Exception as error:
         log_text = (
@@ -157,9 +184,12 @@ async def complete_tlt_client_phone_auth_router(
             f"tlt_config_name: {tlt_config_name}\n"
             f"telegram_phone: {telegram_phone}\n"
             f"telegram_phone_code: {telegram_phone_code}\n"
+            f"tlt_manager_client: {tlt_manager_client}\n"
             f"tlt_client: {tlt_client}\n"
             f"before_sign_in_is_authorised: {before_sign_in_is_authorised}\n"
-            f"after_sign_in_is_authorised: {after_sign_in_is_authorised}\n")
+            f"after_sign_in_is_authorised: {after_sign_in_is_authorised}\n"
+            f"auth_message: {auth_message}\n"
+            f"auth_error: {auth_error}\n")
         print(log_text)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
