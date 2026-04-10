@@ -6,8 +6,12 @@ from pydantic.dataclasses import dataclass
 from telethon import TelegramClient
 
 from configs.enums import QR_CODE_ERROR_CORRECTION
+from configs.environments import BASE_DIR
 from configs.options import TELETHON_OPTIONS
 from telethon_manager.telethon_client_config import TelethonConfig
+from utils_common.create_save_qrcode_image_file import save_qrcode_image
+from utils_common.normalized_path import get_full_file_normal_path
+from utils_common.validate_dir_file import check_create_dir_by_filename_async
 
 
 @dataclass
@@ -19,6 +23,7 @@ class AuthResponse:
     auth_via_console: bool = False
     phone_code_hash: str | None = None
     qrcode_url: str | None = None
+    qrcode_fpath: str | None = None
     is_auth_error: bool = False
     auth_message: str = ""
     auth_error: str = ""
@@ -72,6 +77,24 @@ class TltAuthWebQRAndPhoneDriver(AuthDriver):
                   f"qr_code_login: {qr_code_login}\n"
                   f"qr_code_url: {qr_code_url}\n")
 
+            # Saving QRCode image file
+            qrcode_thread_timeout = TELETHON_OPTIONS.WAIT_FOR_QRCODE_OPS_TIMEOUT_SEC
+            temp_qrcode_imgs_dir = TELETHON_OPTIONS.TEMP_AUTH_QRCODE_IMGS_DIR
+            qr_code_img_size = TELETHON_OPTIONS.QR_CODE_IMAGE_SIZE
+
+            qrcode_img_file_path = get_full_file_normal_path(
+                all_dir_str_parts=[BASE_DIR, temp_qrcode_imgs_dir],
+                file_name_with_ext=f"{config_name}.png")
+            await check_create_dir_by_filename_async(qrcode_img_file_path)
+            qrcode_saved_res = await asyncio.wait_for(
+                fut=asyncio.to_thread(save_qrcode_image,
+                                      qr_code_url=qr_code_url,
+                                      full_file_path=qrcode_img_file_path,
+                                      qrcode_image_size=qr_code_img_size,
+                                      qrcode_fill_color="#2B94FF",
+                                      qrcode_back_color="white"),
+                timeout=qrcode_thread_timeout)
+
             # By Phone code
             request_sent_code = await user_client.send_code_request(
                 phone=telegram_phone,
@@ -81,18 +104,36 @@ class TltAuthWebQRAndPhoneDriver(AuthDriver):
             print(f"Phone authorisation code sent to phone [OK]:\n"
                   f"request_sent_code: {request_sent_code}\n")
 
-            auth_msg = ("WEB QR+Phone Auth Driver: QRCode created, Phone code sent, "
-                        "waiting scanning qrcode or entering phone code")
-            auth_resp = AuthResponse(is_authorised=False,
-                                     requires_action=True,
-                                     auth_by_phone=True,
-                                     auth_by_qrcode=True,
-                                     auth_via_console=False,
-                                     phone_code_hash=phone_code_hash,
-                                     qrcode_url=qr_code_url,
-                                     is_auth_error=False,
-                                     auth_message=auth_msg,
-                                     auth_error="")
+            if qrcode_saved_res:
+                auth_msg = ("WEB QR+Phone Auth Driver: "
+                            "QRCode created, Phone code sent, "
+                            "waiting scanning qrcode or entering phone code")
+                auth_resp = AuthResponse(is_authorised=False,
+                                         requires_action=True,
+                                         auth_by_phone=True,
+                                         auth_by_qrcode=True,
+                                         auth_via_console=False,
+                                         phone_code_hash=phone_code_hash,
+                                         qrcode_url=qr_code_url,
+                                         qrcode_fpath=qrcode_saved_res,
+                                         is_auth_error=False,
+                                         auth_message=auth_msg,
+                                         auth_error="")
+            else:
+                auth_msg = ("WEB QR+Phone Auth Driver: "
+                            "QRCode created but not saved, Phone code sent,"
+                            "only authorisation by phone code accessible")
+                auth_resp = AuthResponse(is_authorised=False,
+                                         requires_action=True,
+                                         auth_by_phone=True,
+                                         auth_by_qrcode=False,
+                                         auth_via_console=False,
+                                         phone_code_hash=phone_code_hash,
+                                         qrcode_url=qr_code_url,
+                                         qrcode_fpath=qrcode_saved_res,
+                                         is_auth_error=False,
+                                         auth_message=auth_msg,
+                                         auth_error="")
             return auth_resp
         except Exception as error:
             error_log = (f"\n\n⚠️ Web QR+Phone Auth Driver [ERROR]:\n"
@@ -155,6 +196,37 @@ class TltAuthWebQRCodeDriver(AuthDriver):
                   f"qr_code_login: {qr_code_login}\n"
                   f"qr_code_url: {qr_code_url}\n")
 
+            # Saving QRCode image file
+            qrcode_thread_timeout = TELETHON_OPTIONS.WAIT_FOR_QRCODE_OPS_TIMEOUT_SEC
+            temp_qrcode_imgs_dir = TELETHON_OPTIONS.TEMP_AUTH_QRCODE_IMGS_DIR
+            qr_code_img_size = TELETHON_OPTIONS.QR_CODE_IMAGE_SIZE
+
+            qrcode_img_file_path = get_full_file_normal_path(
+                all_dir_str_parts=[BASE_DIR, temp_qrcode_imgs_dir],
+                file_name_with_ext=f"{config_name}.png")
+            await check_create_dir_by_filename_async(qrcode_img_file_path)
+            qrcode_saved_res = await asyncio.wait_for(
+                fut=asyncio.to_thread(save_qrcode_image,
+                                      qr_code_url=qr_code_url,
+                                      full_file_path=qrcode_img_file_path,
+                                      qrcode_image_size=qr_code_img_size,
+                                      qrcode_fill_color="#2B94FF",
+                                      qrcode_back_color="white"),
+                timeout=qrcode_thread_timeout)
+            if not qrcode_saved_res:
+                auth_error = "WEB QRCode Auth Driver: QRCode created but not saved"
+                auth_resp = AuthResponse(is_authorised=False,
+                                         requires_action=False,
+                                         auth_by_phone=False,
+                                         auth_by_qrcode=True,
+                                         auth_via_console=False,
+                                         phone_code_hash=None,
+                                         qrcode_url=qr_code_url,
+                                         is_auth_error=True,
+                                         auth_message="",
+                                         auth_error=auth_error)
+                return auth_resp
+
             auth_msg = "WEB QRCode Auth Driver: QRCode created, waiting scanning"
             auth_resp = AuthResponse(is_authorised=False,
                                      requires_action=True,
@@ -163,6 +235,7 @@ class TltAuthWebQRCodeDriver(AuthDriver):
                                      auth_via_console=False,
                                      phone_code_hash=None,
                                      qrcode_url=qr_code_url,
+                                     qrcode_fpath=qrcode_saved_res,
                                      is_auth_error=False,
                                      auth_message=auth_msg,
                                      auth_error="")
