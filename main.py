@@ -22,14 +22,14 @@ from db_postgres.postgres_init.db_create_sqladmin_users import (
     create_default_sqladmin_users)
 from db_postgres.postgres_init.db_tables_initialization import (
     sync_initialize_db_tables)
+from fast_api.app_complete_auth_phone.router_complete_auth_phone import (
+    rtr_complete_client_phone_auth)
 from fast_api.app_find_telegram_users_data.router_find_telegram_data import (
     rtr_find_telegram_users_data)
 from fast_api.app_send_message_by_user_id.router_send_message import (
     rtr_send_telegram_message)
 from fast_api.app_start_new_telethon_client.router_start_new_tlt_client import (
     rtr_start_new_telethon_client)
-from fast_api.app_start_new_web_telethon_client.router_start_new_web_tlt_client import (
-    rtr_start_new_web_tlt_client)
 from fast_api.app_tlt_api_health_check.router_tlt_api_health_check import (
     rtr_tlt_api_health_check)
 from fast_api.app_tlt_clients_tasks_status.router_tlt_clients_tasks_status import (
@@ -48,7 +48,7 @@ routers_list = [
     rtr_find_telegram_users_data,
     rtr_send_telegram_message,
     rtr_tlt_configs_by_web_account,
-    rtr_start_new_web_tlt_client,
+    rtr_complete_client_phone_auth,
 
 ]
 
