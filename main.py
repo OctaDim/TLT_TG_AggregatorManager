@@ -24,6 +24,8 @@ from db_postgres.postgres_init.db_tables_initialization import (
     sync_initialize_db_tables)
 from fast_api.app_complete_auth_phone.router_complete_auth_phone import (
     rtr_complete_client_phone_auth)
+from fast_api.app_complete_auth_qrcode.router_complete_auth_qrcode import (
+    rtr_complete_client_qrcode_auth)
 from fast_api.app_find_telegram_users_data.router_find_telegram_data import (
     rtr_find_telegram_users_data)
 from fast_api.app_send_message_by_user_id.router_send_message import (
@@ -49,6 +51,7 @@ routers_list = [
     rtr_send_telegram_message,
     rtr_tlt_configs_by_web_account,
     rtr_complete_client_phone_auth,
+    rtr_complete_client_qrcode_auth,
 
 ]
 
