@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, Union
+from typing import Literal
 
 
 @dataclass(frozen=True)
@@ -63,7 +63,7 @@ class TELETHON_OPTIONS:
     TELEGRAM_CLIENT_REQUEST_RETRIES: int = 5
     TELEGRAM_BOT_CLIENT_START_ATTEMPTS: int = 3
     FLOOD_SLEEP_THRESHOLD: int = 120
-    WAIT_FOR_TG_AUTH_TREADS_TIMEOUT_SEC: int = 5
+    WAIT_FOR_TG_AUTH_TREADS_TIMEOUT_SEC: int = 60
 
     ACCOUNT_SESSION_FILE_PREFIX: str = "sess_acc_"
     BOT_SESSION_FILE_PREFIX: str = "sess_bot_"
@@ -111,6 +111,9 @@ class TELETHON_OPTIONS:
     LOG_TG_SEND_MSG_BY_USER_ID: bool = True
 
     MESSAGES_PARSING_MODE: Literal["markdown", "html"] = "markdown"
+    TEMP_AUTH_QRCODE_IMGS_DIR: str = "TEMP_QRCODE_IMAGES"
+    WAIT_FOR_QRCODE_OPS_TIMEOUT_SEC: int = 10
+    QR_CODE_IMAGE_SIZE = 300
 
 
 @dataclass(frozen=True)
