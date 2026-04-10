@@ -60,6 +60,7 @@ class TltAuthWebQRAndPhoneDriver(AuthDriver):
                                      auth_via_console=False,
                                      phone_code_hash=None,
                                      qrcode_url=None,
+                                     qrcode_fpath=None,
                                      is_auth_error=False,
                                      auth_message=auth_msg,
                                      auth_error="")
@@ -86,7 +87,7 @@ class TltAuthWebQRAndPhoneDriver(AuthDriver):
                 all_dir_str_parts=[BASE_DIR, temp_qrcode_imgs_dir],
                 file_name_with_ext=f"{config_name}.png")
             await check_create_dir_by_filename_async(qrcode_img_file_path)
-            qrcode_saved_res = await asyncio.wait_for(
+            qrcode_saved_fpath = await asyncio.wait_for(
                 fut=asyncio.to_thread(save_qrcode_image,
                                       qr_code_url=qr_code_url,
                                       full_file_path=qrcode_img_file_path,
@@ -104,7 +105,7 @@ class TltAuthWebQRAndPhoneDriver(AuthDriver):
             print(f"Phone authorisation code sent to phone [OK]:\n"
                   f"request_sent_code: {request_sent_code}\n")
 
-            if qrcode_saved_res:
+            if qrcode_saved_fpath:
                 auth_msg = ("WEB QR+Phone Auth Driver: "
                             "QRCode created, Phone code sent, "
                             "waiting scanning qrcode or entering phone code")
@@ -115,11 +116,11 @@ class TltAuthWebQRAndPhoneDriver(AuthDriver):
                                          auth_via_console=False,
                                          phone_code_hash=phone_code_hash,
                                          qrcode_url=qr_code_url,
-                                         qrcode_fpath=qrcode_saved_res,
+                                         qrcode_fpath=qrcode_saved_fpath,
                                          is_auth_error=False,
                                          auth_message=auth_msg,
                                          auth_error="")
-            else:
+            else:  # if not qrcode_saved_fpath:
                 auth_msg = ("WEB QR+Phone Auth Driver: "
                             "QRCode created but not saved, Phone code sent,"
                             "only authorisation by phone code accessible")
@@ -130,7 +131,7 @@ class TltAuthWebQRAndPhoneDriver(AuthDriver):
                                          auth_via_console=False,
                                          phone_code_hash=phone_code_hash,
                                          qrcode_url=qr_code_url,
-                                         qrcode_fpath=qrcode_saved_res,
+                                         qrcode_fpath=qrcode_saved_fpath,
                                          is_auth_error=False,
                                          auth_message=auth_msg,
                                          auth_error="")
@@ -153,6 +154,7 @@ class TltAuthWebQRAndPhoneDriver(AuthDriver):
                                      auth_via_console=False,
                                      phone_code_hash=None,
                                      qrcode_url=None,
+                                     qrcode_fpath=None,
                                      is_auth_error=True,
                                      auth_message="",
                                      auth_error=error_log)
@@ -180,6 +182,7 @@ class TltAuthWebQRCodeDriver(AuthDriver):
                                      auth_via_console=False,
                                      phone_code_hash=None,
                                      qrcode_url=None,
+                                     qrcode_fpath=None,
                                      is_auth_error=False,
                                      auth_message=auth_msg,
                                      auth_error="")
@@ -213,8 +216,24 @@ class TltAuthWebQRCodeDriver(AuthDriver):
                                       qrcode_fill_color="#2B94FF",
                                       qrcode_back_color="white"),
                 timeout=qrcode_thread_timeout)
-            if not qrcode_saved_res:
-                auth_error = "WEB QRCode Auth Driver: QRCode created but not saved"
+            if qrcode_saved_res:
+                auth_msg = ("WEB QRCode Auth Driver: QRCode created, "
+                            "waiting scanning")
+                auth_resp = AuthResponse(is_authorised=False,
+                                         requires_action=True,
+                                         auth_by_phone=False,
+                                         auth_by_qrcode=True,
+                                         auth_via_console=False,
+                                         phone_code_hash=None,
+                                         qrcode_url=qr_code_url,
+                                         qrcode_fpath=qrcode_saved_res,
+                                         is_auth_error=False,
+                                         auth_message=auth_msg,
+                                         auth_error="")
+                return auth_resp
+            else:  # if not qrcode_saved_res:
+                auth_error = ("WEB QRCode Auth Driver: QRCode created "
+                              "but not saved")
                 auth_resp = AuthResponse(is_authorised=False,
                                          requires_action=False,
                                          auth_by_phone=False,
@@ -222,24 +241,11 @@ class TltAuthWebQRCodeDriver(AuthDriver):
                                          auth_via_console=False,
                                          phone_code_hash=None,
                                          qrcode_url=qr_code_url,
+                                         qrcode_fpath=qrcode_saved_res,
                                          is_auth_error=True,
                                          auth_message="",
                                          auth_error=auth_error)
                 return auth_resp
-
-            auth_msg = "WEB QRCode Auth Driver: QRCode created, waiting scanning"
-            auth_resp = AuthResponse(is_authorised=False,
-                                     requires_action=True,
-                                     auth_by_phone=False,
-                                     auth_by_qrcode=True,
-                                     auth_via_console=False,
-                                     phone_code_hash=None,
-                                     qrcode_url=qr_code_url,
-                                     qrcode_fpath=qrcode_saved_res,
-                                     is_auth_error=False,
-                                     auth_message=auth_msg,
-                                     auth_error="")
-            return auth_resp
         except Exception as error:
             error_log = (f"\n\n⚠️ Web QRCode Auth Driver [ERROR]:\n"
                          f"error: {error}\n"
@@ -258,6 +264,7 @@ class TltAuthWebQRCodeDriver(AuthDriver):
                                      auth_via_console=False,
                                      phone_code_hash=None,
                                      qrcode_url=None,
+                                     qrcode_fpath=None,
                                      is_auth_error=True,
                                      auth_message="",
                                      auth_error=error_log)
@@ -285,6 +292,7 @@ class TltAuthWebPhoneDriver(AuthDriver):
                                      auth_via_console=False,
                                      phone_code_hash=None,
                                      qrcode_url=None,
+                                     qrcode_fpath=None,
                                      is_auth_error=False,
                                      auth_message=auth_msg,
                                      auth_error="")
@@ -309,6 +317,7 @@ class TltAuthWebPhoneDriver(AuthDriver):
                                      auth_via_console=False,
                                      phone_code_hash=phone_code_hash,
                                      qrcode_url=None,
+                                     qrcode_fpath=None,
                                      is_auth_error=False,
                                      auth_message=auth_msg,
                                      auth_error="")
@@ -331,6 +340,7 @@ class TltAuthWebPhoneDriver(AuthDriver):
                                      auth_via_console=False,
                                      phone_code_hash=None,
                                      qrcode_url=None,
+                                     qrcode_fpath=None,
                                      is_auth_error=True,
                                      auth_message="",
                                      auth_error=error_log)
@@ -359,6 +369,7 @@ class TltAuthConsoleDriver(AuthDriver):
                                      auth_via_console=True,
                                      phone_code_hash=None,
                                      qrcode_url=None,
+                                     qrcode_fpath=None,
                                      is_auth_error=False,
                                      auth_message=auth_msg,
                                      auth_error="")
@@ -415,6 +426,7 @@ class TltAuthConsoleDriver(AuthDriver):
                                          auth_via_console=True,
                                          phone_code_hash=phone_code_hash,
                                          qrcode_url=None,
+                                         qrcode_fpath=None,
                                          is_auth_error=False,
                                          auth_message=auth_msg,
                                          auth_error="")
@@ -452,6 +464,7 @@ class TltAuthConsoleDriver(AuthDriver):
                                          auth_via_console=True,
                                          phone_code_hash=None,
                                          qrcode_url=qr_code_url,
+                                         qrcode_fpath=None,
                                          is_auth_error=False,
                                          auth_message=auth_msg,
                                          auth_error="")
@@ -466,6 +479,7 @@ class TltAuthConsoleDriver(AuthDriver):
                                          auth_via_console=True,
                                          phone_code_hash=None,
                                          qrcode_url=None,
+                                         qrcode_fpath=None,
                                          is_auth_error=True,
                                          auth_message="",
                                          auth_error=auth_error)
@@ -495,6 +509,7 @@ class TltAuthConsoleDriver(AuthDriver):
                                      auth_via_console=True,
                                      phone_code_hash=None,
                                      qrcode_url=None,
+                                     qrcode_fpath=None,
                                      is_auth_error=True,
                                      auth_message="",
                                      auth_error=error_log)
@@ -520,6 +535,7 @@ class TltAuthConsoleDriver(AuthDriver):
                                      auth_via_console=True,
                                      phone_code_hash=None,
                                      qrcode_url=None,
+                                     qrcode_fpath=None,
                                      is_auth_error=True,
                                      auth_message="",
                                      auth_error=error_log)

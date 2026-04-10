@@ -1,4 +1,6 @@
 import asyncio
+import os.path
+from aiofiles import os as aiofiles_os
 
 from fastapi import APIRouter, HTTPException
 from starlette import status
@@ -159,6 +161,7 @@ async def start_new_telethon_client_router(
         auth_via_console = auth_resp.auth_via_console
         phone_code_hash = auth_resp.phone_code_hash
         qrcode_url = auth_resp.qrcode_url
+        qrcode_fpath = auth_resp.qrcode_fpath
         is_auth_error = auth_resp.is_auth_error
         auth_message = auth_resp.auth_message
         auth_error = auth_resp.auth_error
@@ -183,6 +186,7 @@ async def start_new_telethon_client_router(
                      "auth_via_console": auth_via_console,
                      "phone_code_hash": phone_code_hash,
                      "qrcode_url": qrcode_url,
+                     "qrcode_fpath": qrcode_fpath,
                      "is_auth_error": is_auth_error,
                      "auth_message": auth_message,
                      "auth_error": auth_error},
@@ -210,6 +214,7 @@ async def start_new_telethon_client_router(
               f"auth_via_console: {auth_via_console}\n",
               f"phone_code_hash: {phone_code_hash}\n",
               f"qrcode_url: {qrcode_url}\n",
+              f"qrcode_fpath: {qrcode_fpath}\n",
               f"is_auth_error: {is_auth_error}\n",
               f"auth_message: {auth_message}\n",
               f"auth_error: {auth_error}\n")
