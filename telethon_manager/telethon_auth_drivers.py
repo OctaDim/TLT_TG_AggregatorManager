@@ -17,6 +17,7 @@ class AuthResponse:
     auth_by_phone: bool = False
     auth_by_qrcode: bool = False
     auth_via_console: bool = False
+    phone_code_hash: str | None = None
     qrcode_url: str | None = None
     is_auth_error: bool = False
     auth_message: str = ""
@@ -52,6 +53,7 @@ class TltAuthWebQRAndPhoneDriver(AuthDriver):
                                      auth_by_phone=True,
                                      auth_by_qrcode=True,
                                      auth_via_console=False,
+                                     phone_code_hash=None,
                                      qrcode_url=None,
                                      is_auth_error=False,
                                      auth_message=auth_msg,
@@ -75,6 +77,7 @@ class TltAuthWebQRAndPhoneDriver(AuthDriver):
                 phone=telegram_phone,
                 force_sms=False,  # Deprecated
                 _retry_count=0)
+            phone_code_hash = request_sent_code.phone_code_hash
             print(f"Phone authorisation code sent to phone [OK]:\n"
                   f"request_sent_code: {request_sent_code}\n")
 
@@ -85,6 +88,7 @@ class TltAuthWebQRAndPhoneDriver(AuthDriver):
                                      auth_by_phone=True,
                                      auth_by_qrcode=True,
                                      auth_via_console=False,
+                                     phone_code_hash=phone_code_hash,
                                      qrcode_url=qr_code_url,
                                      is_auth_error=False,
                                      auth_message=auth_msg,
@@ -106,6 +110,7 @@ class TltAuthWebQRAndPhoneDriver(AuthDriver):
                                      auth_by_phone=True,
                                      auth_by_qrcode=True,
                                      auth_via_console=False,
+                                     phone_code_hash=None,
                                      qrcode_url=None,
                                      is_auth_error=True,
                                      auth_message="",
@@ -132,6 +137,7 @@ class TltAuthWebQRCodeDriver(AuthDriver):
                                      auth_by_phone=False,
                                      auth_by_qrcode=True,
                                      auth_via_console=False,
+                                     phone_code_hash=None,
                                      qrcode_url=None,
                                      is_auth_error=False,
                                      auth_message=auth_msg,
@@ -155,6 +161,7 @@ class TltAuthWebQRCodeDriver(AuthDriver):
                                      auth_by_phone=False,
                                      auth_by_qrcode=True,
                                      auth_via_console=False,
+                                     phone_code_hash=None,
                                      qrcode_url=qr_code_url,
                                      is_auth_error=False,
                                      auth_message=auth_msg,
@@ -176,6 +183,7 @@ class TltAuthWebQRCodeDriver(AuthDriver):
                                      auth_by_phone=False,
                                      auth_by_qrcode=True,
                                      auth_via_console=False,
+                                     phone_code_hash=None,
                                      qrcode_url=None,
                                      is_auth_error=True,
                                      auth_message="",
@@ -202,6 +210,7 @@ class TltAuthWebPhoneDriver(AuthDriver):
                                      auth_by_phone=True,
                                      auth_by_qrcode=False,
                                      auth_via_console=False,
+                                     phone_code_hash=None,
                                      qrcode_url=None,
                                      is_auth_error=False,
                                      auth_message=auth_msg,
@@ -216,6 +225,7 @@ class TltAuthWebPhoneDriver(AuthDriver):
                 phone=telegram_phone,
                 force_sms=False,  # Deprecated
                 _retry_count=0)
+            phone_code_hash = request_sent_code.phone_code_hash
             print(f"Phone authorisation code sent to phone [OK]:\n"
                   f"request_sent_code: {request_sent_code}\n")
             auth_msg = "WEB Phone Auth:  Phone code sent to telegram"
@@ -224,6 +234,7 @@ class TltAuthWebPhoneDriver(AuthDriver):
                                      auth_by_phone=True,
                                      auth_by_qrcode=False,
                                      auth_via_console=False,
+                                     phone_code_hash=phone_code_hash,
                                      qrcode_url=None,
                                      is_auth_error=False,
                                      auth_message=auth_msg,
@@ -245,6 +256,7 @@ class TltAuthWebPhoneDriver(AuthDriver):
                                      auth_by_phone=True,
                                      auth_by_qrcode=False,
                                      auth_via_console=False,
+                                     phone_code_hash=None,
                                      qrcode_url=None,
                                      is_auth_error=True,
                                      auth_message="",
@@ -272,6 +284,7 @@ class TltAuthConsoleDriver(AuthDriver):
                                      auth_by_phone=False,
                                      auth_by_qrcode=False,
                                      auth_via_console=True,
+                                     phone_code_hash=None,
                                      qrcode_url=None,
                                      is_auth_error=False,
                                      auth_message=auth_msg,
@@ -302,6 +315,7 @@ class TltAuthConsoleDriver(AuthDriver):
                     phone=telegram_phone,
                     force_sms=False,  # Deprecated
                     _retry_count=0)
+                phone_code_hash = request_sent_code.phone_code_hash
                 print(f"Phone authorisation code sent to phone [OK]:\n"
                       f"request_sent_code: {request_sent_code}\n")
 
@@ -315,7 +329,7 @@ class TltAuthConsoleDriver(AuthDriver):
                     code=phone_auth_code,
                     password=None,
                     bot_token=None,
-                    phone_code_hash=None)
+                    phone_code_hash=phone_code_hash)
                 print(f"Phone user client authorised successfully [OK]:\n"
                       f"request_sent_code: {request_sent_code}\n"
                       f"phone_signed_in_user: {phone_signed_in_user}\n")
@@ -326,6 +340,7 @@ class TltAuthConsoleDriver(AuthDriver):
                                          auth_by_phone=True,
                                          auth_by_qrcode=False,
                                          auth_via_console=True,
+                                         phone_code_hash=phone_code_hash,
                                          qrcode_url=None,
                                          is_auth_error=False,
                                          auth_message=auth_msg,
@@ -362,6 +377,7 @@ class TltAuthConsoleDriver(AuthDriver):
                                          auth_by_phone=False,
                                          auth_by_qrcode=True,
                                          auth_via_console=True,
+                                         phone_code_hash=None,
                                          qrcode_url=qr_code_url,
                                          is_auth_error=False,
                                          auth_message=auth_msg,
@@ -375,7 +391,8 @@ class TltAuthConsoleDriver(AuthDriver):
                                          auth_by_phone=False,
                                          auth_by_qrcode=False,
                                          auth_via_console=True,
-                                         qrcode_url=qr_code_url,
+                                         phone_code_hash=None,
+                                         qrcode_url=None,
                                          is_auth_error=True,
                                          auth_message="",
                                          auth_error=auth_error)
@@ -403,11 +420,11 @@ class TltAuthConsoleDriver(AuthDriver):
                                      auth_by_phone=False,
                                      auth_by_qrcode=False,
                                      auth_via_console=True,
-                                     qrcode_url=qr_code_url,
+                                     phone_code_hash=None,
+                                     qrcode_url=None,
                                      is_auth_error=True,
                                      auth_message="",
                                      auth_error=error_log)
-
             print(error_log)
             return auth_resp
         except Exception as error:
@@ -428,7 +445,8 @@ class TltAuthConsoleDriver(AuthDriver):
                                      auth_by_phone=False,
                                      auth_by_qrcode=False,
                                      auth_via_console=True,
-                                     qrcode_url=qr_code_url,
+                                     phone_code_hash=None,
+                                     qrcode_url=None,
                                      is_auth_error=True,
                                      auth_message="",
                                      auth_error=error_log)

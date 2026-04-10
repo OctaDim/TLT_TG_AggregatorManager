@@ -157,6 +157,7 @@ async def start_new_telethon_client_router(
         auth_by_phone = auth_resp.auth_by_phone
         auth_by_qrcode = auth_resp.auth_by_qrcode
         auth_via_console = auth_resp.auth_via_console
+        phone_code_hash = auth_resp.phone_code_hash
         qrcode_url = auth_resp.qrcode_url
         is_auth_error = auth_resp.is_auth_error
         auth_message = auth_resp.auth_message
@@ -180,6 +181,7 @@ async def start_new_telethon_client_router(
                      "auth_by_phone": auth_by_phone,
                      "auth_by_qrcode": auth_by_qrcode,
                      "auth_via_console": auth_via_console,
+                     "phone_code_hash": phone_code_hash,
                      "qrcode_url": qrcode_url,
                      "is_auth_error": is_auth_error,
                      "auth_message": auth_message,
@@ -206,6 +208,8 @@ async def start_new_telethon_client_router(
               f"auth_by_phone: {auth_by_phone}\n",
               f"auth_by_qrcode: {auth_by_qrcode}\n",
               f"auth_via_console: {auth_via_console}\n",
+              f"phone_code_hash: {phone_code_hash}\n",
+              f"qrcode_url: {qrcode_url}\n",
               f"is_auth_error: {is_auth_error}\n",
               f"auth_message: {auth_message}\n",
               f"auth_error: {auth_error}\n")
