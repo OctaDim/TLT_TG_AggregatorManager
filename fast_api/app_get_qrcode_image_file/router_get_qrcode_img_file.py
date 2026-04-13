@@ -19,7 +19,8 @@ rtr_get_qrcode_image_file = APIRouter(prefix=f"/{base_url_name}",
                                       tags=["TELEGRAM TLT ENDPOINTS"])
 
 
-@rtr_get_qrcode_image_file.post("/get_qrcode_image_file")
+@rtr_get_qrcode_image_file.post("/get_qrcode_image_file",
+                                response_model=None)
 async def get_qrcode_image_file_router(
         auth_data: AuthData,
         web_account_data: InWebAccountData,
@@ -31,6 +32,9 @@ async def get_qrcode_image_file_router(
 
     web_account_id = web_account_data.web_account_id
     web_account_username = web_account_data.web_account_username
+
+    # TODO: Make creation qr code img from url, saving in memory and getting from memory directly, not from file
+    qrcode_url = qrcode_img_data.qr_code_url
 
     qrcode_img_fpath = qrcode_img_data.qr_code_fpath
     qrcode_img_fname = os.path.basename(qrcode_img_fpath)
