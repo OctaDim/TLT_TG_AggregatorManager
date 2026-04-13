@@ -49,7 +49,7 @@ async def complete_tlt_client_phone_auth_router(
         tlt_not_started_config = tlt_manager.not_started_configs.get(tlt_config_name)
 
         if not tlt_manager_client and not tlt_not_started_config:
-            complete_auth_msg = "TLT client and TLT config not found [ERROR]:"
+            complete_auth_msg = "Phone Auth: Client and config not found [ERROR]:"
             json_response = JSONResponse(
                 content={"complete_auth_msg": complete_auth_msg,
                          "username": auth_data.username,
@@ -81,7 +81,7 @@ async def complete_tlt_client_phone_auth_router(
             auth_error = auth_resp.auth_error
 
         if not tlt_client:
-            complete_auth_msg = "TLT client not found or not created [ERROR]:"
+            complete_auth_msg = "Phone Auth: Client not found or not created [ERROR]:"
             json_response = JSONResponse(
                 content={"complete_auth_msg": complete_auth_msg,
                          "username": auth_data.username,
@@ -109,7 +109,7 @@ async def complete_tlt_client_phone_auth_router(
         if before_sign_in_is_authorised:
             tlt_manager.clients[tlt_config_name] = tlt_client
             tlt_manager.not_started_configs.pop(tlt_config_name, None)
-            complete_auth_msg = "TLT client authorised initially [OK]:"
+            complete_auth_msg = "Phone Auth: Client authorised initially [OK]:"
             json_response = JSONResponse(
                 content={"complete_auth_msg": complete_auth_msg,
                          "username": auth_data.username,
@@ -145,10 +145,10 @@ async def complete_tlt_client_phone_auth_router(
         if after_sign_in_is_authorised:
             tlt_manager.clients[tlt_config_name] = tlt_client
             tlt_manager.not_started_configs.pop(tlt_config_name, None)
-            complete_auth_msg = "TLT client signed in and authed by phone [OK]:"
+            complete_auth_msg = "Phone Auth: Client signed in and authed by phone [OK]:"
         else:
             tlt_manager.not_started_configs.pop(tlt_config_name, None)
-            complete_auth_msg = "TLT client signed in and NOT authed by phone [OK]:"
+            complete_auth_msg = "Phone Auth: Client signed in and NOT AUTHED by phone [OK]:"
 
         json_response = JSONResponse(
             content={"complete_auth_msg": complete_auth_msg,
@@ -177,7 +177,7 @@ async def complete_tlt_client_phone_auth_router(
         return json_response
     except Exception as error:
         log_text = (
-            f"Router Complete authorisation by phone [ERROR]:\n"
+            f"Router Phone Auth: Complete client authorisation by Phone [ERROR]:\n"
             f"error: {error}\n"
             f"web_account_id: {web_account_id}\n"
             f"web_account_username: {web_account_username}\n"

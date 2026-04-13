@@ -70,7 +70,7 @@ class TltAuthWebQRAndPhoneDriver(AuthDriver):
         qr_code_url = None
         try:
             print("Telethon user client auth via WEB QR+Phone driver:")
-            # By QRCode
+            # By QRCode via WEB (QRCode+Phone)
             qr_code_login = await user_client.qr_login(
                 ignored_ids=None)
             qr_code_url = qr_code_login.url
@@ -96,7 +96,7 @@ class TltAuthWebQRAndPhoneDriver(AuthDriver):
                                       qrcode_back_color="white"),
                 timeout=qrcode_thread_timeout)
 
-            # By Phone code
+            # By Phone via WEB (QRCode+Phone)
             request_sent_code = await user_client.send_code_request(
                 phone=telegram_phone,
                 force_sms=False,  # Deprecated
@@ -191,6 +191,7 @@ class TltAuthWebQRCodeDriver(AuthDriver):
         qr_code_login = None
         qr_code_url = None
         try:
+            # By QRCode via WEB
             print("Telethon user client auth via WEB QRCode driver:")
             qr_code_login = await user_client.qr_login(
                 ignored_ids=None)
@@ -301,6 +302,7 @@ class TltAuthWebPhoneDriver(AuthDriver):
         qr_code_login = None
         qr_code_url = None
         try:
+            # By Phone via WEB
             print("Telethon user client auth via WEB Phone driver:")
             request_sent_code = await user_client.send_code_request(
                 phone=telegram_phone,
@@ -393,7 +395,7 @@ class TltAuthConsoleDriver(AuthDriver):
                 fut=asyncio.to_thread(input, input_text),
                 timeout=auth_thread_timeout)
 
-            if auth_type_choice == "1" and telegram_phone:
+            if auth_type_choice == "1" and telegram_phone:  # By Phone via Console
                 print("Telethon user client authorising via phone:")
                 request_sent_code = await user_client.send_code_request(
                     phone=telegram_phone,
@@ -431,7 +433,7 @@ class TltAuthConsoleDriver(AuthDriver):
                                          auth_message=auth_msg,
                                          auth_error="")
                 return auth_resp
-            elif auth_type_choice == "2":
+            elif auth_type_choice == "2":  # By QRCode via Console
                 print("Telethon user client authorisation via QR code:")
                 qr_code_login = await user_client.qr_login(
                     ignored_ids=None)
