@@ -28,6 +28,8 @@ from fast_api.app_complete_auth_qrcode.router_complete_auth_qrcode import (
     rtr_complete_client_qrcode_auth)
 from fast_api.app_find_telegram_users_data.router_find_telegram_data import (
     rtr_find_telegram_users_data)
+from fast_api.app_get_qrcode_image_file.router_get_qrcode_img_file import (
+    rtr_get_qrcode_image_file)
 from fast_api.app_send_message_by_user_id.router_send_message import (
     rtr_send_telegram_message)
 from fast_api.app_start_new_telethon_client.router_start_new_tlt_client import (
@@ -52,6 +54,7 @@ routers_list = [
     rtr_tlt_configs_by_web_account,
     rtr_complete_client_phone_auth,
     rtr_complete_client_qrcode_auth,
+    rtr_get_qrcode_image_file,
 
 ]
 
