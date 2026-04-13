@@ -1,8 +1,7 @@
 from pydantic import BaseModel
 
 
-class InCompleteAuthPhoneData(BaseModel):
+class InCompleteAuthQRCodeData(BaseModel):
     telethon_config_name: str
-    telegram_phone: str
-    telegram_phone_code: str
-    phone_code_hash: str
+    qr_code_file_path: str
+    qr_code_url: str
