@@ -1,6 +1,4 @@
 import asyncio
-import os.path
-from aiofiles import os as aiofiles_os
 
 from fastapi import APIRouter, HTTPException
 from starlette import status
