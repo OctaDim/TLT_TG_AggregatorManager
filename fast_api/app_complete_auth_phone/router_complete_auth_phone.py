@@ -202,8 +202,9 @@ async def complete_tlt_client_phone_auth_router(
               f"auth_error: {auth_error}\n")
         return json_response
     except Exception as error:
-        complete_auth_msg = (f"Router Phone Auth: Complete client auth by Phone [ERROR]: \n"
-                             f"error: {error}")
+        complete_auth_msg = (
+            f"Router Phone Auth: Complete client auth by Phone [ERROR]: \n"
+            f"error: {error}")
         json_response = JSONResponse(
             content={"complete_auth_msg": complete_auth_msg,
                      "username": auth_data.username,
