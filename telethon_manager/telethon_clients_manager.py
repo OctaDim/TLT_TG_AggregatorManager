@@ -5,6 +5,7 @@ from typing import Dict, List, Literal, Callable, Tuple, Union
 
 from telethon import TelegramClient
 from telethon.sessions import StringSession, SQLiteSession
+from telethon.tl.custom import QRLogin
 
 from configs.console_colors import CONSOLE_COLORS
 from configs.enums import (
@@ -20,8 +21,9 @@ from db_postgres.postgres_queries.qry_update_telethon_session_data import (
     update_telethon_session_data_qry)
 from meta_classes.singlton_meta import SingletonMeta
 from telethon_manager.telethon_auth_drivers import (
-    AuthDriver, TltAuthConsoleDriver, TltAuthWebPhoneDriver,
-    TltAuthWebQRCodeDriver, AuthResponse, TltAuthWebQRAndPhoneDriver)
+    TltAuthConsoleDriver, TltAuthWebPhoneDriver,
+    TltAuthWebQRCodeDriver, TltAuthWebQRAndPhoneDriver, AuthDriver)
+from telethon_manager.telethon_auth_response import AuthResponse
 from telethon_manager.telethon_client_config import TelethonConfig
 from telethon_manager.telethon_register_handlers import (
     add_all_telethon_client_handlers)
@@ -31,13 +33,12 @@ from utils_specific.get_valid_proxy_config import get_valid_proxy_tuple
 
 
 class TelethonManagerSingleton(metaclass=SingletonMeta):
-    _obj_instance = None
-
     def __init__(self):
         self.clients: Dict[str, TelegramClient] = {}
         self.not_started_configs: Dict[str, TelethonConfig] = {}
         self.event_handlers: Dict[str, List[Callable]] = {}
         self.running_tasks: Dict[str, asyncio.Task] = {}
+        self.qrcode_logins: Dict[str, QRLogin] = {}
         self.running_state = False
 
     async def get_postgres_db_tlt_configs(self) -> List[TelethonConfig]:
