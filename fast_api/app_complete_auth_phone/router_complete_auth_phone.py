@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from starlette import status
 from starlette.responses import JSONResponse
 
@@ -36,8 +36,7 @@ async def complete_tlt_client_phone_auth_router(
     telegram_phone_code = complete_auth_data.telegram_phone_code
     phone_code_hash = complete_auth_data.phone_code_hash
 
-    tlt_manager_client = None
-    tlt_client = None
+    phone_signed_in_user = None
     before_sign_in_is_authorised = False
     after_sign_in_is_authorised = False
     auth_message = ""
@@ -134,12 +133,39 @@ async def complete_tlt_client_phone_auth_router(
                   f"auth_error: {auth_error}\n")
             return json_response
 
-        phone_signed_in_user = await tlt_client.sign_in(
-            phone=telegram_phone,
-            code=telegram_phone_code,
-            password=None,
-            bot_token=None,
-            phone_code_hash=phone_code_hash)
+        try:
+            phone_signed_in_user = await tlt_client.sign_in(
+                phone=telegram_phone,
+                code=telegram_phone_code,
+                password=None,
+                bot_token=None,
+                phone_code_hash=phone_code_hash)
+        except Exception as sign_in_error:
+            complete_auth_msg = (f"Phone Auth: Client sign in by phone [ERROR]: "
+                                 f"sign_in_error: {sign_in_error} \n")
+            json_response = JSONResponse(
+                content={"complete_auth_msg": complete_auth_msg,
+                         "username": auth_data.username,
+                         "web_account_id": web_account_id,
+                         "web_account_username": web_account_username,
+                         "tlt_config_name": tlt_config_name,
+                         "telegram_phone": telegram_phone,
+                         "telegram_phone_code": telegram_phone_code,
+                         "before_sign_in_is_authorised": before_sign_in_is_authorised,
+                         "after_sign_in_is_authorised": after_sign_in_is_authorised,
+                         "auth_message": auth_message,
+                         "auth_error": auth_error},
+                status_code=status.HTTP_200_OK)
+            print(f"{complete_auth_msg}\n"
+                  f"tlt_config_name: {tlt_config_name}\n"
+                  f"telegram_phone: {telegram_phone}"
+                  f"telegram_phone_code: {telegram_phone_code}\n"
+                  f"tlt_manager_client: {tlt_manager_client}\n"
+                  f"tlt_client: {tlt_client}\n"
+                  f"before_sign_in_is_authorised: {before_sign_in_is_authorised}\n"
+                  f"auth_message: {auth_message}\n"
+                  f"auth_error: {auth_error}\n")
+            return json_response
 
         after_sign_in_is_authorised = await tlt_client.is_user_authorized()
         if after_sign_in_is_authorised:
@@ -176,21 +202,20 @@ async def complete_tlt_client_phone_auth_router(
               f"auth_error: {auth_error}\n")
         return json_response
     except Exception as error:
-        log_text = (
-            f"Router Phone Auth: Complete client authorisation by Phone [ERROR]:\n"
-            f"error: {error}\n"
-            f"web_account_id: {web_account_id}\n"
-            f"web_account_username: {web_account_username}\n"
-            f"tlt_config_name: {tlt_config_name}\n"
-            f"telegram_phone: {telegram_phone}\n"
-            f"telegram_phone_code: {telegram_phone_code}\n"
-            f"tlt_manager_client: {tlt_manager_client}\n"
-            f"tlt_client: {tlt_client}\n"
-            f"before_sign_in_is_authorised: {before_sign_in_is_authorised}\n"
-            f"after_sign_in_is_authorised: {after_sign_in_is_authorised}\n"
-            f"auth_message: {auth_message}\n"
-            f"auth_error: {auth_error}\n")
-        print(log_text)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=log_text)
+        complete_auth_msg = (f"Router Phone Auth: Complete client auth by Phone [ERROR]: \n"
+                             f"error: {error}")
+        json_response = JSONResponse(
+            content={"complete_auth_msg": complete_auth_msg,
+                     "username": auth_data.username,
+                     "web_account_id": web_account_id,
+                     "web_account_username": web_account_username,
+                     "tlt_config_name": tlt_config_name,
+                     "telegram_phone": telegram_phone,
+                     "telegram_phone_code": telegram_phone_code,
+                     "phone_signed_in_user": phone_signed_in_user,
+                     "before_sign_in_is_authorised": before_sign_in_is_authorised,
+                     "after_sign_in_is_authorised": after_sign_in_is_authorised,
+                     "auth_message": auth_message,
+                     "auth_error": auth_error},
+            status_code=status.HTTP_200_OK)
+        return json_response
