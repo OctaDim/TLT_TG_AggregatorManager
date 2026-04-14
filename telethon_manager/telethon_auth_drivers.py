@@ -2,32 +2,19 @@ import asyncio
 from abc import ABC
 
 import qrcode
-from pydantic.dataclasses import dataclass
 from telethon import TelegramClient
 
 from configs.enums import QR_CODE_ERROR_CORRECTION
 from configs.environments import BASE_DIR
 from configs.options import TELETHON_OPTIONS
+from telethon_manager.telethon_auth_response import AuthResponse
 from telethon_manager.telethon_client_config import TelethonConfig
+from telethon_manager.telethon_qr_code_logins import (
+    QRCodeLoginsSingleton)
 from utils_common.create_save_qrcode_image_file import save_qrcode_image
 from utils_common.normalized_path import get_full_file_normal_path
 from utils_common.validate_dir_file import (
     check_create_dir_by_filename_async)
-
-
-@dataclass
-class AuthResponse:
-    is_authorised: bool = False
-    requires_action: bool = False
-    auth_by_phone: bool = False
-    auth_by_qrcode: bool = False
-    auth_via_console: bool = False
-    phone_code_hash: str | None = None
-    qrcode_url: str | None = None
-    qrcode_fpath: str | None = None
-    is_auth_error: bool = False
-    auth_message: str = ""
-    auth_error: str = ""
 
 
 class AuthDriver(ABC):
@@ -87,6 +74,9 @@ class TltAuthWebQRAndPhoneDriver(AuthDriver):
         try:  # By QRCode via WEB (QRCode+Phone)
             qr_code_login = await user_client.qr_login(
                 ignored_ids=None)
+            qr_code_logins = QRCodeLoginsSingleton()
+            qr_code_logins.save_qr_login(config_name=config_name,
+                                         qr_login_obj=qr_code_login)
             qr_code_url = qr_code_login.url
             print(f"Authorisation QRCode created successfully [OK]:\n"
                   f"qr_code_login: {qr_code_login}\n"
@@ -208,11 +198,13 @@ class TltAuthWebQRCodeDriver(AuthDriver):
 
         qr_code_login = None
         qr_code_url = None
-        try:
-            # By QRCode via WEB
+        try:  # By QRCode via WEB
             print("Telethon user client auth via WEB QRCode driver:")
             qr_code_login = await user_client.qr_login(
                 ignored_ids=None)
+            qr_code_logins = QRCodeLoginsSingleton()
+            qr_code_logins.save_qr_login(config_name=config_name,
+                                         qr_login_obj=qr_code_login)
             qr_code_url = qr_code_login.url
             print(f"Authorisation QRCode created successfully [OK]:\n"
                   f"qr_code_login: {qr_code_login}\n"
@@ -319,8 +311,7 @@ class TltAuthWebPhoneDriver(AuthDriver):
 
         qr_code_login = None
         qr_code_url = None
-        try:
-            # By Phone via WEB
+        try:  # By Phone via WEB
             print("Telethon user client auth via WEB Phone driver:")
             request_sent_code = await user_client.send_code_request(
                 phone=telegram_phone,
