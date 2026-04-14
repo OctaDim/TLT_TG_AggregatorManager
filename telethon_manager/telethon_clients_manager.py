@@ -752,3 +752,68 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                 print(f"\t{cur_error}")
         else:
             print("All Telethon clients asyncio tasks canceled successfully [OK]\n")
+
+    async def disconnect_tlt_client(self, config_name: str) -> bool:
+        if config_name not in self.clients:
+            print(f"{'>' * 55}\n{'>' * 55}\n"
+                  f"Telethon client not found and skipped [OK]:\n"
+                  f"config_name: {config_name}\n")
+            return True
+
+        try:
+            tlt_client = self.clients[config_name]
+            client_is_connected = tlt_client.is_connected()
+            if not client_is_connected:
+                print(f"{'>' * 55}\n{'>' * 55}\n"
+                      f"Already disconnected Telethon client skipped [OK]:\n"
+                      f"config_name: {config_name}\n"
+                      f"client_is_connected: {client_is_connected}\n")
+                return True
+
+            await tlt_client.disconnect()
+            client_is_connected = tlt_client.is_connected()
+            print(f"{'>' * 55}\n{'>' * 55}\n"
+                  f"Telethon client disconnected [OK]:\n"
+                  f"config_name: {config_name}\n"
+                  f"client_is_connected: {client_is_connected}\n")
+            return True
+        except Exception as error:
+            print(f"Telethon client disconnection [ERROR]:\n"
+                  f"error: {error}\n"
+                  f"config_name: {config_name}\n")
+            return False
+
+    async def cancel_tlt_async_task(self, config_name: str) -> bool:
+        if config_name not in self.running_tasks:
+            return True
+        try:
+
+            tlt_async_task = self.running_tasks[config_name]
+            if tlt_async_task.done():
+                print(f"{'>' * 55}\n{'>' * 55}\n"
+                      f"Already done Telethon client asyncio task skipped [OK]:\n"
+                      f"config_name: {config_name}\n"
+                      f"tlt_async_task.cancelled(): {tlt_async_task.cancelled()}\n"
+                      f"tlt_async_task.done(): {tlt_async_task.done()}\n")
+                return True
+
+            if tlt_async_task.cancelled():
+                print(f"{'>' * 55}\n{'>' * 55}\n"
+                      f"Already canceled Telethon client asyncio task skipped [OK]:\n"
+                      f"config_name: {config_name}\n"
+                      f"tlt_async_task.cancelled(): {tlt_async_task.cancelled()}\n"
+                      f"tlt_async_task.done(): {tlt_async_task.done()}\n")
+                return True
+
+            tlt_async_task.cancel()
+            print(f"{'>' * 55}\n{'>' * 55}\n"
+                  f"Telethon client async task canceled [OK]:\n"
+                  f"config_name: {config_name}\n"
+                  f"tlt_async_task.cancelled(): {tlt_async_task.cancelled()}\n"
+                  f"tlt_async_task.done(): {tlt_async_task.done()}\n")
+            return True
+        except Exception as error:
+            print(f"Canceling Telethon client asyncio task [ERROR]:\n"
+                  f"error: {error}\n"
+                  f"config_name: {config_name}\n")
+            return False
