@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from starlette import status
 from starlette.responses import JSONResponse
 
-from configs.options import API_OPTIONS
+from configs.options import API_OPTIONS, TELETHON_OPTIONS
 from fast_api.app_auth.funcs_auth import (
     verify_auth_username_password)
 from fast_api.app_auth.scheme_auth import (
@@ -75,7 +75,9 @@ async def complete_tlt_client_phone_auth_router(
         else:
             tlt_client, auth_resp = await tlt_manager.start_user_client(
                 telethon_config=tlt_not_started_config,
-                skip_authorisation=True)
+                skip_authorisation=True,
+                connect_retries=TELETHON_OPTIONS.CLIENT_CONNECT_RETRIES,
+                connect_delay_sec=TELETHON_OPTIONS.CLIENT_CONNECT_DELAY_SEC)
             auth_message = auth_resp.auth_message
             auth_error = auth_resp.auth_error
 

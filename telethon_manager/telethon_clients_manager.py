@@ -1,4 +1,5 @@
 import asyncio
+import sqlite3
 import weakref
 from asyncio import Task
 from typing import Dict, List, Literal, Callable, Tuple, Union
@@ -208,7 +209,9 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                       f"config_name: {config_name}\n")
                 tlt_client, auth_resp = await self.start_user_client(
                     telethon_config=telethon_config,
-                    skip_authorisation=False)
+                    skip_authorisation=False,
+                    connect_retries=TELETHON_OPTIONS.CLIENT_CONNECT_RETRIES,
+                    connect_delay_sec=TELETHON_OPTIONS.CLIENT_CONNECT_DELAY_SEC)
             elif account_type == TELEGRAM_ACCOUNT_TYPE.BOT:
                 print(f"{'>' * 55}\n{'>' * 55}\n"
                       f">>>>>>> START SINGLE TELEGRAM BOT TELETHON CLIENT:\n"
@@ -301,7 +304,9 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
 
     async def start_user_client(
             self, telethon_config: TelethonConfig,
-            skip_authorisation: bool = False
+            skip_authorisation: bool = False,
+            connect_retries: int | None = 60,
+            connect_delay_sec: int | None = 1
     ) -> Tuple[Union[TelegramClient | None], AuthResponse]:
         print("Creating existing or new Telethon session:")
         session_str = telethon_config.session_string
@@ -320,6 +325,9 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
             session_full_file_path = get_full_file_normal_path(
                 all_dir_str_parts=[BASE_DIR, telethon_sessions_dir],
                 file_name_with_ext=new_session_id)
+            # if os.path.isfile(session_full_file_path):
+            #     os.remove(session_full_file_path)
+
             session = SQLiteSession(session_id=session_full_file_path)
             print(f"New Telethon session created via SQLiteSession [OK]:\n"
                   f"session_str_info: {session_str_info}\n"
@@ -358,7 +366,17 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
         print(f"Telethon User client state before connect():\n"
               f"before_connect_is_connected: {before_connect_is_connected}\n")
         if not before_connect_is_connected:
-            await user_client.connect()
+            connection_retries = 1 if not connect_retries else connect_retries
+            for cur_attempt in range(connection_retries):
+                try:
+                    await user_client.connect()
+                    break  # if connection executed successfully
+                except sqlite3.OperationalError as locked_db_error:
+                    if cur_attempt + 1 < connection_retries:
+                        break
+                    print(f"Waiting client connection.....\n"
+                          f"locked_db_error: {locked_db_error}\n")
+                    await asyncio.sleep(connect_delay_sec)
 
         after_connect_is_connected = user_client.is_connected()
         after_connect_is_authorised = await user_client.is_user_authorized()

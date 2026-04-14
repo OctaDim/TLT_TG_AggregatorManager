@@ -1,8 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from starlette import status
 from starlette.responses import JSONResponse
 
-from configs.options import API_OPTIONS
+from configs.options import API_OPTIONS, TELETHON_OPTIONS
 from fast_api.app_auth.funcs_auth import (
     verify_auth_username_password)
 from fast_api.app_auth.scheme_auth import (
@@ -12,6 +12,7 @@ from fast_api.app_complete_auth_qrcode.scheme_complete_auth_qrcode import (
 from fast_api.app_web_account.scheme_web_account import InWebAccountData
 from telethon_manager.telethon_clients_manager import (
     TelethonManagerSingleton)
+from telethon_manager.telethon_qr_code_logins import QRCodeLoginsSingleton
 
 base_url_name = API_OPTIONS.API_BASE_URL_NAME
 rtr_complete_client_qrcode_auth = APIRouter(prefix=f"/{base_url_name}",
@@ -35,8 +36,8 @@ async def complete_tlt_client_qrcode_auth_router(
     qr_code_url = complete_auth_data.qr_code_url
     qr_code_file_path = complete_auth_data.qr_code_file_path
 
-    tlt_manager_client = None
-    tlt_client = None
+    qrcode_login = None
+    qrcode_logged_in_user = None
     before_sign_in_is_authorised = False
     after_sign_in_is_authorised = False
     auth_message = ""
@@ -45,7 +46,8 @@ async def complete_tlt_client_qrcode_auth_router(
     try:
         tlt_manager = TelethonManagerSingleton()  # Singleton
         tlt_manager_client = tlt_manager.clients.get(tlt_config_name)
-        tlt_not_started_config = tlt_manager.not_started_configs.get(tlt_config_name)
+        tlt_not_started_configs = tlt_manager.not_started_configs
+        tlt_not_started_config = tlt_not_started_configs.get(tlt_config_name)
 
         if not tlt_manager_client and not tlt_not_started_config:
             complete_auth_msg = "QRCode Auth: Client and config not found [ERROR]:"
@@ -75,7 +77,9 @@ async def complete_tlt_client_qrcode_auth_router(
         else:
             tlt_client, auth_resp = await tlt_manager.start_user_client(
                 telethon_config=tlt_not_started_config,
-                skip_authorisation=True)
+                skip_authorisation=True,
+                connect_retries=TELETHON_OPTIONS.CLIENT_CONNECT_RETRIES,
+                connect_delay_sec=TELETHON_OPTIONS.CLIENT_CONNECT_DELAY_SEC)
             auth_message = auth_resp.auth_message
             auth_error = auth_resp.auth_error
 
@@ -133,17 +137,47 @@ async def complete_tlt_client_qrcode_auth_router(
                   f"auth_error: {auth_error}\n")
             return json_response
 
-        # TODO: Make client understands, that qrcode was scanned
-        # qrcode_signed_in_user = await qr_code_login.wait()
+        qrcode_logins = QRCodeLoginsSingleton()
+        qrcode_login = qrcode_logins.get_qr_login(config_name=tlt_config_name)
+        try:
+            qrcode_logged_in_user = await qrcode_login.wait()
+        except Exception as wait_error:
+            complete_auth_msg = (f"QRCode Auth: Client wait qr code [ERROR]: "
+                                 f"wait_error: {wait_error} \n")
+            json_response = JSONResponse(
+                content={"complete_auth_msg": complete_auth_msg,
+                         "username": auth_data.username,
+                         "web_account_id": web_account_id,
+                         "web_account_username": web_account_username,
+                         "tlt_config_name": tlt_config_name,
+                         "qr_code_url": qr_code_url,
+                         "qr_code_file_path": qr_code_file_path,
+                         "before_sign_in_is_authorised": before_sign_in_is_authorised,
+                         "after_sign_in_is_authorised": after_sign_in_is_authorised,
+                         "auth_message": auth_message,
+                         "auth_error": auth_error},
+                status_code=status.HTTP_200_OK)
+            print(f"{complete_auth_msg}\n"
+                  f"tlt_config_name: {tlt_config_name}\n"
+                  f"qr_code_url: {qr_code_url}"
+                  f"qr_code_file_path: {qr_code_file_path}\n"
+                  f"tlt_manager_client: {tlt_manager_client}\n"
+                  f"tlt_client: {tlt_client}\n"
+                  f"before_sign_in_is_authorised: {before_sign_in_is_authorised}\n"
+                  f"auth_message: {auth_message}\n"
+                  f"auth_error: {auth_error}\n")
+            return json_response
 
         after_sign_in_is_authorised = await tlt_client.is_user_authorized()
         if after_sign_in_is_authorised:
+            qrcode_logins.remove_qr_login(config_name=tlt_config_name)
             tlt_manager.clients[tlt_config_name] = tlt_client
             tlt_manager.not_started_configs.pop(tlt_config_name, None)
-            complete_auth_msg = "QRCode Auth: Client signed in and authed by phone [OK]:"
+            complete_auth_msg = "QRCode Auth: Client authed by QRCode [OK]:"
+
         else:
             tlt_manager.not_started_configs.pop(tlt_config_name, None)
-            complete_auth_msg = "QRCode Auth: Client signed in and NOT AUTHED by phone [OK]:"
+            complete_auth_msg = "QRCode Auth: Client NOT AUTHED by QRCode [OK]:"
 
         json_response = JSONResponse(
             content={"complete_auth_msg": complete_auth_msg,
@@ -164,29 +198,29 @@ async def complete_tlt_client_qrcode_auth_router(
               f"qr_code_file_path: {qr_code_file_path}\n"
               f"tlt_manager_client: {tlt_manager_client}\n"
               f"tlt_client: {tlt_client}\n"
-              # TODO: How to complete authorisation by qrcode???
-              # "phone_signed_in_user: {phone_signed_in_user}\n"
+              f"qrcode_logged_in_user: {qrcode_logged_in_user}\n"
               f"before_sign_in_is_authorised: {before_sign_in_is_authorised}\n"
               f"after_sign_in_is_authorised: {after_sign_in_is_authorised}\n"
               f"auth_message: {auth_message}\n"
               f"auth_error: {auth_error}\n")
         return json_response
     except Exception as error:
-        log_text = (
-            f"Router QRCode Auth: Complete client authorisation by QRcode [ERROR]:\n"
-            f"error: {error}\n"
-            f"web_account_id: {web_account_id}\n"
-            f"web_account_username: {web_account_username}\n"
-            f"tlt_config_name: {tlt_config_name}\n"
-            f"qr_code_url: {qr_code_url}\n"
-            f"qr_code_file_path: {qr_code_file_path}\n"
-            f"tlt_manager_client: {tlt_manager_client}\n"
-            f"tlt_client: {tlt_client}\n"
-            f"before_sign_in_is_authorised: {before_sign_in_is_authorised}\n"
-            f"after_sign_in_is_authorised: {after_sign_in_is_authorised}\n"
-            f"auth_message: {auth_message}\n"
-            f"auth_error: {auth_error}\n")
-        print(log_text)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=log_text)
+        complete_auth_msg = (
+            f"Router QRCode Auth: Complete client auth by QRcode [ERROR]: \n"
+            f"error: {error}")
+        json_response = JSONResponse(
+            content={"complete_auth_msg": complete_auth_msg,
+                     "username": auth_data.username,
+                     "web_account_id": web_account_id,
+                     "web_account_username": web_account_username,
+                     "tlt_config_name": tlt_config_name,
+                     "qr_code_url": qr_code_url,
+                     "qr_code_file_path": qr_code_file_path,
+                     "qrcode_login": qrcode_login,
+                     "qrcode_logged_in_user": qrcode_logged_in_user,
+                     "before_sign_in_is_authorised": before_sign_in_is_authorised,
+                     "after_sign_in_is_authorised": after_sign_in_is_authorised,
+                     "auth_message": auth_message,
+                     "auth_error": auth_error},
+            status_code=status.HTTP_200_OK)
+        return json_response

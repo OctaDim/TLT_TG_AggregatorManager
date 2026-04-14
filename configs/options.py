@@ -112,8 +112,12 @@ class TELETHON_OPTIONS:
 
     MESSAGES_PARSING_MODE: Literal["markdown", "html"] = "markdown"
     TEMP_AUTH_QRCODE_IMGS_DIR: str = "TEMP_QRCODE_IMAGES"
-    WAIT_FOR_QRCODE_OPS_TIMEOUT_SEC: int = 10
+    WAIT_FOR_QRCODE_OPS_TIMEOUT_SEC: int = 300
     QR_CODE_IMAGE_SIZE = 300
+
+    CLIENT_CONNECT_RETRIES: int = 30
+    CLIENT_CONNECT_DELAY_SEC: int | float = 1
+
 
 
 @dataclass(frozen=True)
