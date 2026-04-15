@@ -6,6 +6,7 @@ from starlette.responses import JSONResponse
 
 from configs.console_colors import CONSOLE_COLORS
 from configs.options import API_OPTIONS
+from db_postgres.postgres_queries.qry_update_telethon_active_status import update_telethon_active_status_qry
 from fast_api.app_auth.funcs_auth import (
     verify_auth_username_password)
 from fast_api.app_auth.scheme_auth import (
@@ -36,32 +37,37 @@ async def stop_clear_tlt_clients_router(
 
     tlt_configs_names = stop_clients_data.telethon_configs_names
 
-    stopped_clients = []
+    cleared_clients = []
     skipped_clients = []
-    stopped_async_tasks = []
+    cleared_async_tasks = []
     skipped_async_tasks = []
-    stopped_clients_logs: Dict[str, Dict[str, str]] = {}
+    clear_clients_logs: Dict[str, Dict[str, str]] = {}
 
     tlt_manager = TelethonManagerSingleton()  # Singleton
 
     for cur_config_name in tlt_configs_names:
-        stop_client_res, stop_client_log = await tlt_manager.disconnect_tlt_client(
+        disconn_res, disconn_log = await tlt_manager.disconnect_tlt_client(
             config_name=cur_config_name)
-        if stop_client_res:
-            stopped_clients.append(cur_config_name)
+        if disconn_res:
+            cleared_clients.append(cur_config_name)
+            tlt_manager.clients.pop(cur_config_name, None)
+            update_data = {"active": False}
+            await update_telethon_active_status_qry(
+                telethon_config_name=cur_config_name,
+                update_data=update_data)
         else:
             skipped_clients.append(cur_config_name)
 
-        stop_async_res, stop_async_log = await tlt_manager.cancel_tlt_async_task(
+        clear_async_res, clear_async_log = await tlt_manager.cancel_tlt_async_task(
             config_name=cur_config_name)
-        if stop_async_res:
-            stopped_async_tasks.append(cur_config_name)
+        if clear_async_res:
+            cleared_async_tasks.append(cur_config_name)
         else:
             skipped_async_tasks.append(cur_config_name)
 
-        stopped_clients_logs[cur_config_name] = {
-            "stop_client_log": stop_client_log,
-            "stop_async_log": stop_async_log}
+        clear_clients_logs[cur_config_name] = {
+            "clear_client_log": disconn_log,
+            "clear_async_log": clear_async_log}
 
         tlt_manager.not_started_configs.pop(cur_config_name, None)
         tlt_manager.event_handlers.pop(cur_config_name, None)
@@ -74,9 +80,9 @@ async def stop_clear_tlt_clients_router(
     magenta_clr = CONSOLE_COLORS.BRIGHT_MAGENTA
 
     all_configs_total = len(tlt_configs_names)
-    print(f"\n{yellow_clr}All stopped clients "
-          f"[{len(stopped_clients)}/{all_configs_total}]:{reset_clr}")
-    for cur_stopped_config in stopped_clients:
+    print(f"\n{yellow_clr}All cleared clients "
+          f"[{len(cleared_clients)}/{all_configs_total}]:{reset_clr}")
+    for cur_stopped_config in cleared_clients:
         print(f"{yellow_clr}{cur_stopped_config}{reset_clr}")
 
     print(f"\n{magenta_clr}All skipped clients "
@@ -84,9 +90,9 @@ async def stop_clear_tlt_clients_router(
     for cur_skipped_config in skipped_clients:
         print(f"{magenta_clr}{cur_skipped_config}{reset_clr}")
 
-    print(f"\n{blue_clr}All stopped async tasks "
-          f"[{len(stopped_async_tasks)}/{all_configs_total}]:{reset_clr}")
-    for cur_stopped_async_task in stopped_async_tasks:
+    print(f"\n{blue_clr}All cleared async tasks "
+          f"[{len(cleared_async_tasks)}/{all_configs_total}]:{reset_clr}")
+    for cur_stopped_async_task in cleared_async_tasks:
         print(f"{blue_clr}{cur_stopped_async_task}{reset_clr}")
 
     print(f"\n{green_clr}All skipped async tasks "
@@ -95,11 +101,11 @@ async def stop_clear_tlt_clients_router(
         print(f"{green_clr}{cur_skipped_async_task}{reset_clr}")
 
     if not tlt_configs_names:
-        stop_message = "Empty TLT clients configs list to stop [OK]:"
-    elif stopped_clients and not skipped_clients:
-        stop_message = "All TLT clients stopped successfully [OK]:"
-    elif stopped_clients and skipped_clients:
-        stop_message = "TLT clients stopped partly [OK]:"
+        stop_message = "Empty TLT clients configs list to clear [OK]:"
+    elif cleared_clients and not skipped_clients:
+        stop_message = "All TLT clients cleared successfully [OK]:"
+    elif cleared_clients and skipped_clients:
+        stop_message = "TLT clients cleared partly [OK]:"
     else:
         stop_message = "All TLT clients not stopped [ERROR]:"
 
@@ -109,17 +115,17 @@ async def stop_clear_tlt_clients_router(
                  "web_account_id": web_account_id,
                  "web_account_username": web_account_username,
                  "tlt_configs_names": tlt_configs_names,
-                 "stopped_clients": stopped_clients,
+                 "cleared_clients": cleared_clients,
                  "skipped_clients": skipped_clients,
-                 "stopped_async_tasks": stopped_async_tasks,
+                 "cleared_async_tasks": cleared_async_tasks,
                  "skipped_async_tasks": skipped_async_tasks,
-                 "stopped_clients_logs": stopped_clients_logs},
+                 "clear_clients_logs": clear_clients_logs},
         status_code=status.HTTP_200_OK)
     print(f"{stop_message}\n"
           f"tlt_configs_names: {tlt_configs_names}\n"
-          f"stopped_clients: {stopped_clients}\n"
+          f"cleared_clients: {cleared_clients}\n"
           f"skipped_clients: {skipped_clients}\n"
-          f"stopped_async_tasks: {stopped_async_tasks}\n"
+          f"cleared_async_tasks: {cleared_async_tasks}\n"
           f"skipped_async_tasks: {skipped_async_tasks}\n"
-          f"stopped_clients_logs: {stopped_clients_logs}\n")
+          f"clear_clients_logs: {clear_clients_logs}\n")
     return json_response
