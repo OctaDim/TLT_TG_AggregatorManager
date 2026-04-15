@@ -68,7 +68,8 @@ async def start_new_telethon_client_router(
             "tg_personal_phone": telegram_phone,
             "tg_bot_token": bot_token,
             "telethon_is_active": True,
-            "authorisation_type": auth_type}
+            "authorisation_type": auth_type,
+            "telethon_config_name": new_config_name}
 
         new_tlt_config_obj: TelethonConfigModel  # just to fix Pycharm annotation warning bug
         new_tlt_config_obj = await cache_new_telethon_config_qry(
@@ -97,6 +98,7 @@ async def start_new_telethon_client_router(
             bot_token=bot_token,
             phone=telegram_phone,
             proxy=None,
+            telethon_is_active=True,
             is_active=True,
             authorisation_type=auth_type)
 

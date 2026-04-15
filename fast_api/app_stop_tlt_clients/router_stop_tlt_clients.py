@@ -1,8 +1,12 @@
+from typing import Dict
+
 from fastapi import APIRouter
 from starlette import status
 from starlette.responses import JSONResponse
 
+from configs.console_colors import CONSOLE_COLORS
 from configs.options import API_OPTIONS
+from db_postgres.postgres_queries.qry_update_telethon_active_status import update_telethon_active_status_qry
 from fast_api.app_auth.funcs_auth import (
     verify_auth_username_password)
 from fast_api.app_auth.scheme_auth import (
@@ -31,52 +35,68 @@ async def stop_tlt_clients_router(
     web_account_id = web_account_data.web_account_id
     web_account_username = web_account_data.web_account_username
 
-    tlt_configs_names = stop_clients_data.telethon_config_name
+    tlt_configs_names = stop_clients_data.telethon_configs_names
 
     stopped_clients = []
     skipped_clients = []
-    cur_config_name = None
+    stopped_clients_logs: Dict[str, Dict[str, str]] = {}
 
-    try:
-        tlt_manager = TelethonManagerSingleton()  # Singleton
+    tlt_manager = TelethonManagerSingleton()  # Singleton
 
-        for cur_config_name in tlt_configs_names:
-            cur_tlt_client = tlt_manager.clients.get(cur_config_name)
-            if cur_tlt_client:
-                await cur_tlt_client.disconnect()
-                stopped_clients.append(cur_config_name)
-                #TODO: Make updating db status and initial starting tlt clients according to their stopped status
-                # tlt_manager.clients.pop(cur_config_name)
-            else:
-                skipped_clients.append(cur_config_name)
+    for cur_config_name in tlt_configs_names:
+        disconn_res, disconn_log = await tlt_manager.disconnect_tlt_client(
+            config_name=cur_config_name)
+        update_data = {"telethon_is_active": False}
+        await update_telethon_active_status_qry(
+            telethon_config_name=cur_config_name,
+            update_data=update_data)
+        if disconn_res:
+            stopped_clients.append(cur_config_name)
+        else:
+            skipped_clients.append(cur_config_name)
 
-        stop_message = "Telethon clients stopped [OK]"
-        json_response = JSONResponse(
-            content={"stop_msg": {stop_message},
-                     "username": auth_data.username,
-                     "web_account_id": web_account_id,
-                     "web_account_username": web_account_username,
-                     "tlt_configs_names": tlt_configs_names,
-                     "stopped_clients": stopped_clients,
-                     "skipped_clients": skipped_clients},
-            status_code=status.HTTP_200_OK)
-        print(f"{stop_message}\n"
-              f"tlt_configs_names: {tlt_configs_names}\n"
-              f"stopped_clients: {stopped_clients}"
-              f"skipped_clients: {skipped_clients}\n")
-        return json_response
-    except Exception as error:
-        error_message = (f"Router Stop TLT clients error: \n"
-                         f"error: {error}\n")
-        json_response = JSONResponse(
-            content={"error_message": error_message,
-                     "username": auth_data.username,
-                     "web_account_id": web_account_id,
-                     "web_account_username": web_account_username,
-                     "tlt_configs_names": tlt_configs_names,
-                     "cur_config_name": cur_config_name,
-                     "stopped_clients": stopped_clients,
-                     "skipped_clients": skipped_clients},
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        print(error_message)
-        return json_response
+        stopped_clients_logs[cur_config_name] = {
+            "stop_client_log": disconn_log}
+
+    blue_clr = CONSOLE_COLORS.BRIGHT_BLUE
+    yellow_clr = CONSOLE_COLORS.BRIGHT_YELLOW
+    green_clr = CONSOLE_COLORS.BRIGHT_GREEN
+    reset_clr = CONSOLE_COLORS.RESET
+    magenta_clr = CONSOLE_COLORS.BRIGHT_MAGENTA
+
+    all_configs_total = len(tlt_configs_names)
+    print(f"\n{yellow_clr}All stopped clients "
+          f"[{len(stopped_clients)}/{all_configs_total}]:{reset_clr}")
+    for cur_stopped_config in stopped_clients:
+        print(f"{yellow_clr}{cur_stopped_config}{reset_clr}")
+
+    print(f"\n{magenta_clr}All skipped clients "
+          f"[{len(skipped_clients)}/{all_configs_total}]:{reset_clr}")
+    for cur_skipped_config in skipped_clients:
+        print(f"{magenta_clr}{cur_skipped_config}{reset_clr}")
+
+    if not tlt_configs_names:
+        stop_message = "Empty TLT clients configs list to stop [OK]:"
+    elif stopped_clients and not skipped_clients:
+        stop_message = "All TLT clients stopped successfully [OK]:"
+    elif stopped_clients and skipped_clients:
+        stop_message = "TLT clients stopped partly [OK]:"
+    else:
+        stop_message = "All TLT clients not stopped [ERROR]:"
+
+    json_response = JSONResponse(
+        content={"stop_message": stop_message,
+                 "username": auth_data.username,
+                 "web_account_id": web_account_id,
+                 "web_account_username": web_account_username,
+                 "tlt_configs_names": tlt_configs_names,
+                 "stopped_clients": stopped_clients,
+                 "skipped_clients": skipped_clients,
+                 "stopped_clients_logs": stopped_clients_logs},
+        status_code=status.HTTP_200_OK)
+    print(f"{stop_message}\n"
+          f"tlt_configs_names: {tlt_configs_names}\n"
+          f"stopped_clients: {stopped_clients}\n"
+          f"skipped_clients: {skipped_clients}\n"
+          f"stopped_clients_logs: {stopped_clients_logs}\n")
+    return json_response

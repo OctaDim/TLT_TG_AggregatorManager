@@ -75,6 +75,7 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                 bot_token=cur_config_obj.tg_bot_token,
                 phone=cur_config_obj.tg_personal_phone,
                 proxy=cur_config_obj.telethon_proxy_config,
+                telethon_is_active=cur_config_obj.telethon_is_active,
                 is_active=cur_config_obj.telethon_is_active,
                 authorisation_type=cur_config_obj.authorisation_type)
             pgs_telethon_configs_list.append(cur_telethon_config)
@@ -462,7 +463,8 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
 
         session_update_data = {
             "telethon_session_str": session_str,
-            "telethon_proxy_config": telethon_config.proxy}
+            "telethon_proxy_config": telethon_config.proxy,
+            "telethon_config_name": telethon_config.name}
         session_is_updated = await update_telethon_session_data_qry(
             # Non Telethon standard Postgres saving session string
             telethon_config_id=telethon_config.telethon_config_id,
