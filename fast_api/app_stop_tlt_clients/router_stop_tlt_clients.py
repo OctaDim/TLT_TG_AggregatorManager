@@ -6,7 +6,8 @@ from starlette.responses import JSONResponse
 
 from configs.console_colors import CONSOLE_COLORS
 from configs.options import API_OPTIONS
-from db_postgres.postgres_queries.qry_update_telethon_active_status import update_telethon_active_status_qry
+from db_postgres.postgres_queries.qry_update_telethon_active_status import (
+    update_telethon_active_status_qry)
 from fast_api.app_auth.funcs_auth import (
     verify_auth_username_password)
 from fast_api.app_auth.scheme_auth import (
@@ -46,10 +47,12 @@ async def stop_tlt_clients_router(
     for cur_config_name in tlt_configs_names:
         disconn_res, disconn_log = await tlt_manager.disconnect_tlt_client(
             config_name=cur_config_name)
+
         update_data = {"telethon_is_active": False}
         await update_telethon_active_status_qry(
             telethon_config_name=cur_config_name,
             update_data=update_data)
+
         if disconn_res:
             stopped_clients.append(cur_config_name)
         else:
