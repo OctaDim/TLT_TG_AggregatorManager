@@ -34,6 +34,8 @@ from fast_api.app_send_message_by_user_id.router_send_message import (
     rtr_send_telegram_message)
 from fast_api.app_start_new_telethon_client.router_start_new_tlt_client import (
     rtr_start_new_telethon_client)
+from fast_api.app_stop_clear_tlt_clients.router_stop_clear_tlt_clients import (
+    rtr_stop_clear_tlt_clients)
 from fast_api.app_stop_tlt_clients.router_stop_tlt_clients import rtr_stop_tlt_clients
 from fast_api.app_tlt_api_health_check.router_tlt_api_health_check import (
     rtr_tlt_api_health_check)
@@ -57,6 +59,7 @@ routers_list = [
     rtr_complete_client_qrcode_auth,
     rtr_get_qrcode_image_file,
     rtr_stop_tlt_clients,
+    rtr_stop_clear_tlt_clients,
 
 ]
 

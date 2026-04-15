@@ -753,67 +753,87 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
         else:
             print("All Telethon clients asyncio tasks canceled successfully [OK]\n")
 
-    async def disconnect_tlt_client(self, config_name: str) -> bool:
+    async def disconnect_tlt_client(self,
+                                    config_name: str) -> Tuple[bool, str]:
         if config_name not in self.clients:
+            log_message = (f"TLT client not found and skipped [OK]:\n"
+                           f"config_name: {config_name}\n")
             print(f"{'>' * 55}\n{'>' * 55}\n"
-                  f"Telethon client not found and skipped [OK]:\n"
-                  f"config_name: {config_name}\n")
-            return True
+                  f"{log_message}\n")
+            return True, log_message
 
         try:
             tlt_client = self.clients[config_name]
             client_is_connected = tlt_client.is_connected()
             if not client_is_connected:
+                log_message = (
+                    f"Already disconnected TLT client skipped [OK]:\n"
+                    f"config_name: {config_name}\n"
+                    f"client_is_connected: {client_is_connected}\n")
                 print(f"{'>' * 55}\n{'>' * 55}\n"
-                      f"Already disconnected Telethon client skipped [OK]:\n"
-                      f"config_name: {config_name}\n"
-                      f"client_is_connected: {client_is_connected}\n")
-                return True
+                      f"{log_message}\n")
+                return True, log_message
 
             await tlt_client.disconnect()
             client_is_connected = tlt_client.is_connected()
+            log_message = (f"TLT client disconnected [OK]:\n"
+                           f"config_name: {config_name}\n"
+                           f"client_is_connected: {client_is_connected}\n")
             print(f"{'>' * 55}\n{'>' * 55}\n"
-                  f"Telethon client disconnected [OK]:\n"
-                  f"config_name: {config_name}\n"
-                  f"client_is_connected: {client_is_connected}\n")
-            return True
+                  f"{log_message}\n")
+            return True, log_message
         except Exception as error:
-            print(f"Telethon client disconnection [ERROR]:\n"
-                  f"error: {error}\n"
-                  f"config_name: {config_name}\n")
-            return False
+            error_log = (f"Telethon client disconnection [ERROR]:\n"
+                         f"error: {error}\n"
+                         f"config_name: {config_name}\n")
+            print(f"{'>' * 55}\n{'>' * 55}\n"
+                  f"{error_log}\n")
+            return False, error_log
 
-    async def cancel_tlt_async_task(self, config_name: str) -> bool:
+    async def cancel_tlt_async_task(self, config_name: str) -> Tuple[bool, str]:
         if config_name not in self.running_tasks:
-            return True
-        try:
+            log_message = (
+                f"TLT client asyncio task not found and skipped [OK]:\n"
+                f"config_name: {config_name}\n")
+            print(f"{'>' * 55}\n{'>' * 55}\n"
+                  f"{log_message}\n")
+            return True, log_message
 
+        try:
             tlt_async_task = self.running_tasks[config_name]
             if tlt_async_task.done():
+                log_message = (
+                    f"Already done TLT client asyncio task skipped [OK]:\n"
+                    f"config_name: {config_name}\n"
+                    f"tlt_async_task.cancelled(): {tlt_async_task.cancelled()}\n"
+                    f"tlt_async_task.done(): {tlt_async_task.done()}\n")
                 print(f"{'>' * 55}\n{'>' * 55}\n"
-                      f"Already done Telethon client asyncio task skipped [OK]:\n"
-                      f"config_name: {config_name}\n"
-                      f"tlt_async_task.cancelled(): {tlt_async_task.cancelled()}\n"
-                      f"tlt_async_task.done(): {tlt_async_task.done()}\n")
-                return True
+                      f"{log_message}\n")
+                return True, log_message
 
             if tlt_async_task.cancelled():
+                log_message = (
+                    f"Already canceled TLT client asyncio task skipped [OK]:\n"
+                    f"config_name: {config_name}\n"
+                    f"tlt_async_task.cancelled(): {tlt_async_task.cancelled()}\n"
+                    f"tlt_async_task.done(): {tlt_async_task.done()}\n")
                 print(f"{'>' * 55}\n{'>' * 55}\n"
-                      f"Already canceled Telethon client asyncio task skipped [OK]:\n"
-                      f"config_name: {config_name}\n"
-                      f"tlt_async_task.cancelled(): {tlt_async_task.cancelled()}\n"
-                      f"tlt_async_task.done(): {tlt_async_task.done()}\n")
-                return True
+                      f"{log_message}\n")
+                return True, log_message
 
             tlt_async_task.cancel()
+            log_message = (
+                f"Telethon client async task canceled [OK]:\n"
+                f"config_name: {config_name}\n"
+                f"tlt_async_task.cancelled(): {tlt_async_task.cancelled()}\n"
+                f"tlt_async_task.done(): {tlt_async_task.done()}\n")
             print(f"{'>' * 55}\n{'>' * 55}\n"
-                  f"Telethon client async task canceled [OK]:\n"
-                  f"config_name: {config_name}\n"
-                  f"tlt_async_task.cancelled(): {tlt_async_task.cancelled()}\n"
-                  f"tlt_async_task.done(): {tlt_async_task.done()}\n")
-            return True
+                  f"{log_message}\n")
+            return True, log_message
         except Exception as error:
-            print(f"Canceling Telethon client asyncio task [ERROR]:\n"
-                  f"error: {error}\n"
-                  f"config_name: {config_name}\n")
-            return False
+            error_log = (
+                f"Canceling Telethon client asyncio task [ERROR]:\n"
+                f"error: {error}\n"
+                f"config_name: {config_name}\n")
+            print(error_log)
+            return False, error_log
