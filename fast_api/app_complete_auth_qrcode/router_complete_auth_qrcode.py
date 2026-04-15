@@ -78,6 +78,7 @@ async def complete_tlt_client_qrcode_auth_router(
             tlt_client, auth_resp = await tlt_manager.start_user_client(
                 telethon_config=tlt_not_started_config,
                 skip_authorisation=True,
+                skip_connection=False,
                 connect_retries=TELETHON_OPTIONS.CLIENT_CONNECT_RETRIES,
                 connect_delay_sec=TELETHON_OPTIONS.CLIENT_CONNECT_DELAY_SEC)
             auth_message = auth_resp.auth_message
