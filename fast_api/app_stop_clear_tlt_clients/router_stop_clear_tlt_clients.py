@@ -56,6 +56,10 @@ async def stop_clear_tlt_clients_router(
         stopped_clients_logs[cur_config_name].update({
             "stop_async_task_log": stop_async_task_log})
 
+        tlt_manager.not_started_configs.pop(cur_config_name, None)
+        tlt_manager.event_handlers.pop(cur_config_name, None)
+        tlt_manager.qrcode_logins.pop(cur_config_name, None)
+
     if not tlt_configs_names:
         stop_message = "Empty TLT clients configs list to stop [OK]:"
     elif stopped_clients and not skipped_clients:
