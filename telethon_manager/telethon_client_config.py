@@ -22,8 +22,10 @@ class TelethonConfig(BaseModel):
     bot_token: Optional[str] = None
     phone: Optional[str] = None
     proxy: Optional[Union[_PROXY_TUPLE_ALIAS]] = None
+    telethon_is_active: bool = True
     is_active: bool = True
     authorisation_type: Literal["console", "phone", "qrcode", "qr+phone"]
+    telethon_config_name: Optional[str] = None
 
     @field_validator("proxy")
     @classmethod
