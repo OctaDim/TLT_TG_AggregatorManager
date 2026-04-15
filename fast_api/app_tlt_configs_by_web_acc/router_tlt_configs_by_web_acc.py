@@ -60,7 +60,15 @@ async def tlt_configs_by_web_account_router(
         for cur_config in started_clients_list:
             cur_tlt_client = telethon_manager.clients[cur_config]
             cur_client_is_connected = cur_tlt_client.is_connected()
-            cur_client_is_authed = await cur_tlt_client.is_user_authorized()
+            if cur_client_is_connected:
+                cur_client_is_authed = await cur_tlt_client.is_user_authorized()
+            else:
+                try:
+                    await cur_tlt_client.connect()
+                    cur_client_is_authed = await cur_tlt_client.is_user_authorized()
+                    await cur_tlt_client.disconnect()
+                except Exception as error:
+                    cur_client_is_authed = False
 
             if cur_client_is_connected and cur_client_is_authed:
                 authorised_configs.append(cur_config)
