@@ -45,7 +45,8 @@ async def stop_tlt_clients_router(
             if cur_tlt_client:
                 await cur_tlt_client.disconnect()
                 stopped_clients.append(cur_config_name)
-                tlt_manager.clients.pop(cur_config_name)
+                #TODO: Make updating db status and initial starting tlt clients according to their stopped status
+                # tlt_manager.clients.pop(cur_config_name)
             else:
                 skipped_clients.append(cur_config_name)
 
