@@ -50,7 +50,8 @@ async def send_telegram_message_router(
         acc_only_tlt_clients = await get_acc_only_started_tlt_clients(
             telethon_manager=telethon_manager,
             web_account_id=web_account_id,
-            web_account_username=web_account_username)
+            web_account_username=web_account_username,
+            skip_disconnected=True)
         account_only_configs = list(acc_only_tlt_clients.keys())
 
         all_sent_msg_usernames = []

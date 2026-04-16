@@ -10,7 +10,8 @@ from telethon_manager.telethon_clients_manager import (
 async def get_acc_only_started_tlt_clients(
         telethon_manager: TelethonManagerSingleton,
         web_account_id: str,
-        web_account_username: str
+        web_account_username: str,
+        skip_disconnected: bool = False
 ) -> Dict[str, TelegramClient]:
     tlt_manager_clients = telethon_manager.clients
     config_partly_name = f"_{web_account_id}_{web_account_username}"
@@ -18,7 +19,8 @@ async def get_acc_only_started_tlt_clients(
 
     for cur_config_name, cur_tlt_client in tlt_manager_clients.items():
         if config_partly_name in cur_config_name:
-            account_only_clients[cur_config_name] = cur_tlt_client
+            if not skip_disconnected or cur_tlt_client.is_connected():
+                account_only_clients[cur_config_name] = cur_tlt_client
     return account_only_clients
 
 
