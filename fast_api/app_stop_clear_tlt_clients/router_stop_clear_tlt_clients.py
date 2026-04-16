@@ -6,7 +6,8 @@ from starlette.responses import JSONResponse
 
 from configs.console_colors import CONSOLE_COLORS
 from configs.options import API_OPTIONS
-from db_postgres.postgres_queries.qry_update_telethon_active_status import update_telethon_active_status_qry
+from db_postgres.postgres_queries.qry_update_telethon_active_status import (
+    update_telethon_active_status_qry)
 from fast_api.app_auth.funcs_auth import (
     verify_auth_username_password)
 from fast_api.app_auth.scheme_auth import (
@@ -101,16 +102,16 @@ async def stop_clear_tlt_clients_router(
         print(f"{green_clr}{cur_skipped_async_task}{reset_clr}")
 
     if not tlt_configs_names:
-        stop_message = "Empty TLT clients configs list to clear [OK]:"
+        stop_clear_message = "Empty TLT clients configs list to clear [OK]:"
     elif cleared_clients and not skipped_clients:
-        stop_message = "All TLT clients cleared successfully [OK]:"
+        stop_clear_message = "All TLT clients cleared successfully [OK]:"
     elif cleared_clients and skipped_clients:
-        stop_message = "TLT clients cleared partly [OK]:"
+        stop_clear_message = "TLT clients cleared partly [OK]:"
     else:
-        stop_message = "All TLT clients not stopped [ERROR]:"
+        stop_clear_message = "All TLT clients not stopped [ERROR]:"
 
     json_response = JSONResponse(
-        content={"stop_message": stop_message,
+        content={"stop_clear_message": stop_clear_message,
                  "username": auth_data.username,
                  "web_account_id": web_account_id,
                  "web_account_username": web_account_username,
@@ -121,7 +122,7 @@ async def stop_clear_tlt_clients_router(
                  "skipped_async_tasks": skipped_async_tasks,
                  "clear_clients_logs": clear_clients_logs},
         status_code=status.HTTP_200_OK)
-    print(f"{stop_message}\n"
+    print(f"{stop_clear_message}\n"
           f"tlt_configs_names: {tlt_configs_names}\n"
           f"cleared_clients: {cleared_clients}\n"
           f"skipped_clients: {skipped_clients}\n"

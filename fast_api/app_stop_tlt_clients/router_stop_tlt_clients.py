@@ -40,7 +40,7 @@ async def stop_tlt_clients_router(
 
     stopped_clients = []
     skipped_clients = []
-    stopped_clients_logs: Dict[str, Dict[str, str]] = {}
+    stop_clients_logs: Dict[str, Dict[str, str]] = {}
 
     tlt_manager = TelethonManagerSingleton()  # Singleton
 
@@ -58,7 +58,7 @@ async def stop_tlt_clients_router(
         else:
             skipped_clients.append(cur_config_name)
 
-        stopped_clients_logs[cur_config_name] = {
+        stop_clients_logs[cur_config_name] = {
             "stop_client_log": disconn_log}
 
     blue_clr = CONSOLE_COLORS.BRIGHT_BLUE
@@ -95,11 +95,11 @@ async def stop_tlt_clients_router(
                  "tlt_configs_names": tlt_configs_names,
                  "stopped_clients": stopped_clients,
                  "skipped_clients": skipped_clients,
-                 "stopped_clients_logs": stopped_clients_logs},
+                 "stop_clients_logs": stop_clients_logs},
         status_code=status.HTTP_200_OK)
     print(f"{stop_message}\n"
           f"tlt_configs_names: {tlt_configs_names}\n"
           f"stopped_clients: {stopped_clients}\n"
           f"skipped_clients: {skipped_clients}\n"
-          f"stopped_clients_logs: {stopped_clients_logs}\n")
+          f"stop_clients_logs: {stop_clients_logs}\n")
     return json_response
