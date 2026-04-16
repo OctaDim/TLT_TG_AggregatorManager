@@ -842,21 +842,22 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
 
         try:
             tlt_client = self.clients[config_name]
-            client_is_connected = tlt_client.is_connected()
-            if not client_is_connected:
+            before_disconn_is_connected = tlt_client.is_connected()
+            if not before_disconn_is_connected:
                 log_message = (
                     f"Already disconnected TLT client skipped [OK]:\n"
                     f"config_name: {config_name}\n"
-                    f"client_is_connected: {client_is_connected}\n")
+                    f"before_disconn_is_connected: {before_disconn_is_connected}\n")
                 print(f"{'>' * 55}\n{'>' * 55}\n"
                       f"{log_message}\n")
                 return True, log_message
 
             await tlt_client.disconnect()
-            client_is_connected = tlt_client.is_connected()
-            log_message = (f"TLT client disconnected [OK]:\n"
-                           f"config_name: {config_name}\n"
-                           f"client_is_connected: {client_is_connected}\n")
+            after_disconn_is_connected = tlt_client.is_connected()
+            log_message = (
+                f"TLT client disconnected [OK]:\n"
+                f"config_name: {config_name}\n"
+                f"after_disconn_is_connected: {after_disconn_is_connected}\n")
             print(f"{'>' * 55}\n{'>' * 55}\n"
                   f"{log_message}\n")
             return True, log_message
@@ -914,4 +915,42 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                 f"error: {error}\n"
                 f"config_name: {config_name}\n")
             print(error_log)
+            return False, error_log
+
+    async def connect_tlt_client(self,
+                                 config_name: str) -> Tuple[bool, str]:
+        if config_name not in self.clients:
+            log_message = (f"TLT client not found and skipped [OK]:\n"
+                           f"config_name: {config_name}\n")
+            print(f"{'>' * 55}\n{'>' * 55}\n"
+                  f"{log_message}\n")
+            return True, log_message
+
+        try:
+            tlt_client = self.clients[config_name]
+            before_conn_is_connected = tlt_client.is_connected()
+            if before_conn_is_connected:
+                log_message = (
+                    f"Already connected TLT client skipped [OK]:\n"
+                    f"config_name: {config_name}\n"
+                    f"before_conn_is_connected: {before_conn_is_connected}\n")
+                print(f"{'>' * 55}\n{'>' * 55}\n"
+                      f"{log_message}\n")
+                return True, log_message
+
+            await tlt_client.connect()
+            after_connect_is_connected = tlt_client.is_connected()
+            log_message = (
+                f"TLT client connected [OK]:\n"
+                f"config_name: {config_name}\n"
+                f"after_connect_is_connected: {after_connect_is_connected}\n")
+            print(f"{'>' * 55}\n{'>' * 55}\n"
+                  f"{log_message}\n")
+            return True, log_message
+        except Exception as error:
+            error_log = (f"Telethon client connection [ERROR]:\n"
+                         f"error: {error}\n"
+                         f"config_name: {config_name}\n")
+            print(f"{'>' * 55}\n{'>' * 55}\n"
+                  f"{error_log}\n")
             return False, error_log
