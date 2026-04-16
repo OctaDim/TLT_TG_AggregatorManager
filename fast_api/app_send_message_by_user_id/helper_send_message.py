@@ -49,7 +49,7 @@ async def send_tg_message_by_user_id(
         telethon_config_name: str = None,
 ) -> Dict[str, Message | str]:
     message_obj = None
-    msg_sent_error = ""
+    message_error = ""
 
     try:
         user_entity = await telethon_client.get_entity(entity=user_id)
@@ -58,10 +58,10 @@ async def send_tg_message_by_user_id(
             message=message_text,
             parse_mode=TELETHON_OPTIONS.MESSAGES_PARSING_MODE)
     except ValueError as direct_entity_error:
-        msg_sent_error = (f"Direct message via entity by user_id [ERROR]:\n"
+        message_error = (f"Direct message via entity by user_id [ERROR]:\n"
                           f"direct_entity_error: {direct_entity_error}\n"
                           f"user_id: {user_id}\n")
-        print(msg_sent_error)
+        print(message_error)
 
     if not message_obj:
         try:
@@ -73,14 +73,14 @@ async def send_tg_message_by_user_id(
                         parse_mode=TELETHON_OPTIONS.MESSAGES_PARSING_MODE)
                     break
             if not message_obj:
-                msg_sent_error = (
-                    f"{msg_sent_error}\n"
+                message_error = (
+                    f"{message_error}\n"
                     f"User_id not found in all dialogs [ERROR]:\n"
                     f"user_id: {user_id}\n")
-                print(msg_sent_error)
+                print(message_error)
         except Exception as dialogs_entity_error:
-            msg_sent_error = (
-                f"{msg_sent_error}\n"
+            message_error = (
+                f"{message_error}\n"
                 f"Message via entity by user_id in dialogs [ERROR]:\n"
                 f"dialogs_entity_error: {dialogs_entity_error}\n"
                 f"user_id: {user_id}\n")
@@ -103,15 +103,15 @@ async def send_tg_message_by_user_id(
                         exit_ext_loop_flag = True
                         break
             if not message_obj:
-                msg_sent_error = (
-                    f"{msg_sent_error}\n"
+                message_error = (
+                    f"{message_error}\n"
                     f"User_id not found in all groups-channels [ERROR]:\n"
                     f"user_id: {user_id}\n"
                     f"search_limit_opt: {search_limit_opt}\n")
-                print(msg_sent_error)
+                print(message_error)
         except Exception as groups_entity_error:
-            msg_sent_error = (
-                f"{msg_sent_error}\n"
+            message_error = (
+                f"{message_error}\n"
                 f"Message via entity by user_id in groups-channels [ERROR]:\n"
                 f"groups_entity_error: {groups_entity_error}\n"
                 f"user_id: {user_id}\n")
@@ -123,7 +123,7 @@ async def send_tg_message_by_user_id(
               f"message_text: {message_text}\n"
               f"message_obj: {message_obj}\n")
     else:
-        msg_sent_error = (f"{msg_sent_error}\n"
+        message_error = (f"{message_error}\n"
                           f"telethon_client: {telethon_client}\n"
                           f"tlt_config_name: {telethon_config_name}\n"
                           f"user_id: {user_id}\n"
@@ -131,5 +131,5 @@ async def send_tg_message_by_user_id(
                           f"message_obj: {message_obj}\n")
 
     sent_msg_result = {"message_object": message_obj,
-                       "msg_sent_error": msg_sent_error}
+                       "message_error": message_error}
     return sent_msg_result
