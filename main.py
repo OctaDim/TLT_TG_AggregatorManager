@@ -30,13 +30,16 @@ from fast_api.app_find_telegram_users_data.router_find_telegram_data import (
     rtr_find_telegram_users_data)
 from fast_api.app_get_qrcode_image_file.router_get_qrcode_img_file import (
     rtr_get_qrcode_image_file)
+from fast_api.app_reconnect_authed_tlt_clients.router_reconnect_authed_tlt_clients import (
+    rtr_reconnect_authed_tlt_clients)
 from fast_api.app_send_message_by_user_id.router_send_message import (
     rtr_send_telegram_message)
 from fast_api.app_start_new_telethon_client.router_start_new_tlt_client import (
     rtr_start_new_telethon_client)
 from fast_api.app_stop_clear_tlt_clients.router_stop_clear_tlt_clients import (
     rtr_stop_clear_tlt_clients)
-from fast_api.app_stop_tlt_clients.router_stop_tlt_clients import rtr_stop_tlt_clients
+from fast_api.app_stop_tlt_clients.router_stop_tlt_clients import (
+    rtr_stop_tlt_clients)
 from fast_api.app_tlt_api_health_check.router_tlt_api_health_check import (
     rtr_tlt_api_health_check)
 from fast_api.app_tlt_clients_tasks_status.router_tlt_clients_tasks_status import (
@@ -60,6 +63,7 @@ routers_list = [
     rtr_get_qrcode_image_file,
     rtr_stop_tlt_clients,
     rtr_stop_clear_tlt_clients,
+    rtr_reconnect_authed_tlt_clients,
 
 ]
 
