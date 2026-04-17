@@ -6,42 +6,6 @@ from telethon.tl.types import Message
 from configs.options import TELETHON_OPTIONS
 
 
-async def send_tg_message_by_username(
-        telethon_client: TelegramClient,
-        username: str,
-        message_text: str,
-        telethon_config_name: str = None,
-) -> Dict[str, Message | str]:
-    username = (username or "").lstrip("@").lower()
-    message_obj = None
-    message_error = ""
-
-    try:
-        message_obj = await telethon_client.send_message(
-            entity=username,
-            message=message_text,
-            parse_mode=TELETHON_OPTIONS.MESSAGES_PARSING_MODE)
-        if TELETHON_OPTIONS.LOG_TG_SEND_MSG_BY_USERNAME:
-            print(f"\nTelegram message sent BY USERNAME [OK]:\n"
-                  f"telethon_config_name: {telethon_config_name}\n"
-                  f"username: {username}\n"
-                  f"message_text: {message_text}\n"
-                  f"message_obj: {message_obj}\n")
-    except Exception as error:
-        print(f"Sending telegram message by username [ERROR]:\n"
-              f"error: {error}\n"
-              f"telethon_client: {telethon_client}\n"
-              f"tlt_config_name: {telethon_config_name}\n"
-              f"username: {username}\n"
-              f"message_text: {message_text}\n"
-              f"message_obj: {message_obj}\n")
-        message_error = str(error)
-
-    sent_msg_result = {"message_object": message_obj,
-                       "message_error": message_error}
-    return sent_msg_result
-
-
 async def send_tg_message_by_user_id(
         telethon_client: TelegramClient,
         user_id: int,
@@ -59,8 +23,8 @@ async def send_tg_message_by_user_id(
             parse_mode=TELETHON_OPTIONS.MESSAGES_PARSING_MODE)
     except ValueError as direct_entity_error:
         message_error = (f"Direct message via entity by user_id [ERROR]:\n"
-                          f"direct_entity_error: {direct_entity_error}\n"
-                          f"user_id: {user_id}\n")
+                         f"direct_entity_error: {direct_entity_error}\n"
+                         f"user_id: {user_id}\n")
         print(message_error)
 
     if not message_obj:
@@ -124,11 +88,11 @@ async def send_tg_message_by_user_id(
               f"message_obj: {message_obj}\n")
     else:
         message_error = (f"{message_error}\n"
-                          f"telethon_client: {telethon_client}\n"
-                          f"tlt_config_name: {telethon_config_name}\n"
-                          f"user_id: {user_id}\n"
-                          f"message_text: {message_text}\n"
-                          f"message_obj: {message_obj}\n")
+                         f"telethon_client: {telethon_client}\n"
+                         f"tlt_config_name: {telethon_config_name}\n"
+                         f"user_id: {user_id}\n"
+                         f"message_text: {message_text}\n"
+                         f"message_obj: {message_obj}\n")
 
     sent_msg_result = {"message_object": message_obj,
                        "message_error": message_error}
