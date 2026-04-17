@@ -126,17 +126,6 @@ async def add_all_telethon_client_handlers(
 
     cur_client_handlers.append(inline_query_handler)
 
-    # Raw Handler
-    @telethon_client.on(events.Raw())
-    async def raw_event_handler(event):
-        await raw_event_handler_helper(
-            event=event,
-            telethon_client=telethon_client,
-            telethon_config=telethon_config,
-            event_type="Raw")
-
-    cur_client_handlers.append(raw_event_handler)
-
     # Album Handler
     @telethon_client.on(events.Album())
     async def album_event_handler(event):
@@ -147,6 +136,17 @@ async def add_all_telethon_client_handlers(
             event_type="Album")
 
     cur_client_handlers.append(album_event_handler)
+
+    # Raw Handler
+    @telethon_client.on(events.Raw())
+    async def raw_event_handler(event):
+        await raw_event_handler_helper(
+            event=event,
+            telethon_client=telethon_client,
+            telethon_config=telethon_config,
+            event_type="Raw")
+
+    cur_client_handlers.append(raw_event_handler)
 
     # Saving all weak ref handlers
     telethon_manager.event_handlers[config_name] = cur_client_handlers
