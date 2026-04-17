@@ -5,6 +5,7 @@ from dataclasses import dataclass
 class ACTION_STATUS:
     # Message statuses
     NEW_MSG_ACTION_STR: str = "new"
+    TLT_CLIENT_SENT_NEW_MSG_ACTION_STR: str = "new+"
     EDIT_MSG_ACTION_STR: str = "edited"
     DELETE_MSG_ACTION_STR: str = "deleted"
     READ_MSG_ACTION_STR: str = "read"
