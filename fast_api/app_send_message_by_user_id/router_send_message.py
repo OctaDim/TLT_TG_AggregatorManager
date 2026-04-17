@@ -18,6 +18,7 @@ from fast_api.app_web_account.scheme_web_account import (
     InWebAccountData)
 from telethon_manager.telethon_clients_manager import (
     TelethonManagerSingleton)
+from telethon_manager.telethon_handlers.special_helper_client_sent_msg import tlt_client_sent_msg_special_helper
 from utils_specific.get_account_tlt_clients import (
     get_acc_only_started_tlt_clients)
 
@@ -48,9 +49,9 @@ async def send_telegram_message_router(
     message_text = send_message_data.message_text
 
     try:
-        telethon_manager = TelethonManagerSingleton()  # Singleton
+        tlt_manager = TelethonManagerSingleton()  # Singleton
         acc_only_tlt_clients = await get_acc_only_started_tlt_clients(
-            telethon_manager=telethon_manager,
+            telethon_manager=tlt_manager,
             web_account_id=web_account_id,
             web_account_username=web_account_username,
             skip_disconnected=True)
@@ -84,6 +85,11 @@ async def send_telegram_message_router(
                     all_sent_msg_usernames.append(tg_username)
                     sent_by_username_flag = True
                     msg_sent_flag = True  # As message has already been sent in any client by username
+
+                    cur_tlt_config = tlt_manager.clients_configs[cur_config_name]
+                    await tlt_client_sent_msg_special_helper(
+                        message_object=message_obj,
+                        telethon_config=cur_tlt_config)
                 else:
                     sent_by_username_err = sent_msg_res["message_error"]
 
@@ -100,6 +106,11 @@ async def send_telegram_message_router(
                     all_sent_msg_users_ids.append(tg_user_id)
                     sent_by_user_id_flag = True
                     msg_sent_flag = True  # As message has already been sent in any client by user_id
+
+                    cur_tlt_config = tlt_manager.clients_configs[cur_config_name]
+                    await tlt_client_sent_msg_special_helper(
+                        message_object=message_obj,
+                        telethon_config=cur_tlt_config)
                 else:
                     sent_by_user_id_err = sent_msg_res["message_error"]
 
