@@ -146,6 +146,7 @@ async def start_new_telethon_client_router(
 
         if new_client and auth_resp.is_authorised:
             tlt_manager.clients[new_config_name] = new_client  # Double. First assignment in start User, Bot client
+            tlt_manager.clients_configs[new_config_name] = new_client_config
             new_client_task = asyncio.create_task(
                 coro=new_client.run_until_disconnected(),
                 name=new_config_name,

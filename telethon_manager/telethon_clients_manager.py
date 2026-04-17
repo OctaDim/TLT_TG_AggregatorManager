@@ -36,6 +36,7 @@ from utils_specific.get_valid_proxy_config import get_valid_proxy_tuple
 class TelethonManagerSingleton(metaclass=SingletonMeta):
     def __init__(self):
         self.clients: Dict[str, TelegramClient] = {}
+        self.clients_configs: Dict[str, TelethonConfig] = {}
         self.not_started_configs: Dict[str, TelethonConfig] = {}
         self.event_handlers: Dict[str, List[Callable]] = {}
         self.running_tasks: Dict[str, asyncio.Task] = {}
@@ -382,6 +383,7 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                 auth_message = ("Start User Client: "
                                 "Authorised User client connection skipped")
                 self.clients[telethon_config.name] = user_client
+                self.clients_configs[telethon_config.name] = telethon_config
                 self.not_started_configs.pop(telethon_config.name, None)
                 auth_resp = AuthResponse(is_authorised=True,
                                          requires_action=False,
@@ -426,6 +428,7 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
             auth_message = ("Start User Client: "
                             "User client authorised initially")
             self.clients[telethon_config.name] = user_client
+            self.clients_configs[telethon_config.name] = telethon_config
             self.not_started_configs.pop(telethon_config.name, None)
             auth_resp = AuthResponse(is_authorised=True,
                                      requires_action=False,
@@ -480,6 +483,7 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
 
         if after_auth_is_connected and after_auth_is_authorised:
             self.clients[telethon_config.name] = user_client
+            self.clients_configs[telethon_config.name] = telethon_config
             self.not_started_configs.pop(telethon_config.name, None)
             auth_resp.is_authorised = True  # Double check and assignment
         else:
@@ -583,7 +587,7 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
                 auth_message = ("Start Bot Client: "
                                 "Authorised Bot client connection skipped")
                 self.clients[telethon_config.name] = bot_client
-                self.not_started_configs.pop(telethon_config.name, None)
+                self.clients_configs[telethon_config.name] = telethon_config
                 auth_resp = AuthResponse(is_authorised=True,
                                          requires_action=False,
                                          auth_by_phone=False,
@@ -618,6 +622,7 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
 
         if after_connect_is_connected and after_connect_is_authorised:
             self.clients[telethon_config.name] = bot_client
+            self.clients_configs[telethon_config.name] = telethon_config
             auth_message = ("Start Bot Client: "
                             "Bot client authorised initially")
             auth_resp = AuthResponse(is_authorised=True,
@@ -655,6 +660,7 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
 
         if after_start_is_connected and after_start_is_authorised:
             self.clients[telethon_config.name] = bot_client
+            self.clients_configs[telethon_config.name] = telethon_config
             self.not_started_configs.pop(telethon_config.name, None)
             auth_message = ("Start Bot Client: "
                             "Bot client authorised after start")
