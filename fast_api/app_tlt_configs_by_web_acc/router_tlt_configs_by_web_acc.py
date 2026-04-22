@@ -37,7 +37,8 @@ async def tlt_configs_by_web_account_router(
         started_clients_dict = await get_acc_only_started_tlt_clients(
             telethon_manager=telethon_manager,
             web_account_id=web_account_id,
-            web_account_username=web_account_username)
+            web_account_username=web_account_username,
+            skip_disconnected=False)
         started_clients_list = list(started_clients_dict.keys())
 
         not_started_configs_dict = await get_acc_only_stopped_tlt_configs(

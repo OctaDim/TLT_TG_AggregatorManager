@@ -8,11 +8,11 @@ from fast_api.app_auth.funcs_auth import (
     verify_auth_username_password)
 from fast_api.app_auth.scheme_auth import (
     AuthData)
-from fast_api.app_send_message_by_user_id.helper_send_msg_by_user_id import (
+from fast_api.app_send_message.helper_send_msg_by_user_id import (
     send_tg_message_by_user_id)
-from fast_api.app_send_message_by_user_id.helper_send_msg_by_username import (
+from fast_api.app_send_message.helper_send_msg_by_username import (
     send_tg_message_by_username)
-from fast_api.app_send_message_by_user_id.scheme_send_message import (
+from fast_api.app_send_message.scheme_send_message import (
     InSendMessageData)
 from fast_api.app_web_account.scheme_web_account import (
     InWebAccountData)

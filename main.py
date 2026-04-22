@@ -32,7 +32,7 @@ from fast_api.app_get_qrcode_image_file.router_get_qrcode_img_file import (
     rtr_get_qrcode_image_file)
 from fast_api.app_reconnect_authed_tlt_clients.router_reconnect_authed_tlt_clients import (
     rtr_reconnect_authed_tlt_clients)
-from fast_api.app_send_message_by_user_id.router_send_message import (
+from fast_api.app_send_message.router_send_message import (
     rtr_send_telegram_message)
 from fast_api.app_start_new_telethon_client.router_start_new_tlt_client import (
     rtr_start_new_telethon_client)
