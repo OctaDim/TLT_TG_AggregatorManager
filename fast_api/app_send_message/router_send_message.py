@@ -66,8 +66,27 @@ async def send_telegram_message_router(
         sent_by_user_id_flag = False
         msg_sent_flag = False
 
-        sent_by_username_err = ""
-        sent_by_user_id_err = ""
+        if not account_only_configs:
+            sent_by_username_err = "Connected account configs not found [ERROR]"
+            sent_by_user_id_err = "Connected account configs not found [ERROR]"
+            cur_config_name = "Not found"
+            client_is_authorised = False
+            client_is_connected = False
+
+            all_sending_results.append({
+                "tg_username": tg_username,
+                "sent_by_username": sent_by_username_flag,
+                "sent_by_username_error": sent_by_username_err,
+                "tg_user_id": tg_user_id,
+                "sent_by_user_id": sent_by_user_id_flag,
+                "sent_by_user_id_error": sent_by_user_id_err,
+                "cur_config_name": cur_config_name,
+                "client_is_connected": client_is_authorised,
+                "client_is_authorized": client_is_connected,
+                "message_sent_flag": msg_sent_flag})
+        else:
+            sent_by_username_err = ""
+            sent_by_user_id_err = ""
 
         send_msg_once_option = TELETHON_OPTIONS.ALL_TLT_CLIENTS_SEND_MSG_ONCE
 
