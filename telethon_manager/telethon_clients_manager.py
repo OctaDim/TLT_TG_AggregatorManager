@@ -17,7 +17,7 @@ from configs.options import ALCHEMY_OPTIONS, TELETHON_OPTIONS
 from db_postgres.postgres_conn.pgs_connection import PgsAsyncConnection
 from db_postgres.postgres_conn.postgres_session import PgsAsyncSession
 from db_postgres.postgres_queries.qry_get_telethon_configs_objs import (
-    get_telethon_configs_objs_qry)
+    get_tlt_configs_objs_list_qry)
 from db_postgres.postgres_queries.qry_update_telethon_session_data import (
     update_telethon_session_data_qry)
 from meta_classes.singlton_meta import SingletonMeta
@@ -49,7 +49,7 @@ class TelethonManagerSingleton(metaclass=SingletonMeta):
         async with PgsAsyncSession(engine=pgs_conn.engine,
                                    log_good_ops=log_pgs_good_ops
                                    ) as pgs_session:
-            pgs_telethon_configs_objs = await get_telethon_configs_objs_qry(
+            pgs_telethon_configs_objs = await get_tlt_configs_objs_list_qry(
                 ongoing_session=pgs_session)
 
         pgs_telethon_configs_list = []
