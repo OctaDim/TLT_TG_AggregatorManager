@@ -67,22 +67,16 @@ async def send_telegram_message_router(
         msg_sent_flag = False
 
         if not account_only_configs:
-            sent_by_username_err = "Connected account configs not found [ERROR]"
-            sent_by_user_id_err = "Connected account configs not found [ERROR]"
-            cur_config_name = "Not found"
-            client_is_authorised = False
-            client_is_connected = False
-
             all_sending_results.append({
                 "tg_username": tg_username,
                 "sent_by_username": sent_by_username_flag,
-                "sent_by_username_error": sent_by_username_err,
+                "sent_by_username_error": "Connected configs not found [ERROR]",
                 "tg_user_id": tg_user_id,
                 "sent_by_user_id": sent_by_user_id_flag,
-                "sent_by_user_id_error": sent_by_user_id_err,
-                "cur_config_name": cur_config_name,
-                "client_is_connected": client_is_authorised,
-                "client_is_authorized": client_is_connected,
+                "sent_by_user_id_error": "Connected configs not found [ERROR]",
+                "cur_config_name": "Not found",
+                "client_is_connected": False,
+                "client_is_authorized": False,
                 "message_sent_flag": msg_sent_flag})
         else:
             sent_by_username_err = ""
