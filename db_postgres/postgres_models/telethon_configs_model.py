@@ -26,5 +26,6 @@ class TelethonConfigModel(Base, ActiveMix, CreateUpdateMix):
     tg_personal_phone: Mapped[Optional[str]]
     telethon_proxy_config: Mapped[Optional[Union[tuple]]] = mapped_column(JSON)  # Postgres: list! => tlt proxy: tuple!
     telethon_is_active: Mapped[bool] = mapped_column(default=True)
+    used_for_messages: Mapped[bool] = mapped_column(default=False)
     authorisation_type: Mapped[str] = mapped_column(String(30))
     telethon_config_name: Mapped[Optional[str]] = mapped_column(String(100))
