@@ -1,6 +1,6 @@
 import os
-from aiofiles import os as aiofiles_os
 
+from aiofiles import os as aiofiles_os
 from telethon.tl.patched import Message
 from telethon.tl.types import (
     MessageMediaPhoto, DocumentAttributeVideo, DocumentAttributeAudio,
@@ -10,7 +10,6 @@ from configs.aggregator_api_urls import AGGREGATOR_API_WEBHOOKS_URL
 from configs.environments import BASE_DIR
 from configs.labels_messages import ACTION_STATUS
 from configs.options import AGGREGATOR_API_OPTIONS, TELETHON_OPTIONS
-from fast_api.app_web_account.scheme_web_account import InWebAccountData
 from telethon_manager.telethon_attrs_chains.chain_doc_attr_audio import (
     get_doc_attr_audio_attr_chains)
 from telethon_manager.telethon_attrs_chains.chain_doc_attr_file_name import (
@@ -52,7 +51,7 @@ async def tlt_client_sent_msg_special_helper(
         clean_line_breaks=True,
         clean_continuous_spaces=True)
     tlt_sent_msg_spec_params.update(cleaned_texts_params)
-    
+
     # Getting TLT sent message object specific params
     tlt_sent_msg_obj_main_params = await get_attrs_values_by_attr_chains(
         base_class_or_obj=message_object,
@@ -71,14 +70,11 @@ async def tlt_client_sent_msg_special_helper(
             temp_tlt_files_dir = get_full_dir_normal_path(
                 [BASE_DIR, base_tlt_files_dir])
             await aiofiles_os.makedirs(temp_tlt_files_dir, exist_ok=True)
-            # os.makedirs(temp_tlt_files_dir, exist_ok=True)  # Sync
             temp_file_path = await ev__client.download_media(
                 ev_media_photo, file=temp_tlt_files_dir)  # tg file name
-            # temp_file_path = await ev__client.download_media(ev_media_photo, file=bytes)
+            # temp_file_path = await ev__client.download_media(ev_media_photo, file=bytes)  # To memory
             if await aiofiles_os.path.exists(temp_file_path):
-            # if os.path.exists(temp_file_path):  # Sync
                 await aiofiles_os.remove(temp_file_path)
-                # os.remove(temp_file_path)  # Sync
             file_name_cst = os.path.basename(temp_file_path)
             tlt_sent_msg_spec_params.update({"file_name_cst": file_name_cst})
             action_str = f"{action_str}+{ACTION_STATUS.PHOTO_ATTACH_ACTION_STR}"
@@ -96,14 +92,11 @@ async def tlt_client_sent_msg_special_helper(
                     temp_tlt_files_dir = get_full_dir_normal_path(
                         [BASE_DIR, base_tlt_files_dir])
                     await aiofiles_os.makedirs(temp_tlt_files_dir, exist_ok=True)
-                    # os.makedirs(temp_tlt_files_dir, exist_ok=True)  # Sync
                     temp_file_path = await ev__client.download_media(
                         ev_media_doc, file=temp_tlt_files_dir)  # tg file name
-                    # temp_file_path = await ev__client.download_media(ev_media_doc, file=bytes)
+                    # temp_file_path = await ev__client.download_media(ev_media_doc, file=bytes)  # To memory
                     if await aiofiles_os.path.exists(temp_file_path):
-                    # if os.path.exists(temp_file_path):  # Sync
                         await aiofiles_os.remove(temp_file_path)
-                        # os.remove(temp_file_path)  # Sync
                     file_name_cst = os.path.basename(temp_file_path)
                     video_params.update({"file_name_cst": file_name_cst})
                 tlt_sent_msg_spec_params.update(video_params)

@@ -1,12 +1,13 @@
 import os
 
+from aiofiles import os as aiofiles_os
 from telethon import events, TelegramClient
 from telethon.tl.types import (
     DocumentAttributeAudio, DocumentAttributeFilename,
     DocumentAttributeVideo, MessageMediaPhoto)
 
-from configs.labels_messages import ACTION_STATUS
 from configs.environments import BASE_DIR
+from configs.labels_messages import ACTION_STATUS
 from configs.options import TELETHON_OPTIONS
 from telethon_manager.telethon_attrs_chains.chain_doc_attr_audio import (
     get_doc_attr_audio_attr_chains)
@@ -72,12 +73,12 @@ async def new_message_handler_helper(
             base_tlt_files_dir = TELETHON_OPTIONS.TEMP_TG_DOWNLOADED_FILES_DIR
             temp_tlt_files_dir = get_full_dir_normal_path(
                 [BASE_DIR, base_tlt_files_dir])
-            os.makedirs(temp_tlt_files_dir, exist_ok=True)
+            await aiofiles_os.makedirs(temp_tlt_files_dir, exist_ok=True)
             temp_file_path = await ev__client.download_media(
                 ev_media_photo, file=temp_tlt_files_dir)  # tg file name
-            # temp_file_path = await ev__client.download_media(ev_media_photo, file=bytes)
-            if os.path.exists(temp_file_path):
-                os.remove(temp_file_path)
+            # temp_file_path = await ev__client.download_media(ev_media_photo, file=bytes)  # To memory
+            if await aiofiles_os.path.exists(temp_file_path):
+                await aiofiles_os.remove(temp_file_path)
             file_name_cst = os.path.basename(temp_file_path)
             handler_specific_params.update({"file_name_cst": file_name_cst})
             action_str = f"{action_str}+{ACTION_STATUS.PHOTO_ATTACH_ACTION_STR}"
@@ -94,12 +95,12 @@ async def new_message_handler_helper(
                     base_tlt_files_dir = TELETHON_OPTIONS.TEMP_TG_DOWNLOADED_FILES_DIR
                     temp_tlt_files_dir = get_full_dir_normal_path(
                         [BASE_DIR, base_tlt_files_dir])
-                    os.makedirs(temp_tlt_files_dir, exist_ok=True)
+                    await aiofiles_os.makedirs(temp_tlt_files_dir, exist_ok=True)
                     temp_file_path = await ev__client.download_media(
                         ev_media_doc, file=temp_tlt_files_dir)  # tg file name
-                    # temp_file_path = await ev__client.download_media(ev_media_doc, file=bytes)
-                    if os.path.exists(temp_file_path):
-                        os.remove(temp_file_path)
+                    # temp_file_path = await ev__client.download_media(ev_media_doc, file=bytes)  # To memory
+                    if await aiofiles_os.path.exists(temp_file_path):
+                        await aiofiles_os.remove(temp_file_path)
                     file_name_cst = os.path.basename(temp_file_path)
                     video_params.update({"file_name_cst": file_name_cst})
                 handler_specific_params.update(video_params)
