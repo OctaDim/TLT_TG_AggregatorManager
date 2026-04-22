@@ -30,6 +30,10 @@ from fast_api.app_find_telegram_users_data.router_find_telegram_data import (
     rtr_find_telegram_users_data)
 from fast_api.app_get_qrcode_image_file.router_get_qrcode_img_file import (
     rtr_get_qrcode_image_file)
+from fast_api.app_messages_configs_activate.router_msgs_configs_activate import (
+    rtr_activate_messages_configs)
+from fast_api.app_messages_configs_by_web_acc.router_messages_configs_by_web_acc import (
+    rtr_tlt_messages_configs_by_web_acc)
 from fast_api.app_reconnect_authed_tlt_clients.router_reconnect_authed_tlt_clients import (
     rtr_reconnect_authed_tlt_clients)
 from fast_api.app_send_message.router_send_message import (
@@ -64,6 +68,8 @@ routers_list = [
     rtr_stop_tlt_clients,
     rtr_stop_clear_tlt_clients,
     rtr_reconnect_authed_tlt_clients,
+    rtr_tlt_messages_configs_by_web_acc,
+    rtr_activate_messages_configs,
 
 ]
 
