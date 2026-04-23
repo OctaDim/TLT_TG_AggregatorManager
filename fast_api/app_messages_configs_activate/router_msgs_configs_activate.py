@@ -48,17 +48,17 @@ async def activate_messages_configs_router(
 
             if activate_result:
                 activated_configs.append(cur_config_name)
-                activate_log = (f"Message used config activated [OK]:\n"
-                                f"cur_config_name: {cur_config_name}\n")
+                activate_log = (f"Message used config activated [OK]:\n "
+                                f"cur_config_name: {cur_config_name}\n ")
             else:
                 skipped_configs.append(cur_config_name)
-                activate_log = (f"Message used config not activated [ERROR]:\n"
-                                f"cur_config_name: {cur_config_name}\n")
+                activate_log = (f"Message used config not activated [ERROR]:\n "
+                                f"cur_config_name: {cur_config_name}\n ")
         except Exception as error:
             skipped_configs.append(cur_config_name)
-            activate_log = (f"Message used config activation [ERROR]:\n"
-                            f"error: {error}\n"
-                            f"cur_config_name: {cur_config_name}\n")
+            activate_log = (f"Message used config activation [ERROR]:\n "
+                            f"error: {error}\n "
+                            f"cur_config_name: {cur_config_name}\n ")
         activate_configs_logs[cur_config_name] = {
             "activate_log": activate_log}
 
@@ -69,24 +69,24 @@ async def activate_messages_configs_router(
     magenta_clr = CONSOLE_COLORS.BRIGHT_MAGENTA
 
     all_configs_total = len(tlt_configs_names)
-    print(f"\n{yellow_clr}All activated configs "
+    print(f"\n{yellow_clr}All activated configs: "
           f"[{len(activated_configs)}/{all_configs_total}]:{reset_clr}")
     for cur_activated_config in activated_configs:
         print(f"{yellow_clr}{cur_activated_config}{reset_clr}")
 
-    print(f"\n{magenta_clr}All skipped configs "
+    print(f"\n{magenta_clr}All skipped configs: "
           f"[{len(skipped_configs)}/{all_configs_total}]:{reset_clr}")
     for cur_skipped_config in skipped_configs:
         print(f"{magenta_clr}{cur_skipped_config}{reset_clr}")
 
     if not tlt_configs_names:
-        activate_msg = "Empty TLT configs list to activate for messages [OK]:"
+        activate_msg = "Empty TLT configs list to activate for messages [OK]: "
     elif activated_configs and not skipped_configs:
-        activate_msg = "All TLT configs activated successfully [OK]:"
+        activate_msg = "All TLT configs activated successfully [OK]: "
     elif activated_configs and skipped_configs:
-        activate_msg = "TLT TLT configs activated partly [OK]:"
+        activate_msg = "TLT TLT configs activated partly [OK]: "
     else:
-        activate_msg = "All TLT configs not activated [ERROR]:"
+        activate_msg = "All TLT configs not activated [ERROR]: "
 
     json_response = JSONResponse(
         content={"activate_msg": activate_msg,
@@ -98,9 +98,9 @@ async def activate_messages_configs_router(
                  "skipped_configs": skipped_configs,
                  "activate_configs_logs": activate_configs_logs},
         status_code=status.HTTP_200_OK)
-    print(f"{activate_msg}\n"
-          f"tlt_configs_names: {tlt_configs_names}\n"
-          f"activated_configs: {activated_configs}\n"
-          f"skipped_configs: {skipped_configs}\n"
-          f"activate_configs_logs: {activate_configs_logs}\n")
+    print(f"{activate_msg}\n "
+          f"tlt_configs_names: {tlt_configs_names}\n "
+          f"activated_configs: {activated_configs}\n "
+          f"skipped_configs: {skipped_configs}\n "
+          f"activate_configs_logs: {activate_configs_logs}\n ")
     return json_response

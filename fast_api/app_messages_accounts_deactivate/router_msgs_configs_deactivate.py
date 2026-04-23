@@ -47,17 +47,17 @@ async def deactivate_messages_configs_router(
                 update_data={"used_for_messages": False})
             if deactivate_result:
                 deactivated_configs.append(cur_config_name)
-                deactivate_log = (f"Message used config deactivated [OK]:\n"
-                                  f"cur_config_name: {cur_config_name}\n")
+                deactivate_log = (f"Message used config deactivated [OK]:\n "
+                                  f"cur_config_name: {cur_config_name}\n ")
             else:
                 skipped_configs.append(cur_config_name)
-                deactivate_log = (f"Message used config not deactivated [ERROR]:\n"
-                                  f"cur_config_name: {cur_config_name}\n")
+                deactivate_log = (f"Message used config not deactivated [ERROR]:\n "
+                                  f"cur_config_name: {cur_config_name}\n ")
         except Exception as error:
             skipped_configs.append(cur_config_name)
-            deactivate_log = (f"Message used config deactivation [ERROR]:\n"
-                              f"error: {error}\n"
-                              f"cur_config_name: {cur_config_name}\n")
+            deactivate_log = (f"Message used config deactivation [ERROR]:\n "
+                              f"error: {error}\n "
+                              f"cur_config_name: {cur_config_name}\n ")
         deactivate_configs_logs[cur_config_name] = {
             "deactivate_log": deactivate_log}
 
@@ -79,13 +79,13 @@ async def deactivate_messages_configs_router(
         print(f"{magenta_clr}{cur_skipped_config}{reset_clr}")
 
     if not tlt_configs_names:
-        deactivate_msg = "Empty TLT configs list to deactivate for messages [OK]:"
+        deactivate_msg = "Empty TLT configs list to deactivate for messages [OK]: "
     elif deactivated_configs and not skipped_configs:
-        deactivate_msg = "All TLT configs deactivated successfully [OK]:"
+        deactivate_msg = "All TLT configs deactivated successfully [OK]: "
     elif deactivated_configs and skipped_configs:
-        deactivate_msg = "TLT TLT configs deactivated partly [OK]:"
+        deactivate_msg = "TLT TLT configs deactivated partly [OK]: "
     else:
-        deactivate_msg = "All TLT configs not deactivated [ERROR]:"
+        deactivate_msg = "All TLT configs not deactivated [ERROR]: "
 
     json_response = JSONResponse(
         content={"deactivate_msg": deactivate_msg,
@@ -97,9 +97,9 @@ async def deactivate_messages_configs_router(
                  "skipped_configs": skipped_configs,
                  "deactivate_configs_logs": deactivate_configs_logs},
         status_code=status.HTTP_200_OK)
-    print(f"{deactivate_msg}\n"
-          f"tlt_configs_names: {tlt_configs_names}\n"
-          f"deactivated_configs: {deactivated_configs}\n"
-          f"skipped_configs: {skipped_configs}\n"
-          f"deactivate_configs_logs: {deactivate_configs_logs}\n")
+    print(f"{deactivate_msg}\n "
+          f"tlt_configs_names: {tlt_configs_names}\n "
+          f"deactivated_configs: {deactivated_configs}\n "
+          f"skipped_configs: {skipped_configs}\n "
+          f"deactivate_configs_logs: {deactivate_configs_logs}\n ")
     return json_response
