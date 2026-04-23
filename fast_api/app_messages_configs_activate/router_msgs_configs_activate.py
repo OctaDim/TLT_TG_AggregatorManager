@@ -25,7 +25,7 @@ rtr_activate_messages_configs = APIRouter(prefix=f"/{base_url_name}",
 async def activate_messages_configs_router(
         auth_data: AuthData,
         web_account_data: InWebAccountData,
-        active_msgs_configs: InActivateMsgsConfigs
+        activate_msgs_configs: InActivateMsgsConfigs
 ) -> JSONResponse:
     await verify_auth_username_password(
         username=auth_data.username,
@@ -34,7 +34,7 @@ async def activate_messages_configs_router(
     web_account_id = web_account_data.web_account_id
     web_account_username = web_account_data.web_account_username
 
-    tlt_configs_names = active_msgs_configs.telethon_configs_names
+    tlt_configs_names = activate_msgs_configs.telethon_configs_names
 
     activated_configs = []
     skipped_configs = []
@@ -51,7 +51,6 @@ async def activate_messages_configs_router(
                 activate_log = (f"Message used config activated [OK]:\n"
                                 f"cur_config_name: {cur_config_name}\n")
             else:
-
                 skipped_configs.append(cur_config_name)
                 activate_log = (f"Message used config not activated [ERROR]:\n"
                                 f"cur_config_name: {cur_config_name}\n")
@@ -59,7 +58,7 @@ async def activate_messages_configs_router(
             skipped_configs.append(cur_config_name)
             activate_log = (f"Message used config activation [ERROR]:\n"
                             f"error: {error}\n"
-                            f"cur_1config_name: {cur_config_name}\n")
+                            f"cur_config_name: {cur_config_name}\n")
         activate_configs_logs[cur_config_name] = {
             "activate_log": activate_log}
 
@@ -87,7 +86,7 @@ async def activate_messages_configs_router(
     elif activated_configs and skipped_configs:
         activate_msg = "TLT TLT configs activated partly [OK]:"
     else:
-        activate_msg = "All TLT configs not connected [ERROR]:"
+        activate_msg = "All TLT configs not activated [ERROR]:"
 
     json_response = JSONResponse(
         content={"activate_msg": activate_msg,
