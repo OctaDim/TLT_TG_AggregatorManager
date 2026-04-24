@@ -3,7 +3,12 @@ from starlette import status
 from starlette.responses import JSONResponse
 
 from configs.console_colors import CONSOLE_COLORS
-from configs.options import API_OPTIONS, TELETHON_OPTIONS
+from configs.options import (
+    API_OPTIONS, TELETHON_OPTIONS, ALCHEMY_OPTIONS)
+from db_postgres.postgres_conn.pgs_connection import PgsAsyncConnection
+from db_postgres.postgres_conn.postgres_session import PgsAsyncSession
+from db_postgres.postgres_queries.qry_get_telethon_configs_objs import (
+    get_tlt_configs_objs_dict_qry)
 from fast_api.app_auth.funcs_auth import (
     verify_auth_username_password)
 from fast_api.app_auth.scheme_auth import (
@@ -18,7 +23,8 @@ from fast_api.app_web_account.scheme_web_account import (
     InWebAccountData)
 from telethon_manager.telethon_clients_manager import (
     TelethonManagerSingleton)
-from telethon_manager.telethon_handlers.special_helper_client_sent_msg import tlt_client_sent_msg_special_helper
+from telethon_manager.telethon_handlers.special_helper_client_sent_msg import (
+    tlt_client_sent_msg_special_helper)
 from utils_specific.get_account_tlt_clients import (
     get_acc_only_started_tlt_clients)
 
@@ -66,25 +72,59 @@ async def send_telegram_message_router(
         sent_by_user_id_flag = False
         msg_sent_flag = False
 
+        sent_by_username_err = ""
+        sent_by_user_id_err = ""
+
         if not account_only_configs:
+            error_log = "Connected configs not found [ERROR]"
             all_sending_results.append({
                 "tg_username": tg_username,
                 "sent_by_username": sent_by_username_flag,
-                "sent_by_username_error": "Connected configs not found [ERROR]",
+                "sent_by_username_error": error_log,
                 "tg_user_id": tg_user_id,
                 "sent_by_user_id": sent_by_user_id_flag,
-                "sent_by_user_id_error": "Connected configs not found [ERROR]",
+                "sent_by_user_id_error": error_log,
                 "cur_config_name": "Not found",
                 "client_is_connected": False,
                 "client_is_authorized": False,
+                "messages_used": False,
                 "message_sent_flag": msg_sent_flag})
-        else:
-            sent_by_username_err = ""
-            sent_by_user_id_err = ""
+
+        log_pgs_good_ops = ALCHEMY_OPTIONS.ALCHEMY_SESSION_OK_ACTIONS_LOGS
+        pgs_conn = PgsAsyncConnection()
+        async with PgsAsyncSession(engine=pgs_conn.engine,
+                                   log_good_ops=log_pgs_good_ops
+                                   ) as pgs_session:
+            pgs_configs_data = await get_tlt_configs_objs_dict_qry(
+                ongoing_session=pgs_session)
 
         send_msg_once_option = TELETHON_OPTIONS.ALL_TLT_CLIENTS_SEND_MSG_ONCE
 
         for cur_config_name, cur_tlt_client in acc_only_tlt_clients.items():
+            cur_pgs_config_data = pgs_configs_data.get(cur_config_name)
+            if cur_pgs_config_data:
+                messages_used = cur_pgs_config_data.used_for_messages or False
+            else:
+                messages_used = False
+
+            if not messages_used and TELETHON_OPTIONS.SKIP_NOT_MESSAGE_USED_CONFIGS:
+                client_is_connected = cur_tlt_client.is_connected()
+                client_is_authorised = await cur_tlt_client.is_user_authorized()
+                error_log = "Not activated for messages configuration [ERROR]"
+                all_sending_results.append({
+                    "tg_username": tg_username,
+                    "sent_by_username": sent_by_username_flag,
+                    "sent_by_username_error": error_log,
+                    "tg_user_id": tg_user_id,
+                    "sent_by_user_id": sent_by_user_id_flag,
+                    "sent_by_user_id_error": error_log,
+                    "cur_config_name": cur_config_name,
+                    "client_is_connected": client_is_connected,
+                    "client_is_authorized": client_is_authorised,
+                    "messages_used": messages_used,
+                    "message_sent_flag": msg_sent_flag})
+                continue
+
             if tg_username and (not send_msg_once_option or not msg_sent_flag):
                 sent_msg_res = await send_tg_message_by_username(
                     telethon_client=cur_tlt_client,
@@ -127,9 +167,8 @@ async def send_telegram_message_router(
                 else:
                     sent_by_user_id_err = sent_msg_res["message_error"]
 
-            client_is_authorised = await cur_tlt_client.is_user_authorized()
             client_is_connected = cur_tlt_client.is_connected()
-
+            client_is_authorised = await cur_tlt_client.is_user_authorized()
             all_sending_results.append({
                 "tg_username": tg_username,
                 "sent_by_username": sent_by_username_flag,
@@ -140,6 +179,7 @@ async def send_telegram_message_router(
                 "cur_config_name": cur_config_name,
                 "client_is_connected": client_is_authorised,
                 "client_is_authorized": client_is_connected,
+                "messages_used": messages_used,
                 "message_sent_flag": msg_sent_flag})
 
             # For only unique values
