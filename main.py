@@ -38,6 +38,8 @@ from fast_api.app_messages_configs_by_web_acc.router_messages_configs_by_web_acc
     rtr_tlt_messages_configs_by_web_acc)
 from fast_api.app_reconnect_authed_tlt_clients.router_reconnect_authed_tlt_clients import (
     rtr_reconnect_authed_tlt_clients)
+from fast_api.app_send_file.router_send_file import (
+    rtr_send_telegram_file)
 from fast_api.app_send_message.router_send_message import (
     rtr_send_telegram_message)
 from fast_api.app_start_new_telethon_client.router_start_new_tlt_client import (
@@ -73,6 +75,7 @@ routers_list = [
     rtr_tlt_messages_configs_by_web_acc,
     rtr_activate_messages_configs,
     rtr_deactivate_messages_configs,
+    rtr_send_telegram_file,
 
 ]
 
