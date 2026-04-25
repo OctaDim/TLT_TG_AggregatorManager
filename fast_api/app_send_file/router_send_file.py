@@ -53,6 +53,7 @@ async def send_telegram_file_router(
     tg_user_id = int(tg_user_id) if tg_user_id else None
     file_name = send_file_data.file_name
     file_content = send_file_data.file_content
+    file_content_type = send_file_data.file_content_type
 
     try:
         tlt_manager = TelethonManagerSingleton()  # Singleton
@@ -131,7 +132,8 @@ async def send_telegram_file_router(
                     telethon_config_name=cur_config_name,
                     username=tg_username,
                     file_name=file_name,
-                    file_content=file_content)
+                    file_content=file_content,
+                    file_content_type=file_content_type)
                 message_obj = sent_msg_res["message_object"]
                 if message_obj:
                     all_msg_sent_users.append({"tg_username": tg_username,
@@ -153,7 +155,8 @@ async def send_telegram_file_router(
                     telethon_config_name=cur_config_name,
                     user_id=tg_user_id,
                     file_name=file_name,
-                    file_content=file_content)
+                    file_content=file_content,
+                    file_content_type=file_content_type)
                 message_obj = sent_msg_res["message_object"]
                 if message_obj:
                     all_msg_sent_users.append({"tg_username": tg_username,

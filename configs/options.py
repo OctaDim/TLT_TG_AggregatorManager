@@ -119,6 +119,7 @@ class TELETHON_OPTIONS:
     CLIENT_CONNECT_RETRIES: int = 30
     CLIENT_CONNECT_DELAY_SEC: int | float = 1
 
+    SEND_FILE_MESSAGE_CAPTION_PREFIX = "Файл:"
 
 
 @dataclass(frozen=True)

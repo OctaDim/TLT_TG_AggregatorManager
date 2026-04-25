@@ -11,6 +11,7 @@ async def send_tg_file_by_username(
         username: str,
         file_name: str,
         file_content: bytes,
+        file_content_type: str = None,
         telethon_config_name: str = None,
 ) -> Dict[str, Message | str]:
     username = (username or "").lstrip("@").lower()
@@ -18,11 +19,15 @@ async def send_tg_file_by_username(
     message_error = ""
 
     try:
+        caption_prefix = TELETHON_OPTIONS.SEND_FILE_MESSAGE_CAPTION_PREFIX
+        file_msg_caption = f"{caption_prefix} {file_name}"
         message_obj = await telethon_client.send_file(
             entity=username,
             file=file_content,
-            caption=file_name,
-            parse_mode=TELETHON_OPTIONS.MESSAGES_PARSING_MODE)
+            caption=file_msg_caption,
+            mime_type=file_content_type,
+            # parse_mode=TELETHON_OPTIONS.MESSAGES_PARSING_MODE
+            force_document=True)
         if TELETHON_OPTIONS.LOG_TG_SEND_MSG_BY_USERNAME:
             print(f"\nTelegram file sent BY USERNAME [OK]:\n"
                   f"telethon_config_name: {telethon_config_name}\n"

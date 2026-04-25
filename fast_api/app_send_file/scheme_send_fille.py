@@ -10,6 +10,7 @@ class InSendFileData(BaseModel):
     tg_user_id: Optional[str] = ""
     file_name: str
     file_content: bytes
+    file_content_type: str | None = None
 
 
     @model_validator(mode="before")
