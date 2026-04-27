@@ -11,21 +11,26 @@ async def send_tg_file_by_user_id(
         user_id: int,
         file_name: str,
         file_content: bytes,
-        file_content_type: str = None,
+        file_mime_type: str = None,
         telethon_config_name: str = None,
+        force_document: bool = False
 ) -> Dict[str, Message | str]:
     message_obj = None
     message_error = ""
 
     try:
+        caption_prefix = TELETHON_OPTIONS.SEND_FILE_MESSAGE_CAPTION_PREFIX
+        file_msg_caption = f"{caption_prefix} {file_name}" if file_name else None
+
         user_entity = await telethon_client.get_entity(entity=user_id)
         message_obj = await telethon_client.send_file(
             entity=user_entity,
             file=file_content,
-            caption=file_name,
-            mime_type=file_content_type,
+            caption=file_msg_caption,
+            mime_type=file_mime_type,
+            force_document=force_document
             # parse_mode=TELETHON_OPTIONS.MESSAGES_PARSING_MODE
-            force_document=True)
+        )
     except ValueError as direct_entity_error:
         message_error = (f"Direct file sending via entity by user_id [ERROR]:\n"
                          f"direct_entity_error: {direct_entity_error}\n"
