@@ -1,3 +1,4 @@
+from io import BytesIO
 from typing import Dict
 
 from telethon import TelegramClient
@@ -22,10 +23,15 @@ async def send_tg_file_by_user_id(
         caption_prefix = TELETHON_OPTIONS.SEND_FILE_MESSAGE_CAPTION_PREFIX
         file_msg_caption = f"{caption_prefix} {file_name}" if file_name else None
 
+        file_obj = BytesIO(file_content)
+        file_obj.name = file_name
+
         user_entity = await telethon_client.get_entity(entity=user_id)
         message_obj = await telethon_client.send_file(
             entity=user_entity,
-            file=file_content,
+            file=file_obj,  # To display file name in telegram correctly
+            # file=file_content,
+            file_name=file_name,
             caption=file_msg_caption,
             mime_type=file_mime_type,
             force_document=force_document

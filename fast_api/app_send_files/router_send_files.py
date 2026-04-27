@@ -196,7 +196,7 @@ async def send_telegram_files_router(
                         file_name=file_name,
                         file_content=file_content,
                         file_mime_type=file_mime_type,
-                        force_document=False)
+                        force_document=TELETHON_OPTIONS.SEND_FILE_FORCE_AS_DOCUMENT)
                     message_obj = sent_msg_res["message_object"]
                     if message_obj:
                         all_msg_sent_users.append({"tg_username": tg_username,
@@ -222,7 +222,7 @@ async def send_telegram_files_router(
                         file_name=file_name,
                         file_content=file_content,
                         file_mime_type=file_mime_type,
-                        force_document=False)
+                        force_document=TELETHON_OPTIONS.SEND_FILE_FORCE_AS_DOCUMENT)
                     message_obj = sent_msg_res["message_object"]
                     if message_obj:
                         all_msg_sent_users.append({"tg_username": tg_username,
