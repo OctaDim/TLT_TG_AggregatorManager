@@ -14,11 +14,11 @@ class InSendFilesData(BaseModel):
         tg_username = data["tg_username"]
         tg_user_id = data["tg_user_id"]
 
-        valid_combination = any([tg_username, tg_user_id])
+        valid_combin_flag = any([tg_username, tg_user_id, ])
 
-        if not valid_combination:
+        if not valid_combin_flag:
             error_log = (f"\nWrong parameters combination passed [ERROR]:\n "
-                         f"Possible combinations:\n "
+                         f"Possible combinations: "
                          f"[tg_username OR/AND tg_user_id]\n "
                          f"tg_username: {tg_username}\n "
                          f"tg_user_id: {tg_user_id}\n ")

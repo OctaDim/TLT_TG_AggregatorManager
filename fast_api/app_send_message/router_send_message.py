@@ -101,15 +101,37 @@ async def send_telegram_message_router(
         send_msg_once_option = TELETHON_OPTIONS.ALL_TLT_CLIENTS_SEND_MSG_ONCE
 
         for cur_config_name, cur_tlt_client in acc_only_tlt_clients.items():
+            client_is_connected = cur_tlt_client.is_connected()
+            client_is_authorised = await cur_tlt_client.is_user_authorized()
+
             cur_pgs_config_data = pgs_configs_data.get(cur_config_name)
             if cur_pgs_config_data:
                 messages_used = cur_pgs_config_data.used_for_messages or False
             else:
                 messages_used = False
 
+            if not message_text:
+                if TELETHON_OPTIONS.REPORT_EMPTY_TEXT_MESSAGE_SKIPPED:
+                    # client_is_connected = cur_tlt_client.is_connected()
+                    # client_is_authorised = await cur_tlt_client.is_user_authorized()
+                    error_log = "Empty text message skipped [ERROR]"
+                    all_sending_results.append({
+                        "tg_username": tg_username,
+                        "sent_by_username": sent_by_username_flag,
+                        "sent_by_username_error": error_log,
+                        "tg_user_id": tg_user_id,
+                        "sent_by_user_id": sent_by_user_id_flag,
+                        "sent_by_user_id_error": error_log,
+                        "cur_config_name": cur_config_name,
+                        "client_is_connected": client_is_connected,
+                        "client_is_authorized": client_is_authorised,
+                        "messages_used": messages_used,
+                        "message_sent_flag": msg_sent_flag})
+                continue
+
             if not messages_used and TELETHON_OPTIONS.SKIP_NOT_MESSAGE_USED_CONFIGS:
-                client_is_connected = cur_tlt_client.is_connected()
-                client_is_authorised = await cur_tlt_client.is_user_authorized()
+                # client_is_connected = cur_tlt_client.is_connected()
+                # client_is_authorised = await cur_tlt_client.is_user_authorized()
                 error_log = "Not activated for messages configuration [ERROR]"
                 all_sending_results.append({
                     "tg_username": tg_username,
@@ -167,8 +189,8 @@ async def send_telegram_message_router(
                 else:
                     sent_by_user_id_err = sent_msg_res["message_error"]
 
-            client_is_connected = cur_tlt_client.is_connected()
-            client_is_authorised = await cur_tlt_client.is_user_authorized()
+            # client_is_connected = cur_tlt_client.is_connected()
+            # client_is_authorised = await cur_tlt_client.is_user_authorized()
             all_sending_results.append({
                 "tg_username": tg_username,
                 "sent_by_username": sent_by_username_flag,
