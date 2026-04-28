@@ -35,9 +35,10 @@ async def new_message_handler_helper(
         event_type: str = None
 ) -> None:
     if not TELETHON_OPTIONS.HANDLE_NEW_MESSAGE_EVENT:
-        log_txt = (f"\nDEBUG: WEBHOOK SKIPPED [ERROR]:\n"
-                   f"event_type: {event_type}\n")
-        print(log_txt)
+        if TELETHON_OPTIONS.LOG_SKIPPED_EVENT_HANDLING_ERROR:
+            log_txt = (f"\nDEBUG: WEBHOOK SKIPPED [ERROR]:\n"
+                       f"event_type: {event_type}\n")
+            print(log_txt)
         return
 
     separator = TELETHON_OPTIONS.EVENT_ATTRS_SECTION_SEPARATOR_PREFIX
