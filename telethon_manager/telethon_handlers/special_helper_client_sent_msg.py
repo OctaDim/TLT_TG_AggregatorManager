@@ -1,5 +1,6 @@
 import os
 
+import aioshutil
 from aiofiles import os as aiofiles_os
 from telethon.tl.patched import Message
 from telethon.tl.types import (
@@ -22,6 +23,7 @@ from telethon_manager.telethon_attrs_chains.chain_message_new_edit import (
     get_event_new_edit_msg_attr_chains)
 from telethon_manager.telethon_client_config import TelethonConfig
 from utils_common.clean_str_new_lines_spaces import group_clean_text
+from utils_common.get_file_name_extra_part import get_file_name_with_extra_part
 from utils_common.get_obj_attrs_vals_by_attr_chain import (
     get_attrs_values_by_attr_chains)
 from utils_common.normalized_path import get_full_dir_normal_path
@@ -37,16 +39,17 @@ async def tlt_client_sent_msg_special_helper(
 ) -> None:
     separator = TELETHON_OPTIONS.EVENT_ATTRS_SECTION_SEPARATOR_PREFIX
     action_str = ACTION_STATUS.TLT_CLIENT_SENT_NEW_MSG_ACTION_STR
+    archive_file_prefix = TELETHON_OPTIONS.DOWNLOADED_ARCHIVE_FILES_PREFIX
     event_type = "ClientSentNewMessage"
     tlt_sent_msg_spec_params = {}
 
     # Getting TLT sent message object text params
-    tlt_sent_msg_obj_texts_params = await get_attrs_values_by_attr_chains(
+    tlt_sent_msg_obj_text_params = await get_attrs_values_by_attr_chains(
         base_class_or_obj=message_object,
         attributes_chains_dict=get_client_sent_msg_text_attr_chains(),
         section_separator_prefix=separator)
     cleaned_texts_params = await group_clean_text(
-        origin_texts=tlt_sent_msg_obj_texts_params,
+        origin_texts=tlt_sent_msg_obj_text_params,
         strip_spaces=True,
         clean_line_breaks=True,
         clean_continuous_spaces=True)
@@ -65,7 +68,7 @@ async def tlt_client_sent_msg_special_helper(
 
     if isinstance(ev_media, MessageMediaPhoto):
         ev_media_photo = tlt_sent_msg_obj_main_params["ev_media_photo"]
-        if ev_media_photo and TELETHON_OPTIONS.DOWNLOAD_PHOTO_FILE_NAME:
+        if ev_media_photo and TELETHON_OPTIONS.DOWNLOAD_PHOTO_TO_GET_FILE_NAME:
             base_tlt_files_dir = TELETHON_OPTIONS.TEMP_TG_DOWNLOADED_FILES_DIR
             temp_tlt_files_dir = get_full_dir_normal_path(
                 [BASE_DIR, base_tlt_files_dir])
@@ -73,21 +76,47 @@ async def tlt_client_sent_msg_special_helper(
             temp_file_path = await ev__client.download_media(
                 ev_media_photo, file=temp_tlt_files_dir)  # tg file name
             # temp_file_path = await ev__client.download_media(ev_media_photo, file=bytes)  # To memory
+
+            if TELETHON_OPTIONS.SERVER_SAVE_MESSAGE_PHOTO_FILE:
+                file_extra_path = get_file_name_with_extra_part(
+                    orig_file_full_path=temp_file_path,
+                    filename_prefix=archive_file_prefix)
+                await aioshutil.copy2(temp_file_path, file_extra_path)
+                extra_file_name = os.path.basename(file_extra_path)
+                extra_saved_mark = TELETHON_OPTIONS.SERVER_SAVED_FILE_ACTION_MARK
+            else:
+                extra_file_name = None
+                extra_saved_mark = ""
+
             if await aiofiles_os.path.exists(temp_file_path):
                 await aiofiles_os.remove(temp_file_path)
             file_name_cst = os.path.basename(temp_file_path)
-            tlt_sent_msg_spec_params.update({"file_name_cst": file_name_cst})
-            action_str = f"{action_str}+{ACTION_STATUS.PHOTO_ATTACH_ACTION_STR}"
+            file_name_params = {"file_name_cst": file_name_cst,
+                                "extra_file_name_cst": extra_file_name}
+            tlt_sent_msg_spec_params.update(file_name_params)
+            action_str = (f"{action_str}+"
+                          f"{ACTION_STATUS.PHOTO_ATTACH_ACTION_STR}"
+                          f"{extra_saved_mark}")
     elif ev_media_doc_attrs:
         for cur_doc_attr_obj in ev_media_doc_attrs:
             if isinstance(cur_doc_attr_obj, DocumentAttributeVideo):
+                ev_media_doc = tlt_sent_msg_obj_main_params["ev_media_document"]
                 video_params = await get_attrs_values_by_attr_chains(
                     base_class_or_obj=cur_doc_attr_obj,
                     attributes_chains_dict=get_doc_attr_video_attr_chains(),
                     section_separator_prefix=separator)
-                ev_media_doc = tlt_sent_msg_obj_main_params["ev_media_document"]
-                if (not video_params["doc_attr_file_name"] and ev_media_doc
-                        and TELETHON_OPTIONS.DOWNLOAD_VIDEO_FILE_NAME):
+                tlt_sent_msg_spec_params.update(video_params)
+
+                if (video_params["doc_attr_file_name"]
+                        and not TELETHON_OPTIONS.SERVER_SAVE_MESSAGE_VIDEO_FILE):
+                    file_name_cst = video_params["doc_attr_file_name"]
+                    extra_file_name = None
+                    file_name_params = {"file_name_cst": file_name_cst,
+                                        "extra_file_name_cst": extra_file_name}
+                    tlt_sent_msg_spec_params.update(file_name_params)
+                    action_str = (
+                        f"{action_str}+{ACTION_STATUS.VIDEO_ATTACH_ACTION_STR}")
+                elif ev_media_doc and TELETHON_OPTIONS.DOWNLOAD_VIDEO_TO_GET_FILE_NAME:
                     base_tlt_files_dir = TELETHON_OPTIONS.TEMP_TG_DOWNLOADED_FILES_DIR
                     temp_tlt_files_dir = get_full_dir_normal_path(
                         [BASE_DIR, base_tlt_files_dir])
@@ -95,32 +124,103 @@ async def tlt_client_sent_msg_special_helper(
                     temp_file_path = await ev__client.download_media(
                         ev_media_doc, file=temp_tlt_files_dir)  # tg file name
                     # temp_file_path = await ev__client.download_media(ev_media_doc, file=bytes)  # To memory
+
+                    if TELETHON_OPTIONS.SERVER_SAVE_MESSAGE_VIDEO_FILE:
+                        file_extra_path = get_file_name_with_extra_part(
+                            orig_file_full_path=temp_file_path,
+                            filename_prefix=archive_file_prefix)
+                        await aioshutil.copy2(temp_file_path, file_extra_path)
+                        extra_file_name = os.path.basename(file_extra_path)
+                        extra_saved_mark = TELETHON_OPTIONS.SERVER_SAVED_FILE_ACTION_MARK
+                    else:
+                        extra_file_name = None
+                        extra_saved_mark = ""
+
                     if await aiofiles_os.path.exists(temp_file_path):
                         await aiofiles_os.remove(temp_file_path)
                     file_name_cst = os.path.basename(temp_file_path)
-                    video_params.update({"file_name_cst": file_name_cst})
-                tlt_sent_msg_spec_params.update(video_params)
-                action_str = f"{action_str}+{ACTION_STATUS.VIDEO_ATTACH_ACTION_STR}"
+                    file_name_params = {"file_name_cst": file_name_cst,
+                                        "extra_file_name_cst": extra_file_name}
+                    tlt_sent_msg_spec_params.update(file_name_params)
+                    action_str = (f"{action_str}+"
+                                  f"{ACTION_STATUS.VIDEO_ATTACH_ACTION_STR}"
+                                  f"{extra_saved_mark}")
             elif isinstance(cur_doc_attr_obj, DocumentAttributeAudio):
+                ev_media_doc = tlt_sent_msg_obj_main_params["ev_media_document"]
                 audio_params = await get_attrs_values_by_attr_chains(
                     base_class_or_obj=cur_doc_attr_obj,
                     attributes_chains_dict=get_doc_attr_audio_attr_chains(),
                     section_separator_prefix=separator)
-                file_name_cst = audio_params["doc_attr_file_name"]
-                audio_params.update({"file_name_cst": file_name_cst})
                 tlt_sent_msg_spec_params.update(audio_params)
-                action_str = f"{action_str}+{ACTION_STATUS.AUDIO_ATTACH_ACTION_STR}"
+
+                if TELETHON_OPTIONS.SERVER_SAVE_MESSAGE_AUDIO_FILE:
+                    base_tlt_files_dir = TELETHON_OPTIONS.TEMP_TG_DOWNLOADED_FILES_DIR
+                    temp_tlt_files_dir = get_full_dir_normal_path(
+                        [BASE_DIR, base_tlt_files_dir])
+                    await aiofiles_os.makedirs(temp_tlt_files_dir, exist_ok=True)
+                    temp_file_path = await ev__client.download_media(
+                        ev_media_doc, file=temp_tlt_files_dir)  # tg file name
+                    # temp_file_path = await ev__client.download_media(ev_media_doc, file=bytes)  # To memory
+
+                    file_extra_path = get_file_name_with_extra_part(
+                        orig_file_full_path=temp_file_path,
+                        filename_prefix=archive_file_prefix)
+                    await aioshutil.copy2(temp_file_path, file_extra_path)
+                    extra_file_name = os.path.basename(file_extra_path)
+                    extra_saved_mark = TELETHON_OPTIONS.SERVER_SAVED_FILE_ACTION_MARK
+                    if await aiofiles_os.path.exists(temp_file_path):
+                        await aiofiles_os.remove(temp_file_path)
+                else:
+                    extra_file_name = None
+                    extra_saved_mark = ""
+
+                file_name_cst = audio_params["doc_attr_file_name"]
+                file_name_params = {"file_name_cst": file_name_cst,
+                                    "extra_file_name_cst": extra_file_name}
+                tlt_sent_msg_spec_params.update(file_name_params)
+                action_str = (f"{action_str}+"
+                              f"{ACTION_STATUS.AUDIO_ATTACH_ACTION_STR}"
+                              f"{extra_saved_mark}")
             elif isinstance(cur_doc_attr_obj, DocumentAttributeFilename):
+                ev_media_doc = tlt_sent_msg_obj_main_params["ev_media_document"]
                 document_params = await get_attrs_values_by_attr_chains(
                     base_class_or_obj=cur_doc_attr_obj,
                     attributes_chains_dict=get_doc_attr_file_name_attr_chains(),
                     section_separator_prefix=separator)
-                file_name_cst = document_params["doc_attr_file_name"]
-                document_params.update({"file_name_cst": file_name_cst})
                 tlt_sent_msg_spec_params.update(document_params)
-                action_str = f"{action_str}+{ACTION_STATUS.DOC_ATTACH_ACTION_STR}"
 
-    tlt_sent_msg_spec_params.update({"action": action_str})
+                if TELETHON_OPTIONS.SERVER_SAVE_MESSAGE_DOC_FILE:
+                    base_tlt_files_dir = TELETHON_OPTIONS.TEMP_TG_DOWNLOADED_FILES_DIR
+                    temp_tlt_files_dir = get_full_dir_normal_path(
+                        [BASE_DIR, base_tlt_files_dir])
+                    await aiofiles_os.makedirs(temp_tlt_files_dir, exist_ok=True)
+                    temp_file_path = await ev__client.download_media(
+                        ev_media_doc, file=temp_tlt_files_dir)  # tg file name
+                    # temp_file_path = await ev__client.download_media(ev_media_doc, file=bytes)  # To memory
+
+                    file_extra_path = get_file_name_with_extra_part(
+                        orig_file_full_path=temp_file_path,
+                        filename_prefix=archive_file_prefix)
+                    await aioshutil.copy2(temp_file_path, file_extra_path)
+                    extra_file_name = os.path.basename(file_extra_path)
+                    extra_saved_mark = TELETHON_OPTIONS.SERVER_SAVED_FILE_ACTION_MARK
+                    if await aiofiles_os.path.exists(temp_file_path):
+                        await aiofiles_os.remove(temp_file_path)
+                else:
+                    extra_file_name = None
+                    extra_saved_mark = ""
+
+                file_name_cst = document_params["doc_attr_file_name"]
+                file_name_params = {"file_name_cst": file_name_cst,
+                                    "extra_file_name_cst": extra_file_name}
+                tlt_sent_msg_spec_params.update(file_name_params)
+                action_str = (f"{action_str}+{ACTION_STATUS.DOC_ATTACH_ACTION_STR}"
+                              f"{extra_saved_mark}")
+
+    tlt_sent_msg_spec_params.update({
+        "action": action_str,
+        "tlt_config_name": telethon_config.name,
+        "telethon_config_name": telethon_config.telethon_config_name})
 
     if telethon_config.bot_token:
         tlt_bot_token_info = telethon_config.bot_token[:10]
