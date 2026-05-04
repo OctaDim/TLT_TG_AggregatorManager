@@ -224,8 +224,8 @@ async def new_message_handler_helper(
 
     handler_specific_params.update({
         "action": action_str,
-        "tlt_config_name": telethon_config.name,
-        "telethon_config_name": telethon_config.telethon_config_name})
+        # "telethon_config_name": telethon_config.telethon_config_name,
+        "tlt_config_name": telethon_config.name})
 
     # Separate function because handler function with its own params values
     # is enclosed by add_all_telethon_client_handlers()
