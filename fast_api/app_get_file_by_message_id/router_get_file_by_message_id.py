@@ -1,3 +1,7 @@
+import asyncio
+import os.path
+
+from aiofiles import os as aiofiles_os
 from fastapi import APIRouter, HTTPException
 from starlette import status
 from starlette.responses import JSONResponse, FileResponse
@@ -7,6 +11,8 @@ from fast_api.app_auth.funcs_auth import (
     verify_auth_username_password)
 from fast_api.app_auth.scheme_auth import (
     AuthData)
+from fast_api.app_get_file_by_message_id.helper_get_file_by_message_id import (
+    get_tg_file_by_message_id)
 from fast_api.app_get_file_by_message_id.scheme_get_file_by_message_id import (
     InGetFileByMessageData)
 from fast_api.app_web_account.scheme_web_account import (
@@ -37,62 +43,116 @@ async def get_file_by_message_id_router(
     channel_id = message_file_data.channel_id
     chat_id = message_file_data.chat_id
     user_id = message_file_data.user_id
+    # telethon_config_name = message_file_data.telethon_config_name
+    tlt_config_name = message_file_data.tlt_config_name
     extra_file_name = message_file_data.extra_file_name
-    print("####### message_id", message_id)
-    print("####### channel_id", channel_id)
-    print("####### chat_id", chat_id)
-    print("####### user_id", user_id)
-    print("####### extra_file_name", extra_file_name)
+
+    tlt_file_path = ""
+    context = {"username": auth_data.username,
+               "web_account_id": web_account_id,
+               "web_account_username": web_account_username,
+               "message_id": message_id,
+               "channel_id": channel_id,
+               "chat_id": chat_id,
+               "user_id": user_id,
+               "tlt_config_name": tlt_config_name,
+               "extra_file_name": extra_file_name}
 
     try:
         tlt_manager = TelethonManagerSingleton()  # Singleton
-        print("####### tlt_manager.clients", tlt_manager.clients)
+        tlt_client = tlt_manager.clients.get(tlt_config_name)
 
-        json_response = JSONResponse(content={}, status_code=200)
-        return json_response
+        if not tlt_client:
+            get_file_error = (f"TLT telegram client not found [ERROR]: \n"
+                              f"tlt_config_name: {tlt_config_name} \n")
+            context.update({"get_file_msg": get_file_error,
+                            "tlt_file_path": "",
+                            "get_file_error": get_file_error})
+            json_response = JSONResponse(
+                content=context,
+                status_code=status.HTTP_200_OK)
+            print(get_file_error)
+            return json_response
 
-        # acc_only_tlt_clients = await get_acc_only_started_tlt_clients(
-        #     telethon_manager=tlt_manager,
-        #     web_account_id=web_account_id,
-        #     web_account_username=web_account_username,
-        #     skip_disconnected=True)
-        # account_only_configs = list(acc_only_tlt_clients.keys())
+        file_owner_peer_id = channel_id or chat_id or user_id
+        file_result = await get_tg_file_by_message_id(
+            file_message_id=message_id,
+            file_owner_peer_id=file_owner_peer_id,
+            telethon_client=tlt_client,
+            telethon_config_name=tlt_config_name)
 
-        #     qrcode_img_exists = await aiofiles_os.path.isfile(path=qrcode_img_fpath)
-        #     if not qrcode_img_exists:
-        #         get_qrcode_msg = (f"QRcode image file not found [ERROR]: "
-        #                           f"{qrcode_img_fname}")
-        #         json_response = JSONResponse(
-        #             content={"get_qrcode_msg": get_qrcode_msg,
-        #                      "username": auth_data.username,
-        #                      "web_account_id": web_account_id,
-        #                      "web_account_username": web_account_username,
-        #                      "qrcode_img_fpath": qrcode_img_fpath,
-        #                      "qrcode_img_fname": qrcode_img_fname,
-        #                      "qrcode_img_exists": qrcode_img_exists},
-        #             status_code=status.HTTP_200_OK)
-        #         print(f"{get_qrcode_msg}\n"
-        #               f"qrcode_img_fpath: {qrcode_img_fpath}\n"
-        #               f"qrcode_img_fname: {qrcode_img_fname}"
-        #               f"qrcode_img_exists: {qrcode_img_exists}\n")
-        #         return json_response
-        #
-        #     # QRCode image exists
-        #     file_response = FileResponse(
-        #         path=qrcode_img_fpath,
-        #         status_code=200,
-        #         media_type="image/png",
-        #         filename=qrcode_img_fname)
-        #     return file_response
+        if not file_result:
+            get_file_error = f"Telegram file not found [ERROR]:"
+            context.update({"get_file_msg": get_file_error,
+                            "file_path": "",
+                            "get_file_error": get_file_error})
+            json_response = JSONResponse(
+                content=context,
+                status_code=status.HTTP_200_OK)
+            print(f"{get_file_error}\n"
+                  f"message_id: {message_id}\n"
+                  f"channel_id: {channel_id}\n"
+                  f"chat_id: {chat_id}\n"
+                  f"user_id: {user_id}\n"
+                  f"tlt_config_name: {tlt_config_name}\n"
+                  f"extra_file_name: {extra_file_name}\n")
+            return json_response
+
+        tlt_file_path = file_result.get("tlt_file_path")
+        get_file_error = file_result.get("get_file_error")
+
+        if not tlt_file_path:
+            context.update({"get_file_msg": get_file_error,
+                            "file_path": tlt_file_path,
+                            "get_file_error": get_file_error})
+            json_response = JSONResponse(
+                content=context,
+                status_code=status.HTTP_200_OK)
+            print(f"{get_file_error}\n"
+                  f"message_id: {message_id}\n"
+                  f"channel_id: {channel_id}\n"
+                  f"chat_id: {chat_id}\n"
+                  f"user_id: {user_id}\n"
+                  f"tlt_config_name: {tlt_config_name}\n"
+                  f"extra_file_name: {extra_file_name}\n"
+                  f"tlt_file_path: {tlt_file_path}\n")
+            return json_response
+
+        file_exists = await aiofiles_os.path.isfile(path=tlt_file_path)
+        if not file_exists:
+            get_file_error = (f"Not existing file [ERROR]:")
+            context.update({"get_file_msg": get_file_error,
+                            "file_path": tlt_file_path,
+                            "get_file_error": get_file_error})
+            json_response = JSONResponse(
+                content=context,
+                status_code=status.HTTP_200_OK)
+            print(f"{get_file_error}\n"
+                  f"tlt_file_path: {tlt_file_path}\n"
+                  f"get_file_error: {get_file_error}")
+            return json_response
+
+        # File downloaded from message successfully and exists
+        tlt_file_name = os.path.basename(tlt_file_path)
+        file_response = FileResponse(
+            path=tlt_file_path,
+            status_code=200,
+            media_type=None,
+            filename=tlt_file_name)
+        return file_response
     except Exception as error:
         log_text = (
-            f"Router QRCode image file [ERROR]:\n"
+            f"Router Get telegram file by message id and peer id [ERROR]:\n"
             f"error: {error}\n"
             f"web_account_id: {web_account_id}\n"
             f"web_account_username: {web_account_username}\n"
-            # f"qrcode_img_fpath: {qrcode_img_fpath}\n"
-            # f"qrcode_img_fname: {qrcode_img_fname}\n"
-        )
+            f"message_id: {message_id}\n"
+            f"channel_id: {channel_id}\n"
+            f"chat_id: {chat_id}\n"
+            f"user_id: {user_id}\n"
+            f"extra_file_name: {extra_file_name}\n"
+            f"tlt_config_name: {tlt_config_name}\n"
+            f"tlt_file_path: {tlt_file_path}\n")
         print(log_text)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -13,7 +13,7 @@ async def get_tg_file_by_message_id(
         file_owner_peer_id: int,
         telethon_client: TelegramClient,
         telethon_config_name: str,
-) -> Dict[str, str]:
+) -> Dict[str, str] | None:
     """Note: file_owner_peer_id can be channel_id, chat_id or user_id"""
 
     orig_is_connected = telethon_client.is_connected()
@@ -32,9 +32,9 @@ async def get_tg_file_by_message_id(
                 f"after_conn_is_connected: {after_conn_is_connected} \n"
                 f"telethon_config_name: {telethon_config_name} \n")
             print(get_file_error)
-            get_file_result = {"file path": "",
-                               "get_file_error": get_file_error}
-            return get_file_result
+            file_result = {"file_path": "",
+                           "get_file_error": get_file_error}
+            return file_result
 
         try:
             peer_id_msgs_objs = await telethon_client.get_messages(
@@ -58,9 +58,9 @@ async def get_tg_file_by_message_id(
                 f"peer_id_msgs_objs: {peer_id_msgs_objs} \n"
                 f"peer_id_msg_obj: {peer_id_msg_obj} \n")
             print(get_file_error)
-            get_file_result = {"file path": "",
-                               "get_file_error": get_file_error}
-            return get_file_result
+            file_result = {"file_path": "",
+                           "get_file_error": get_file_error}
+            return file_result
 
         if not hasattr(peer_id_msg_obj, "media") or not peer_id_msg_obj.media:
             get_file_error = (
@@ -71,9 +71,9 @@ async def get_tg_file_by_message_id(
                 f"peer_id_msg_obj: {peer_id_msg_obj} \n"
                 f"peer_id_msg_obj.media: {peer_id_msg_obj.media} \n")
             print(get_file_error)
-            get_file_result = {"file path": "",
-                               "get_file_error": get_file_error}
-            return get_file_result
+            file_result = {"file_path": "",
+                           "get_file_error": get_file_error}
+            return file_result
 
         base_tlt_files_dir = TELETHON_OPTIONS.TEMP_TG_DOWNLOADED_FILES_DIR
         temp_tlt_files_dir = get_full_dir_normal_path(
@@ -83,9 +83,9 @@ async def get_tg_file_by_message_id(
         media_file_path = await telethon_client.download_media(
             peer_id_msg_obj, file=temp_tlt_files_dir)  # tg file name
         # media_file_path = await ev__client.download_media(peer_id_msg_obj, file=bytes)  # To memory
-        get_file_result = {"file path": media_file_path,
-                           "get_file_error": ""}
-        return get_file_result
+        file_result = {"file_path": media_file_path,
+                       "get_file_error": ""}
+        return file_result
     except Exception as get_file_error:
         message_error = (
             f"Downloading File from Message by Peer ID [ERROR]: \n"
@@ -94,8 +94,10 @@ async def get_tg_file_by_message_id(
             f"file_owner_peer_id: {file_owner_peer_id} \n"
             f"telethon_config_name: {telethon_config_name} \n")
         print(message_error)
-        get_file_result = {"file path": "",
-                           "get_file_error": get_file_error}
-        return get_file_result
+        file_result = {"file_path": "",
+                       "get_file_error": get_file_error}
+        return file_result
     finally:
-        telethon_client.disconnect() if not orig_is_connected else None
+        # TODO: Temporary unattach handlers not to get or not to send msgs by client
+        if not orig_is_connected:
+            telethon_client.disconnect()
