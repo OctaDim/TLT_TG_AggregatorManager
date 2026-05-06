@@ -137,14 +137,20 @@ async def get_file_by_message_id_router(
 
         # File downloaded from message successfully and
         file_resp_headers = copy.copy(context)
-        file_resp_headers.update({"message_id": str(message_id),
-                                  "channel_id": str(channel_id),
-                                  "chat_id": str(chat_id),
-                                  "user_id": str(user_id)})
+        file_resp_headers.update({
+            "message_id": str(message_id),
+            "channel_id": str(channel_id),
+            "chat_id": str(chat_id),
+            "user_id": str(user_id),
+            "tlt_file_path": tlt_file_path,
+            "tlt_file_name": tlt_file_name,
+            "tlt_file_mime_type": tlt_file_mime_type,
+            "get_file_error": get_file_error})
+
         file_response = FileResponse(
             path=tlt_file_path,
             status_code=200,
-            headers=file_resp_headers,
+            headers=None,
             media_type=tlt_file_mime_type,
             background=None,
             filename=tlt_file_name,
