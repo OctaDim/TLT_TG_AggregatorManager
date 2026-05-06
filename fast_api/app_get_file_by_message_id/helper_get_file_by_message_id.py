@@ -4,9 +4,12 @@ from typing import Dict
 
 from aiofiles import os as aiofiles_os
 from telethon import TelegramClient
+from telethon.tl.types import DocumentAttributeFilename
 
+from configs.console_colors import CONSOLE_COLORS
 from configs.environments import BASE_DIR
 from configs.options import TELETHON_OPTIONS
+from fast_api.app_get_file_by_message_id.chain_message_doc_attrs import get_tg_msg_doc_attrs
 from fast_api.app_get_file_by_message_id.chain_message_file_name import (
     get_tg_msg_file_name)
 from fast_api.app_get_file_by_message_id.chain_message_mime_type import (
@@ -29,7 +32,6 @@ async def get_tg_file_by_message_id(
                    "file_name": "",
                    "file_mime_type": "",
                    "get_file_error": ""}
-
     try:
         if not orig_is_connected:
             await telethon_client.connect()
@@ -93,54 +95,60 @@ async def get_tg_file_by_message_id(
             peer_id_msg_obj, file=temp_tlt_files_dir)  # tg file name
         # media_file_path = await ev__client.download_media(peer_id_msg_obj, file=bytes)  # To memory
 
-        # Mime Type
+        # Mime type from message object
         separator = TELETHON_OPTIONS.EVENT_ATTRS_SECTION_SEPARATOR_PREFIX
         mime_type_params = await get_attrs_values_by_attr_chains(
             base_class_or_obj=peer_id_msg_obj,
             attributes_chains_dict=get_tg_msg_file_mime_type(),
             section_separator_prefix=separator)
-        msg_file_mime_type = mime_type_params["msg_file_mime_type"]
-        msg_media_mime_type = mime_type_params["msg_media_mime_type"]
         msg_media_doc_mime_type = mime_type_params["msg_media_doc_mime_type"]
-        msg_media_file_mime_type = mime_type_params["msg_media_file_mime_type"]
-
-        if msg_file_mime_type:
-            file_mime_type = msg_file_mime_type
-        elif msg_media_mime_type:
-            file_mime_type = msg_media_mime_type
-        elif msg_media_doc_mime_type:
+        if msg_media_doc_mime_type:
             file_mime_type = msg_media_doc_mime_type
-        elif msg_media_file_mime_type:
-            file_mime_type = msg_media_file_mime_type
         else:
             file_mime_type, encoding = mimetypes.guess_type(
-                url=media_file_path, strict=True)
+                url=media_file_path,
+                strict=True)
             if not file_mime_type:
                 file_mime_type = "application/octet-stream"
 
-        # File Name
+        # File name from message object
         file_name_params = await get_attrs_values_by_attr_chains(
             base_class_or_obj=peer_id_msg_obj,
             attributes_chains_dict=get_tg_msg_file_name(),
             section_separator_prefix=separator)
         msg_file_name = file_name_params["msg_file_name"]
-        msg_media_name = file_name_params["msg_media_name"]
-        msg_media_file_name = file_name_params["msg_media_file_name"]
-        msg_media_doc_name = file_name_params["msg_media_doc_name"]
         if msg_file_name:
             file_name = msg_file_name
-        elif msg_media_name:
-            file_name = msg_media_name
-        elif msg_media_file_name:
-            file_name = msg_media_file_name
-        elif msg_media_doc_name:
-            file_name = msg_media_doc_name
         else:
+            file_name = ""
+
+        # File name from message attributes
+        if not file_name:
+            doc_attrs_params = await get_attrs_values_by_attr_chains(
+                base_class_or_obj=peer_id_msg_obj,
+                attributes_chains_dict=get_tg_msg_doc_attrs(),
+                section_separator_prefix=separator)
+            msg_media_doc_attrs = doc_attrs_params["msg_media_doc_attrs"]
+            if msg_media_doc_attrs:
+                for cur_attr in msg_media_doc_attrs:
+                    if isinstance(cur_attr, DocumentAttributeFilename):
+                        file_name = cur_attr.file_name
+                        break
+
+        # File name from download path
+        if not file_name:
             file_name = os.path.basename(media_file_path)
 
         file_result.update({"file_path": media_file_path,
                             "file_name": file_name,
                             "file_mime_type": file_mime_type})
+        yellow_clr = CONSOLE_COLORS.BRIGHT_YELLOW
+        magenta_clr = CONSOLE_COLORS.BRIGHT_MAGENTA
+        reset_color = CONSOLE_COLORS.RESET
+        print(f"Message object file received successfully [OK]:\n"
+              f"file_path: {media_file_path}\n"
+              f"file_path: {file_mime_type}\n"
+              f"file_path: {yellow_clr}{file_name}{reset_color}\n")
         return file_result
     except Exception as error:
         message_error = (f"Download File from Msg by Peer ID [ERROR]: \n"
