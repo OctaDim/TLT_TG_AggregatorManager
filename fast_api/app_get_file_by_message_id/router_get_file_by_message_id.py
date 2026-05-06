@@ -1,4 +1,3 @@
-import asyncio
 import os.path
 
 from aiofiles import os as aiofiles_os
@@ -98,8 +97,8 @@ async def get_file_by_message_id_router(
                   f"extra_file_name: {extra_file_name}\n")
             return json_response
 
-        tlt_file_path = file_result.get("tlt_file_path")
-        get_file_error = file_result.get("get_file_error")
+        tlt_file_path = file_result["file_path"]
+        get_file_error = file_result["get_file_error"]
 
         if not tlt_file_path:
             context.update({"get_file_msg": get_file_error,
