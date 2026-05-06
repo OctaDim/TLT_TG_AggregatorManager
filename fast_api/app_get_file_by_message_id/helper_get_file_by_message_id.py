@@ -1,3 +1,5 @@
+import mimetypes
+import os
 from typing import Dict
 
 from aiofiles import os as aiofiles_os
@@ -5,6 +7,12 @@ from telethon import TelegramClient
 
 from configs.environments import BASE_DIR
 from configs.options import TELETHON_OPTIONS
+from fast_api.app_get_file_by_message_id.chain_message_file_name import (
+    get_tg_msg_file_name)
+from fast_api.app_get_file_by_message_id.chain_message_mime_type import (
+    get_tg_msg_file_mime_type)
+from utils_common.get_obj_attrs_vals_by_attr_chain import (
+    get_attrs_values_by_attr_chains)
 from utils_common.normalized_path import get_full_dir_normal_path
 
 
@@ -17,6 +25,10 @@ async def get_tg_file_by_message_id(
     """Note: file_owner_peer_id can be channel_id, chat_id or user_id"""
 
     orig_is_connected = telethon_client.is_connected()
+    file_result = {"file_path": "",
+                   "file_name": "",
+                   "file_mime_type": "",
+                   "get_file_error": ""}
 
     try:
         if not orig_is_connected:
@@ -32,8 +44,7 @@ async def get_tg_file_by_message_id(
                 f"after_conn_is_connected: {after_conn_is_connected} \n"
                 f"telethon_config_name: {telethon_config_name} \n")
             print(get_file_error)
-            file_result = {"file_path": "",
-                           "get_file_error": get_file_error}
+            file_result.update({"get_file_error": get_file_error})
             return file_result
 
         try:
@@ -58,8 +69,7 @@ async def get_tg_file_by_message_id(
                 f"peer_id_msgs_objs: {peer_id_msgs_objs} \n"
                 f"peer_id_msg_obj: {peer_id_msg_obj} \n")
             print(get_file_error)
-            file_result = {"file_path": "",
-                           "get_file_error": get_file_error}
+            file_result.update({"get_file_error": get_file_error})
             return file_result
 
         if not hasattr(peer_id_msg_obj, "media") or not peer_id_msg_obj.media:
@@ -71,8 +81,7 @@ async def get_tg_file_by_message_id(
                 f"peer_id_msg_obj: {peer_id_msg_obj} \n"
                 f"peer_id_msg_obj.media: {peer_id_msg_obj.media} \n")
             print(get_file_error)
-            file_result = {"file_path": "",
-                           "get_file_error": get_file_error}
+            file_result.update({"get_file_error": get_file_error})
             return file_result
 
         base_tlt_files_dir = TELETHON_OPTIONS.TEMP_TG_DOWNLOADED_FILES_DIR
@@ -83,19 +92,64 @@ async def get_tg_file_by_message_id(
         media_file_path = await telethon_client.download_media(
             peer_id_msg_obj, file=temp_tlt_files_dir)  # tg file name
         # media_file_path = await ev__client.download_media(peer_id_msg_obj, file=bytes)  # To memory
-        file_result = {"file_path": media_file_path,
-                       "get_file_error": ""}
+
+        # Mime Type
+        separator = TELETHON_OPTIONS.EVENT_ATTRS_SECTION_SEPARATOR_PREFIX
+        mime_type_params = await get_attrs_values_by_attr_chains(
+            base_class_or_obj=peer_id_msg_obj,
+            attributes_chains_dict=get_tg_msg_file_mime_type(),
+            section_separator_prefix=separator)
+        msg_file_mime_type = mime_type_params["msg_file_mime_type"]
+        msg_media_mime_type = mime_type_params["msg_media_mime_type"]
+        msg_media_doc_mime_type = mime_type_params["msg_media_doc_mime_type"]
+        msg_media_file_mime_type = mime_type_params["msg_media_file_mime_type"]
+
+        if msg_file_mime_type:
+            file_mime_type = msg_file_mime_type
+        elif msg_media_mime_type:
+            file_mime_type = msg_media_mime_type
+        elif msg_media_doc_mime_type:
+            file_mime_type = msg_media_doc_mime_type
+        elif msg_media_file_mime_type:
+            file_mime_type = msg_media_file_mime_type
+        else:
+            file_mime_type, encoding = mimetypes.guess_type(
+                url=media_file_path, strict=True)
+            if not file_mime_type:
+                file_mime_type = "application/octet-stream"
+
+        # File Name
+        file_name_params = await get_attrs_values_by_attr_chains(
+            base_class_or_obj=peer_id_msg_obj,
+            attributes_chains_dict=get_tg_msg_file_name(),
+            section_separator_prefix=separator)
+        msg_file_name = file_name_params["msg_file_name"]
+        msg_media_name = file_name_params["msg_media_name"]
+        msg_media_file_name = file_name_params["msg_media_file_name"]
+        msg_media_doc_name = file_name_params["msg_media_doc_name"]
+        if msg_file_name:
+            file_name = msg_file_name
+        elif msg_media_name:
+            file_name = msg_media_name
+        elif msg_media_file_name:
+            file_name = msg_media_file_name
+        elif msg_media_doc_name:
+            file_name = msg_media_doc_name
+        else:
+            file_name = os.path.basename(media_file_path)
+
+        file_result.update({"file_path": media_file_path,
+                            "file_name": file_name,
+                            "file_mime_type": file_mime_type})
         return file_result
-    except Exception as get_file_error:
-        message_error = (
-            f"Downloading File from Message by Peer ID [ERROR]: \n"
-            f"get_file_error: {get_file_error} \n"
-            f"file_message_id: {file_message_id} \n"
-            f"file_owner_peer_id: {file_owner_peer_id} \n"
-            f"telethon_config_name: {telethon_config_name} \n")
+    except Exception as error:
+        message_error = (f"Download File from Msg by Peer ID [ERROR]: \n"
+                         f"error: {error} \n"
+                         f"file_message_id: {file_message_id} \n"
+                         f"file_owner_peer_id: {file_owner_peer_id} \n"
+                         f"telethon_config_name: {telethon_config_name} \n")
         print(message_error)
-        file_result = {"file_path": "",
-                       "get_file_error": get_file_error}
+        file_result.update({"get_file_error": message_error})
         return file_result
     finally:
         # TODO: Temporary unattach handlers not to get or not to send msgs by client

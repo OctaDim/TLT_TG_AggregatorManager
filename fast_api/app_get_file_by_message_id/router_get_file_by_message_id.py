@@ -47,6 +47,8 @@ async def get_file_by_message_id_router(
     extra_file_name = message_file_data.extra_file_name
 
     tlt_file_path = ""
+    tlt_file_name = ""
+    tlt_file_mime_type = ""
     context = {"username": auth_data.username,
                "web_account_id": web_account_id,
                "web_account_username": web_account_username,
@@ -55,7 +57,10 @@ async def get_file_by_message_id_router(
                "chat_id": chat_id,
                "user_id": user_id,
                "tlt_config_name": tlt_config_name,
-               "extra_file_name": extra_file_name}
+               "extra_file_name": extra_file_name,
+               "tlt_file_path": "",
+               "tlt_file_name": "",
+               "tlt_file_mime_type": ""}
 
     try:
         tlt_manager = TelethonManagerSingleton()  # Singleton
@@ -65,7 +70,6 @@ async def get_file_by_message_id_router(
             get_file_error = (f"TLT telegram client not found [ERROR]: \n"
                               f"tlt_config_name: {tlt_config_name} \n")
             context.update({"get_file_msg": get_file_error,
-                            "tlt_file_path": "",
                             "get_file_error": get_file_error})
             json_response = JSONResponse(
                 content=context,
@@ -83,7 +87,6 @@ async def get_file_by_message_id_router(
         if not file_result:
             get_file_error = f"Telegram file not found [ERROR]:"
             context.update({"get_file_msg": get_file_error,
-                            "file_path": "",
                             "get_file_error": get_file_error})
             json_response = JSONResponse(
                 content=context,
@@ -98,11 +101,11 @@ async def get_file_by_message_id_router(
             return json_response
 
         tlt_file_path = file_result["file_path"]
+        tlt_file_name = file_result["file_name"]
+        tlt_file_mime_type = file_result["file_mime_type"]
         get_file_error = file_result["get_file_error"]
-
         if not tlt_file_path:
             context.update({"get_file_msg": get_file_error,
-                            "file_path": tlt_file_path,
                             "get_file_error": get_file_error})
             json_response = JSONResponse(
                 content=context,
@@ -119,25 +122,34 @@ async def get_file_by_message_id_router(
 
         file_exists = await aiofiles_os.path.isfile(path=tlt_file_path)
         if not file_exists:
-            get_file_error = (f"Not existing file [ERROR]:")
+            get_file_error = f"Not existing file [ERROR]:"
             context.update({"get_file_msg": get_file_error,
-                            "file_path": tlt_file_path,
+                            "tlt_file_path": tlt_file_path,
                             "get_file_error": get_file_error})
             json_response = JSONResponse(
                 content=context,
                 status_code=status.HTTP_200_OK)
             print(f"{get_file_error}\n"
+                  f"file_exists: {file_exists}\n"
                   f"tlt_file_path: {tlt_file_path}\n"
                   f"get_file_error: {get_file_error}")
             return json_response
 
-        # File downloaded from message successfully and exists
-        tlt_file_name = os.path.basename(tlt_file_path)
+        # File downloaded from message successfully and
         file_response = FileResponse(
             path=tlt_file_path,
             status_code=200,
-            media_type=None,
-            filename=tlt_file_name)
+            headers=None,
+            media_type=tlt_file_mime_type,
+            background=None,
+            filename=tlt_file_name,
+            stat_result=None,
+            method=None,
+            content_disposition_type="attachment")
+        print("@@@@@@@ tlt_file_path", tlt_file_path)
+        print("@@@@@@@ tlt_file_name", tlt_file_name)
+        print("@@@@@@@ tlt_file_mime_type", tlt_file_mime_type)
+        print("@@@@@@@ get_file_error", get_file_error)
         return file_response
     except Exception as error:
         log_text = (
@@ -151,7 +163,9 @@ async def get_file_by_message_id_router(
             f"user_id: {user_id}\n"
             f"extra_file_name: {extra_file_name}\n"
             f"tlt_config_name: {tlt_config_name}\n"
-            f"tlt_file_path: {tlt_file_path}\n")
+            f"tlt_file_path: {tlt_file_path}\n"
+            f"tlt_file_name: {tlt_file_name}\n"
+            f"tlt_file_mime_type: {tlt_file_mime_type}\n")
         print(log_text)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

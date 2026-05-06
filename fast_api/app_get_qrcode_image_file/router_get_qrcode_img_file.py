@@ -63,8 +63,13 @@ async def get_qrcode_image_file_router(
         file_response = FileResponse(
             path=qrcode_img_fpath,
             status_code=200,
+            headers=None,
             media_type="image/png",
-            filename=qrcode_img_fname)
+            background=None,
+            filename=qrcode_img_fname,
+            stat_result=None,
+            method=None,
+            content_disposition_type="attachment")
         return file_response
     except Exception as error:
         log_text = (
