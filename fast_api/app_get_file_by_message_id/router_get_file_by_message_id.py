@@ -1,4 +1,4 @@
-import os.path
+import copy
 
 from aiofiles import os as aiofiles_os
 from fastapi import APIRouter, HTTPException
@@ -136,10 +136,15 @@ async def get_file_by_message_id_router(
             return json_response
 
         # File downloaded from message successfully and
+        file_resp_headers = copy.copy(context)
+        file_resp_headers.update({"message_id": str(message_id),
+                                  "channel_id": str(channel_id),
+                                  "chat_id": str(chat_id),
+                                  "user_id": str(user_id)})
         file_response = FileResponse(
             path=tlt_file_path,
             status_code=200,
-            headers=None,
+            headers=file_resp_headers,
             media_type=tlt_file_mime_type,
             background=None,
             filename=tlt_file_name,
@@ -149,7 +154,7 @@ async def get_file_by_message_id_router(
         return file_response
     except Exception as error:
         log_text = (
-            f"Router Get telegram file by message id and peer id [ERROR]:\n"
+            f"Router Get telegram file by Message ID and Peer ID [ERROR]:\n"
             f"error: {error}\n"
             f"web_account_id: {web_account_id}\n"
             f"web_account_username: {web_account_username}\n"
