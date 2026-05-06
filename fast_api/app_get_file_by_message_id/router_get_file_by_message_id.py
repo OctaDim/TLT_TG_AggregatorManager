@@ -146,10 +146,6 @@ async def get_file_by_message_id_router(
             stat_result=None,
             method=None,
             content_disposition_type="attachment")
-        print("@@@@@@@ tlt_file_path", tlt_file_path)
-        print("@@@@@@@ tlt_file_name", tlt_file_name)
-        print("@@@@@@@ tlt_file_mime_type", tlt_file_mime_type)
-        print("@@@@@@@ get_file_error", get_file_error)
         return file_response
     except Exception as error:
         log_text = (
