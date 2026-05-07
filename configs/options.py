@@ -133,6 +133,8 @@ class TELETHON_OPTIONS:
     SEND_FILE_MESSAGE_CAPTION_PREFIX = "Файл: "
     SEND_FILE_FORCE_AS_DOCUMENT = False
 
+    WAIT_FOR_DOWNLOAD_MEDIA_TIMEOUT: int | float = 10
+
 
 @dataclass(frozen=True)
 class AGGREGATOR_API_OPTIONS:

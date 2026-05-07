@@ -12,6 +12,7 @@ class InGetFileByMessageData(BaseModel):
     user_id: Optional[int] = None
     # telethon_config_name: Optional[str] = None
     tlt_config_name: Optional[str] = None
+    custom_file_name: Optional[str] = None
     extra_file_name: Optional[str] = None
 
     @model_validator(mode="before")

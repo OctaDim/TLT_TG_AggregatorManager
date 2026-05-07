@@ -1,3 +1,4 @@
+import asyncio
 import mimetypes
 import os
 from typing import Dict
@@ -9,7 +10,8 @@ from telethon.tl.types import DocumentAttributeFilename
 from configs.console_colors import CONSOLE_COLORS
 from configs.environments import BASE_DIR
 from configs.options import TELETHON_OPTIONS
-from fast_api.app_get_file_by_message_id.chain_message_doc_attrs import get_tg_msg_doc_attrs
+from fast_api.app_get_file_by_message_id.chain_message_doc_attrs import (
+    get_tg_msg_doc_attrs)
 from fast_api.app_get_file_by_message_id.chain_message_file_name import (
     get_tg_msg_file_name)
 from fast_api.app_get_file_by_message_id.chain_message_mime_type import (
@@ -24,6 +26,7 @@ async def get_tg_file_by_message_id(
         file_owner_peer_id: int,
         telethon_client: TelegramClient,
         telethon_config_name: str,
+        custom_file_name: str = None
 ) -> Dict[str, str] | None:
     """Note: file_owner_peer_id can be channel_id, chat_id or user_id"""
 
@@ -39,7 +42,7 @@ async def get_tg_file_by_message_id(
 
         if not after_conn_is_connected:
             get_file_error = (
-                "Not connectable TLT telegram client [ERROR]: \n"
+                f"Not connectable TLT telegram client [ERROR]: \n"
                 f"file_message_id: {file_message_id} \n"
                 f"file_owner_peer_id: {file_owner_peer_id} \n"
                 f"orig_is_connected: {orig_is_connected} \n"
@@ -64,7 +67,7 @@ async def get_tg_file_by_message_id(
 
         if not peer_id_msg_obj:
             get_file_error = (
-                "Peer ID Message object not found [ERROR]: \n"
+                f"Peer ID Message object not found [ERROR]: \n"
                 f"file_message_id: {file_message_id} \n"
                 f"file_owner_peer_id: {file_owner_peer_id} \n"
                 f"telethon_config_name: {telethon_config_name} \n"
@@ -76,7 +79,7 @@ async def get_tg_file_by_message_id(
 
         if not hasattr(peer_id_msg_obj, "media") or not peer_id_msg_obj.media:
             get_file_error = (
-                "Media attribute empty or not found [ERROR]: \n"
+                f"Media attribute empty or not found [ERROR]: \n"
                 f"file_message_id: {file_message_id} \n"
                 f"file_owner_peer_id: {file_owner_peer_id} \n"
                 f"telethon_config_name: {telethon_config_name} \n"
@@ -91,9 +94,40 @@ async def get_tg_file_by_message_id(
             all_dir_str_parts=[BASE_DIR, base_tlt_files_dir])
         await aiofiles_os.makedirs(temp_tlt_files_dir, exist_ok=True)
 
-        media_file_path = await telethon_client.download_media(
-            peer_id_msg_obj, file=temp_tlt_files_dir)  # tg file name
-        # media_file_path = await ev__client.download_media(peer_id_msg_obj, file=bytes)  # To memory
+        try:
+            async_task_obj = telethon_client.download_media(
+                message=peer_id_msg_obj,
+                file=temp_tlt_files_dir)  # tg file name
+            media_file_path = await asyncio.wait_for(
+                fut=async_task_obj,
+                timeout=TELETHON_OPTIONS.WAIT_FOR_DOWNLOAD_MEDIA_TIMEOUT)
+
+        except asyncio.TimeoutError as download_timeout_error:
+            get_file_error = (
+                f"Telethon TG download media timeout [ERROR]: \n"
+                f"download_timeout_error: {download_timeout_error} \n"
+                f"file_message_id: {file_message_id} \n"
+                f"file_owner_peer_id: {file_owner_peer_id} \n"
+                f"telethon_config_name: {telethon_config_name} \n"
+                f"peer_id_msg_obj: {peer_id_msg_obj} \n"
+                f"peer_id_msg_obj.media: {peer_id_msg_obj.media} \n"
+                f"temp_tlt_files_dir: {temp_tlt_files_dir}")
+            print(get_file_error)
+            file_result.update({"get_file_error": get_file_error})
+            return file_result
+        except Exception as media_download_error:
+            get_file_error = (
+                f"Telethon TG download media [ERROR]: \n"
+                f"media_download_error: {media_download_error} \n"
+                f"file_message_id: {file_message_id} \n"
+                f"file_owner_peer_id: {file_owner_peer_id} \n"
+                f"telethon_config_name: {telethon_config_name} \n"
+                f"peer_id_msg_obj: {peer_id_msg_obj} \n"
+                f"peer_id_msg_obj.media: {peer_id_msg_obj.media} \n"
+                f"temp_tlt_files_dir: {temp_tlt_files_dir}")
+            print(get_file_error)
+            file_result.update({"get_file_error": get_file_error})
+            return file_result
 
         # Mime type from message object
         separator = TELETHON_OPTIONS.EVENT_ATTRS_SECTION_SEPARATOR_PREFIX
@@ -111,16 +145,21 @@ async def get_tg_file_by_message_id(
             if not file_mime_type:
                 file_mime_type = "application/octet-stream"
 
-        # File name from message object
-        file_name_params = await get_attrs_values_by_attr_chains(
-            base_class_or_obj=peer_id_msg_obj,
-            attributes_chains_dict=get_tg_msg_file_name(),
-            section_separator_prefix=separator)
-        msg_file_name = file_name_params["msg_file_name"]
-        if msg_file_name:
-            file_name = msg_file_name
+        # File name from custom file name
+        if custom_file_name:
+            file_name = custom_file_name
         else:
             file_name = ""
+
+        # File name from message object
+        if not file_name:
+            file_name_params = await get_attrs_values_by_attr_chains(
+                base_class_or_obj=peer_id_msg_obj,
+                attributes_chains_dict=get_tg_msg_file_name(),
+                section_separator_prefix=separator)
+            msg_file_name = file_name_params["msg_file_name"]
+            if msg_file_name:
+                file_name = msg_file_name
 
         # File name from message attributes
         if not file_name:
