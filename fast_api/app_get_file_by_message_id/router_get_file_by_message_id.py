@@ -18,6 +18,7 @@ from fast_api.app_web_account.scheme_web_account import (
     InWebAccountData)
 from telethon_manager.telethon_clients_manager import (
     TelethonManagerSingleton)
+from utils_common.correct_header_value import correct_header_str_value
 
 base_url_name = API_OPTIONS.API_BASE_URL_NAME
 rtr_get_file_by_message_id = APIRouter(prefix=f"/{base_url_name}",
@@ -45,6 +46,7 @@ async def get_file_by_message_id_router(
     # telethon_config_name = message_file_data.telethon_config_name
     tlt_config_name = message_file_data.tlt_config_name
     extra_file_name = message_file_data.extra_file_name
+    custom_file_name = message_file_data.custom_file_name
 
     tlt_file_path = ""
     tlt_file_name = ""
@@ -82,29 +84,11 @@ async def get_file_by_message_id_router(
             file_message_id=message_id,
             file_owner_peer_id=file_owner_peer_id,
             telethon_client=tlt_client,
-            telethon_config_name=tlt_config_name)
+            telethon_config_name=tlt_config_name,
+            custom_file_name=custom_file_name)
 
         if not file_result:
-            get_file_error = f"Telegram file not found [ERROR]:"
-            context.update({"get_file_msg": get_file_error,
-                            "get_file_error": get_file_error})
-            json_response = JSONResponse(
-                content=context,
-                status_code=status.HTTP_200_OK)
-            print(f"{get_file_error}\n"
-                  f"message_id: {message_id}\n"
-                  f"channel_id: {channel_id}\n"
-                  f"chat_id: {chat_id}\n"
-                  f"user_id: {user_id}\n"
-                  f"tlt_config_name: {tlt_config_name}\n"
-                  f"extra_file_name: {extra_file_name}\n")
-            return json_response
-
-        tlt_file_path = file_result["file_path"]
-        tlt_file_name = file_result["file_name"]
-        tlt_file_mime_type = file_result["file_mime_type"]
-        get_file_error = file_result["get_file_error"]
-        if not tlt_file_path:
+            get_file_error = f"Telegram file not received [ERROR]:"
             context.update({"get_file_msg": get_file_error,
                             "get_file_error": get_file_error})
             json_response = JSONResponse(
@@ -117,7 +101,31 @@ async def get_file_by_message_id_router(
                   f"user_id: {user_id}\n"
                   f"tlt_config_name: {tlt_config_name}\n"
                   f"extra_file_name: {extra_file_name}\n"
-                  f"tlt_file_path: {tlt_file_path}\n")
+                  f"get_file_error: {get_file_error}\n")
+            return json_response
+
+        tlt_file_path = file_result["file_path"]
+        tlt_file_name = file_result["file_name"]
+        tlt_file_mime_type = file_result["file_mime_type"]
+        get_file_error = file_result["get_file_error"]
+
+        if get_file_error or not tlt_file_path:
+            context.update({"get_file_msg": get_file_error,
+                            "get_file_error": get_file_error})
+            json_response = JSONResponse(
+                content=context,
+                status_code=status.HTTP_200_OK)
+            print(f"{get_file_error}\n"
+                  f"message_id: {message_id}\n"
+                  f"channel_id: {channel_id}\n"
+                  f"chat_id: {chat_id}\n"
+                  f"user_id: {user_id}\n"
+                  f"tlt_config_name: {tlt_config_name}\n"
+                  f"extra_file_name: {extra_file_name}\n"
+                  f"tlt_file_path: {tlt_file_path}\n"
+                  f"tlt_file_name: {tlt_file_name}\n"
+                  f"tlt_file_mime_type: {tlt_file_mime_type}\n"
+                  f"get_file_error: {get_file_error}\n")
             return json_response
 
         file_exists = await aiofiles_os.path.isfile(path=tlt_file_path)
@@ -135,22 +143,29 @@ async def get_file_by_message_id_router(
                   f"get_file_error: {get_file_error}")
             return json_response
 
-        # File downloaded from message successfully and
+        # File downloaded from message successfully and exists
+        get_file_msg = "File downloaded successfully [OK]:"
+        print(f"{get_file_msg}\n"
+              f"tlt_file_path: {tlt_file_path}\n"
+              f"tlt_file_name: {tlt_file_name}\n"
+              f"tlt_file_mime_type: {tlt_file_mime_type}\n"
+              f"get_file_error: {get_file_error}\n")
+
         file_resp_headers = copy.copy(context)
         file_resp_headers.update({
-            "message_id": str(message_id),
-            "channel_id": str(channel_id),
-            "chat_id": str(chat_id),
-            "user_id": str(user_id),
+            "get_file_msg": get_file_msg,
             "tlt_file_path": tlt_file_path,
             "tlt_file_name": tlt_file_name,
             "tlt_file_mime_type": tlt_file_mime_type,
             "get_file_error": get_file_error})
+        for cur_key, cur_value in file_resp_headers.items():
+            right_value = correct_header_str_value(cur_value)
+            file_resp_headers[cur_key] = right_value
 
         file_response = FileResponse(
             path=tlt_file_path,
             status_code=200,
-            headers=None,
+            headers=file_resp_headers,
             media_type=tlt_file_mime_type,
             background=None,
             filename=tlt_file_name,
