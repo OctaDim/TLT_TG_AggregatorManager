@@ -100,7 +100,7 @@ async def get_tg_file_by_message_id(
                 file=temp_tlt_files_dir)  # tg file name
             media_file_path = await asyncio.wait_for(
                 fut=async_task_obj,
-                timeout=TELETHON_OPTIONS.WAIT_FOR_DOWNLOAD_MEDIA_TIMEOUT)
+                timeout=TELETHON_OPTIONS.WAIT_FOR_DOWNLOAD_MEDIA_TIMEOUT_SEC)
 
         except asyncio.TimeoutError as download_timeout_error:
             get_file_error = (

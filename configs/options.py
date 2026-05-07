@@ -133,7 +133,7 @@ class TELETHON_OPTIONS:
     SEND_FILE_MESSAGE_CAPTION_PREFIX = "Файл: "
     SEND_FILE_FORCE_AS_DOCUMENT = False
 
-    WAIT_FOR_DOWNLOAD_MEDIA_TIMEOUT: int | float = 10
+    WAIT_FOR_DOWNLOAD_MEDIA_TIMEOUT_SEC: int | float = 43200
 
 
 @dataclass(frozen=True)
