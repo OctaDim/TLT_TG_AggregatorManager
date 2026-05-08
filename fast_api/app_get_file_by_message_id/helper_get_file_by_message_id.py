@@ -104,7 +104,7 @@ async def get_tg_file_by_message_id(
 
         except asyncio.TimeoutError as download_timeout_error:
             get_file_error = (
-                f"Telethon TG download media timeout [ERROR]: \n"
+                f"Download Telegram media timeout [ERROR]: \n"
                 f"download_timeout_error: {download_timeout_error} \n"
                 f"file_message_id: {file_message_id} \n"
                 f"file_owner_peer_id: {file_owner_peer_id} \n"
@@ -117,7 +117,7 @@ async def get_tg_file_by_message_id(
             return file_result
         except Exception as media_download_error:
             get_file_error = (
-                f"Telethon TG download media [ERROR]: \n"
+                f"Download Telegram media [ERROR]: \n"
                 f"media_download_error: {media_download_error} \n"
                 f"file_message_id: {file_message_id} \n"
                 f"file_owner_peer_id: {file_owner_peer_id} \n"
