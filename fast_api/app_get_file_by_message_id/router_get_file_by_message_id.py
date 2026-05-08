@@ -60,9 +60,11 @@ async def get_file_by_message_id_router(
                "user_id": user_id,
                "tlt_config_name": tlt_config_name,
                "extra_file_name": extra_file_name,
+               "get_file_msg": "",
                "tlt_file_path": "",
                "tlt_file_name": "",
-               "tlt_file_mime_type": ""}
+               "tlt_file_mime_type": "",
+               "get_file_error": ""}
 
     try:
         tlt_manager = TelethonManagerSingleton()  # Singleton
@@ -151,21 +153,23 @@ async def get_file_by_message_id_router(
               f"tlt_file_mime_type: {tlt_file_mime_type}\n"
               f"get_file_error: {get_file_error}\n")
 
-        file_resp_headers = copy.copy(context)
-        file_resp_headers.update({
+        file_resp_data = copy.copy(context)  # Attention: Web/proxy servers allowed not more 4-8 kb
+        file_resp_data.update({
             "get_file_msg": get_file_msg,
             "tlt_file_path": tlt_file_path,
             "tlt_file_name": tlt_file_name,
             "tlt_file_mime_type": tlt_file_mime_type,
             "get_file_error": get_file_error})
-        for cur_key, cur_value in file_resp_headers.items():
+        custom_resp_headers = {}
+        for cur_key, cur_value in file_resp_data.items():
             right_value = correct_header_str_value(cur_value)
-            file_resp_headers[cur_key] = right_value
+            new_x_header_key = f"X-TLT-{cur_key}"  # Valid custom headers key
+            custom_resp_headers[new_x_header_key] = right_value
 
         file_response = FileResponse(
             path=tlt_file_path,
             status_code=200,
-            headers=file_resp_headers,
+            headers=custom_resp_headers,
             media_type=tlt_file_mime_type,
             background=None,
             filename=tlt_file_name,
