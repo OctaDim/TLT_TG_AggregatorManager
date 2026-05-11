@@ -22,10 +22,12 @@ from telethon_manager.telethon_attrs_chains.chain_message_text import (
     get_message_text_attr_chains)
 from telethon_manager.telethon_client_config import TelethonConfig
 from utils_common.clean_str_new_lines_spaces import group_clean_text
-from utils_common.get_file_name_extra_part import get_file_name_with_extra_part
+from utils_common.get_file_name_extra_part import (
+    get_file_name_with_extra_part)
 from utils_common.get_obj_attrs_vals_by_attr_chain import (
     get_attrs_values_by_attr_chains)
-from utils_common.normalized_path import get_full_dir_normal_path
+from utils_common.normalized_path import (
+    get_full_dir_normal_path, get_full_file_normal_path)
 from utils_specific.handle_all_event_params import (
     send_all_event_params)
 
@@ -83,11 +85,23 @@ async def new_message_handler_helper(
             # temp_file_path = await ev__client.download_media(ev_media_photo, file=bytes)  # To memory
 
             if TELETHON_OPTIONS.SERVER_SAVE_MESSAGE_PHOTO_FILE:
-                file_extra_path = get_file_name_with_extra_part(
-                    orig_file_full_path=temp_file_path,
+                base_arch_files_dir = TELETHON_OPTIONS.ARCHIVE_TLT_TG_FILES_DIR
+                arch_tlt_files_dir = get_full_dir_normal_path(
+                    [BASE_DIR, base_arch_files_dir])
+                await aiofiles_os.makedirs(arch_tlt_files_dir,
+                                           exist_ok=True)
+
+                temp_arch_file_name = os.path.basename(temp_file_path)
+                temp_arch_file_path = get_full_file_normal_path(
+                    all_dir_str_parts=[arch_tlt_files_dir],
+                    file_name_with_ext=temp_arch_file_name)
+
+                arch_file_extra_path = get_file_name_with_extra_part(
+                    orig_file_full_path=temp_arch_file_path,
                     filename_prefix=archive_file_prefix)
-                await aioshutil.copy2(temp_file_path, file_extra_path)
-                extra_file_name = os.path.basename(file_extra_path)
+                await aioshutil.copy2(src=temp_file_path,
+                                      dst=arch_file_extra_path)
+                extra_file_name = os.path.basename(arch_file_extra_path)
                 extra_saved_mark = TELETHON_OPTIONS.SERVER_SAVED_FILE_ACTION_MARK
             else:
                 extra_file_name = None
@@ -131,11 +145,23 @@ async def new_message_handler_helper(
                     # temp_file_path = await ev__client.download_media(ev_media_doc, file=bytes)  # To memory
 
                     if TELETHON_OPTIONS.SERVER_SAVE_MESSAGE_VIDEO_FILE:
-                        file_extra_path = get_file_name_with_extra_part(
-                            orig_file_full_path=temp_file_path,
+                        base_arch_files_dir = TELETHON_OPTIONS.ARCHIVE_TLT_TG_FILES_DIR
+                        arch_tlt_files_dir = get_full_dir_normal_path(
+                            [BASE_DIR, base_arch_files_dir])
+                        await aiofiles_os.makedirs(arch_tlt_files_dir,
+                                                   exist_ok=True)
+
+                        temp_arch_file_name = os.path.basename(temp_file_path)
+                        temp_arch_file_path = get_full_file_normal_path(
+                            all_dir_str_parts=[arch_tlt_files_dir],
+                            file_name_with_ext=temp_arch_file_name)
+
+                        arch_file_extra_path = get_file_name_with_extra_part(
+                            orig_file_full_path=temp_arch_file_path,
                             filename_prefix=archive_file_prefix)
-                        await aioshutil.copy2(temp_file_path, file_extra_path)
-                        extra_file_name = os.path.basename(file_extra_path)
+                        await aioshutil.copy2(src=temp_file_path,
+                                              dst=arch_file_extra_path)
+                        extra_file_name = os.path.basename(arch_file_extra_path)
                         extra_saved_mark = TELETHON_OPTIONS.SERVER_SAVED_FILE_ACTION_MARK
                     else:
                         extra_file_name = None
@@ -167,14 +193,28 @@ async def new_message_handler_helper(
                         ev_media_doc, file=temp_tlt_files_dir)  # tg file name
                     # temp_file_path = await ev__client.download_media(ev_media_doc, file=bytes)  # To memory
 
-                    file_extra_path = get_file_name_with_extra_part(
-                        orig_file_full_path=temp_file_path,
+                    base_arch_files_dir = TELETHON_OPTIONS.ARCHIVE_TLT_TG_FILES_DIR
+                    arch_tlt_files_dir = get_full_dir_normal_path(
+                        [BASE_DIR, base_arch_files_dir])
+                    await aiofiles_os.makedirs(arch_tlt_files_dir,
+                                               exist_ok=True)
+
+                    temp_arch_file_name = os.path.basename(temp_file_path)
+                    temp_arch_file_path = get_full_file_normal_path(
+                        all_dir_str_parts=[arch_tlt_files_dir],
+                        file_name_with_ext=temp_arch_file_name)
+
+                    arch_file_extra_path = get_file_name_with_extra_part(
+                        orig_file_full_path=temp_arch_file_path,
                         filename_prefix=archive_file_prefix)
-                    await aioshutil.copy2(temp_file_path, file_extra_path)
-                    extra_file_name = os.path.basename(file_extra_path)
-                    extra_saved_mark = TELETHON_OPTIONS.SERVER_SAVED_FILE_ACTION_MARK
+                    await aioshutil.copy2(src=temp_file_path,
+                                          dst=arch_file_extra_path)
+
                     if await aiofiles_os.path.exists(temp_file_path):
                         await aiofiles_os.remove(temp_file_path)
+
+                    extra_file_name = os.path.basename(arch_file_extra_path)
+                    extra_saved_mark = TELETHON_OPTIONS.SERVER_SAVED_FILE_ACTION_MARK
                 else:
                     extra_file_name = None
                     extra_saved_mark = ""
@@ -203,14 +243,28 @@ async def new_message_handler_helper(
                         ev_media_doc, file=temp_tlt_files_dir)  # tg file name
                     # temp_file_path = await ev__client.download_media(ev_media_doc, file=bytes)  # To memory
 
-                    file_extra_path = get_file_name_with_extra_part(
-                        orig_file_full_path=temp_file_path,
+                    base_arch_files_dir = TELETHON_OPTIONS.ARCHIVE_TLT_TG_FILES_DIR
+                    arch_tlt_files_dir = get_full_dir_normal_path(
+                        [BASE_DIR, base_arch_files_dir])
+                    await aiofiles_os.makedirs(arch_tlt_files_dir,
+                                               exist_ok=True)
+
+                    temp_arch_file_name = os.path.basename(temp_file_path)
+                    temp_arch_file_path = get_full_file_normal_path(
+                        all_dir_str_parts=[arch_tlt_files_dir],
+                        file_name_with_ext=temp_arch_file_name)
+
+                    arch_file_extra_path = get_file_name_with_extra_part(
+                        orig_file_full_path=temp_arch_file_path,
                         filename_prefix=archive_file_prefix)
-                    await aioshutil.copy2(temp_file_path, file_extra_path)
-                    extra_file_name = os.path.basename(file_extra_path)
-                    extra_saved_mark = TELETHON_OPTIONS.SERVER_SAVED_FILE_ACTION_MARK
+                    await aioshutil.copy2(src=temp_file_path,
+                                          dst=arch_file_extra_path)
+
                     if await aiofiles_os.path.exists(temp_file_path):
                         await aiofiles_os.remove(temp_file_path)
+
+                    extra_file_name = os.path.basename(arch_file_extra_path)
+                    extra_saved_mark = TELETHON_OPTIONS.SERVER_SAVED_FILE_ACTION_MARK
                 else:
                     extra_file_name = None
                     extra_saved_mark = ""
