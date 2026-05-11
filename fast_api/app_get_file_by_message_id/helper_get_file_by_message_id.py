@@ -95,13 +95,13 @@ async def get_tg_file_by_message_id(
         await aiofiles_os.makedirs(temp_tlt_files_dir, exist_ok=True)
 
         try:
-            async_task_obj = telethon_client.download_media(
+            async_task_fut_obj = telethon_client.download_media(
                 message=peer_id_msg_obj,
                 file=temp_tlt_files_dir)  # tg file name
+            # TODO: Make separate thread or background_task execution
             media_file_path = await asyncio.wait_for(
-                fut=async_task_obj,
+                fut=async_task_fut_obj,
                 timeout=TELETHON_OPTIONS.WAIT_FOR_DOWNLOAD_MEDIA_TIMEOUT_SEC)
-
         except asyncio.TimeoutError as download_timeout_error:
             get_file_error = (
                 f"Download Telegram media timeout [ERROR]: \n"
