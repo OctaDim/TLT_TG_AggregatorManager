@@ -260,3 +260,48 @@ AGGREGATOR_PORT = aggregator_conf_parser.get(section=aggregator_conf_name, optio
 # Server-port for BERT classifier API to request
 AGGREGATOR_API_SEVER_PORT = "{api_host}:{api_port}".format(
     api_host=AGGREGATOR_HOST, api_port=AGGREGATOR_PORT)
+
+
+# GETTING S3 CONFIGS ###################################################
+@dataclass(frozen=True)
+class S3_CONFIG_NAMES:
+    S3_PRODUCT_SERVER_IP = "S3_production"
+    S3_TEST_SERVER_IP = "S3_test_176_124_136_22"
+    S3_TEST_PORT_ANY_IP = "S3_all_ips_0_0_0_0"
+    S3_TEST_WIN_LOCALHOST = "S3_win_localhost_127_0_0_1"
+    S3_TEST_UNIX_LOCALHOST = "S3_unix_localhost_127_0_1_1"
+    S3_TEST_DEXP_IP = "S3_dexp_ip_192_168_0_106"
+
+
+s3_ini_normal_path = get_full_file_normal_path(
+    all_dir_str_parts=[BASE_DIR],
+    file_name_with_ext=".configs_s3_aws_api.ini")
+s3_conf_parser = ConfigParser()
+s3_conf_parser.read(filenames=s3_ini_normal_path)
+
+if cur_external_ip == "___.___.___.___":  # Just example
+    s3_conf_name = S3_CONFIG_NAMES.S3_TEST_SERVER_IP
+elif cur_external_ip == "172.19.201.24":
+    s3_conf_name = S3_CONFIG_NAMES.S3_TEST_SERVER_IP
+elif cur_external_ip == "176.124.136.22":
+    s3_conf_name = S3_CONFIG_NAMES.S3_TEST_SERVER_IP
+elif cur_external_ip == "192.168.0.117":
+    s3_conf_name = S3_CONFIG_NAMES.S3_TEST_DEXP_IP
+elif sys.platform == "linux":
+    s3_conf_name = S3_CONFIG_NAMES.S3_TEST_UNIX_LOCALHOST
+elif sys.platform == "win32":
+    s3_conf_name = S3_CONFIG_NAMES.S3_TEST_WIN_LOCALHOST
+else:
+    s3_conf_name = S3_CONFIG_NAMES.S3_TEST_PORT_ANY_IP
+
+S3_HOST = s3_conf_parser.get(section=s3_conf_name, option="S3_HOST")
+S3_PORT = s3_conf_parser.get(section=s3_conf_name, option="S3_PORT")
+S3_ACCESS_KEY = s3_conf_parser.get(section=s3_conf_name, option="S3_ACCESS_KEY")
+S3_SECRET_KEY = s3_conf_parser.get(section=s3_conf_name, option="S3_SECRET_KEY")
+S3_DEFAULT_BUCKET = s3_conf_parser.get(section=s3_conf_name, option="S3_DEFAULT_BUCKET")
+S3_SERVICE_NAME = s3_conf_parser.get(section=s3_conf_name, option="S3_SERVICE_NAME")
+S3_REGION_NAME = s3_conf_parser.get(section=s3_conf_name, option="S3_REGION_NAME")
+
+# Server-port for BERT classifier API to request
+S3_API_SERVER_PORT = "{s3_api_host}:{s3_api_port}".format(
+    s3_api_host=S3_HOST, s3_api_port=S3_PORT)
