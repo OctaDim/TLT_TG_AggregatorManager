@@ -1,5 +1,6 @@
 import os
 
+import aiofiles
 import aioshutil
 from aiofiles import os as aiofiles_os
 
@@ -9,8 +10,9 @@ from telethon.tl.types import (
     DocumentAttributeFilename, MessageMediaPhoto)
 
 from configs.labels_messages import ACTION_STATUS
-from configs.environments import BASE_DIR
+from configs.environments import BASE_DIR, S3_DEFAULT_BUCKET, S3_API_ENDPOINT, S3_REGION_NAME
 from configs.options import TELETHON_OPTIONS
+from s3_async_managers.s3_aiobotocore_manager import AioBotoCoreManager
 from telethon_manager.telethon_attrs_chains.chain_doc_attr_audio import (
     get_doc_attr_audio_attr_chains)
 from telethon_manager.telethon_attrs_chains.chain_doc_attr_file_name import (
@@ -24,6 +26,7 @@ from telethon_manager.telethon_attrs_chains.chain_message_text import (
 from telethon_manager.telethon_attrs_chains.chain_reaction_result import (
     get_reaction_result_attr_chains)
 from telethon_manager.telethon_client_config import TelethonConfig
+from utils_common.check_create_s3_bucket import check_create_s3_bucket
 from utils_common.clean_str_new_lines_spaces import group_clean_text
 from utils_common.get_file_name_extra_part import (
     get_file_name_with_extra_part)
@@ -87,7 +90,10 @@ async def message_edited_handler_helper(
                 ev_media_photo, file=temp_tlt_files_dir)  # tg file name
             # temp_file_path = await ev__client.download_media(ev_media_photo, file=bytes)  # To memory
 
-            if TELETHON_OPTIONS.SERVER_SAVE_MESSAGE_PHOTO_FILE:
+            arch_file_extra_path = ""
+            extra_saved_mark = ""
+            if (TELETHON_OPTIONS.SERVER_SAVE_MESSAGE_PHOTO_FILE
+                    or TELETHON_OPTIONS.S3_SAVE_MESSAGE_PHOTO_FILE):
                 base_arch_files_dir = TELETHON_OPTIONS.ARCHIVE_TLT_TG_FILES_DIR
                 arch_tlt_files_dir = get_full_dir_normal_path(
                     [BASE_DIR, base_arch_files_dir])
@@ -102,22 +108,60 @@ async def message_edited_handler_helper(
                 arch_file_extra_path = get_file_name_with_extra_part(
                     orig_file_full_path=temp_arch_file_path,
                     filename_prefix=archive_file_prefix)
-                await aioshutil.copy2(src=temp_file_path,
-                                      dst=arch_file_extra_path)
                 extra_file_name = os.path.basename(arch_file_extra_path)
-                extra_saved_mark = TELETHON_OPTIONS.SERVER_SAVED_FILE_ACTION_MARK
             else:
                 extra_file_name = None
-                extra_saved_mark = ""
 
-            if await aiofiles_os.path.exists(temp_file_path):
-                await aiofiles_os.remove(temp_file_path)
+            if TELETHON_OPTIONS.SERVER_SAVE_MESSAGE_PHOTO_FILE:
+                await aioshutil.copy2(src=temp_file_path,
+                                      dst=arch_file_extra_path)
+                server_saved_mark = TELETHON_OPTIONS.SERVER_SAVED_FILE_ACTION_MARK
+                extra_saved_mark = f"{extra_saved_mark}{server_saved_mark}"
+
+            s3_bucket, s3_key, s3_endpoint, s3_uri = "", "", "", ""
+            if TELETHON_OPTIONS.S3_SAVE_MESSAGE_PHOTO_FILE:
+                async with AioBotoCoreManager() as s3_manager:
+                    s3_client = await s3_manager.get_client()
+                    s3_bucket_res = await check_create_s3_bucket(
+                        s3_client=s3_client,
+                        s3_bucket_name=S3_DEFAULT_BUCKET,
+                        s3_region_name=S3_REGION_NAME)
+
+                    if s3_bucket_res.valid_bucket:
+                        async with aiofiles.open(
+                                file=temp_file_path, mode="rb") as f_obj:
+                            file_data = await f_obj.read()
+                            await s3_client.put_object(
+                                # ContentType='image/jpeg'
+                                Bucket=S3_DEFAULT_BUCKET,
+                                Key=extra_file_name,
+                                Body=file_data)
+
+                        s3_bucket = S3_DEFAULT_BUCKET
+                        s3_key = extra_file_name
+                        s3_endpoint = (f"{S3_API_ENDPOINT}/"
+                                       f"{S3_DEFAULT_BUCKET}/"
+                                       f"{extra_file_name}")
+                        s3_uri = (f"s3://{S3_DEFAULT_BUCKET}/"
+                                  f"{extra_file_name}")
+
+                        s3_saved_mark = TELETHON_OPTIONS.S3_SAVED_FILE_ACTION_MARK
+                        extra_saved_mark = f"{extra_saved_mark}{s3_saved_mark}"
+
             file_name_cst = os.path.basename(temp_file_path)
             file_name_params = {"file_name_cst": file_name_cst,
                                 "extra_file_name_cst": extra_file_name}
             handler_specific_params.update(file_name_params)
-            action_str = (f"{action_str}+"
-                          f"{ACTION_STATUS.PHOTO_ATTACH_ACTION_STR}"
+
+            s3_aws_params = {"s3_bucket": s3_bucket,
+                             "s3_key": s3_key,
+                             "s3_endpoint": s3_endpoint,
+                             "s3_uri": s3_uri}
+            handler_specific_params.update(s3_aws_params)
+
+            if await aiofiles_os.path.exists(temp_file_path):
+                await aiofiles_os.remove(temp_file_path)
+            action_str = (f"{action_str}+{ACTION_STATUS.PHOTO_ATTACH_ACTION_STR}"
                           f"{extra_saved_mark}")
     elif ev_media_doc_attrs:
         for cur_doc_attr_obj in ev_media_doc_attrs:
@@ -136,8 +180,7 @@ async def message_edited_handler_helper(
                     file_name_params = {"file_name_cst": file_name_cst,
                                         "extra_file_name_cst": extra_file_name}
                     handler_specific_params.update(file_name_params)
-                    action_str = (
-                        f"{action_str}+{ACTION_STATUS.VIDEO_ATTACH_ACTION_STR}")
+                    action_str = f"{action_str}+{ACTION_STATUS.VIDEO_ATTACH_ACTION_STR}"
                 elif ev_media_doc and TELETHON_OPTIONS.DOWNLOAD_VIDEO_TO_GET_FILE_NAME:
                     base_tlt_files_dir = TELETHON_OPTIONS.TEMP_TG_DOWNLOADED_FILES_DIR
                     temp_tlt_files_dir = get_full_dir_normal_path(
@@ -147,7 +190,10 @@ async def message_edited_handler_helper(
                         ev_media_doc, file=temp_tlt_files_dir)  # tg file name
                     # temp_file_path = await ev__client.download_media(ev_media_doc, file=bytes)  # To memory
 
-                    if TELETHON_OPTIONS.SERVER_SAVE_MESSAGE_VIDEO_FILE:
+                    arch_file_extra_path = ""
+                    extra_saved_mark = ""
+                    if (TELETHON_OPTIONS.SERVER_SAVE_MESSAGE_VIDEO_FILE
+                            or TELETHON_OPTIONS.S3_SAVE_MESSAGE_VIDEO_FILE):
                         base_arch_files_dir = TELETHON_OPTIONS.ARCHIVE_TLT_TG_FILES_DIR
                         arch_tlt_files_dir = get_full_dir_normal_path(
                             [BASE_DIR, base_arch_files_dir])
@@ -162,22 +208,60 @@ async def message_edited_handler_helper(
                         arch_file_extra_path = get_file_name_with_extra_part(
                             orig_file_full_path=temp_arch_file_path,
                             filename_prefix=archive_file_prefix)
-                        await aioshutil.copy2(src=temp_file_path,
-                                              dst=arch_file_extra_path)
                         extra_file_name = os.path.basename(arch_file_extra_path)
-                        extra_saved_mark = TELETHON_OPTIONS.SERVER_SAVED_FILE_ACTION_MARK
                     else:
                         extra_file_name = None
-                        extra_saved_mark = ""
 
-                    if await aiofiles_os.path.exists(temp_file_path):
-                        await aiofiles_os.remove(temp_file_path)
+                    if TELETHON_OPTIONS.SERVER_SAVE_MESSAGE_VIDEO_FILE:
+                        await aioshutil.copy2(src=temp_file_path,
+                                              dst=arch_file_extra_path)
+                        server_saved_mark = TELETHON_OPTIONS.SERVER_SAVED_FILE_ACTION_MARK
+                        extra_saved_mark = f"{extra_saved_mark}{server_saved_mark}"
+
+                    s3_bucket, s3_key, s3_endpoint, s3_uri = "", "", "", ""
+                    if TELETHON_OPTIONS.S3_SAVE_MESSAGE_VIDEO_FILE:
+                        async with AioBotoCoreManager() as s3_manager:
+                            s3_client = await s3_manager.get_client()
+                            s3_bucket_res = await check_create_s3_bucket(
+                                s3_client=s3_client,
+                                s3_bucket_name=S3_DEFAULT_BUCKET,
+                                s3_region_name=S3_REGION_NAME)
+
+                            if s3_bucket_res.valid_bucket:
+                                async with aiofiles.open(
+                                        file=temp_file_path, mode="rb") as f_obj:
+                                    file_data = await f_obj.read()
+                                    await s3_client.put_object(
+                                        # ContentType='image/jpeg'
+                                        Bucket=S3_DEFAULT_BUCKET,
+                                        Key=extra_file_name,
+                                        Body=file_data)
+
+                                s3_bucket = S3_DEFAULT_BUCKET
+                                s3_key = extra_file_name
+                                s3_endpoint = (f"{S3_API_ENDPOINT}/"
+                                               f"{S3_DEFAULT_BUCKET}/"
+                                               f"{extra_file_name}")
+                                s3_uri = (f"s3://{S3_DEFAULT_BUCKET}/"
+                                          f"{extra_file_name}")
+
+                                s3_saved_mark = TELETHON_OPTIONS.S3_SAVED_FILE_ACTION_MARK
+                                extra_saved_mark = f"{extra_saved_mark}{s3_saved_mark}"
+
                     file_name_cst = os.path.basename(temp_file_path)
                     file_name_params = {"file_name_cst": file_name_cst,
                                         "extra_file_name_cst": extra_file_name}
                     handler_specific_params.update(file_name_params)
-                    action_str = (f"{action_str}+"
-                                  f"{ACTION_STATUS.VIDEO_ATTACH_ACTION_STR}"
+
+                    s3_aws_params = {"s3_bucket": s3_bucket,
+                                     "s3_key": s3_key,
+                                     "s3_endpoint": s3_endpoint,
+                                     "s3_uri": s3_uri}
+                    handler_specific_params.update(s3_aws_params)
+
+                    if await aiofiles_os.path.exists(temp_file_path):
+                        await aiofiles_os.remove(temp_file_path)
+                    action_str = (f"{action_str}+{ACTION_STATUS.VIDEO_ATTACH_ACTION_STR}"
                                   f"{extra_saved_mark}")
             elif isinstance(cur_doc_attr_obj, DocumentAttributeAudio):
                 ev_media_doc = event_main_params["ev_media_document"]
@@ -187,7 +271,11 @@ async def message_edited_handler_helper(
                     section_separator_prefix=separator)
                 handler_specific_params.update(audio_params)
 
-                if TELETHON_OPTIONS.SERVER_SAVE_MESSAGE_AUDIO_FILE:
+                temp_file_path = ""
+                arch_file_extra_path = ""
+                extra_saved_mark = ""
+                if (TELETHON_OPTIONS.SERVER_SAVE_MESSAGE_AUDIO_FILE
+                        or TELETHON_OPTIONS.S3_SAVE_MESSAGE_AUDIO_FILE):
                     base_tlt_files_dir = TELETHON_OPTIONS.TEMP_TG_DOWNLOADED_FILES_DIR
                     temp_tlt_files_dir = get_full_dir_normal_path(
                         [BASE_DIR, base_tlt_files_dir])
@@ -210,24 +298,60 @@ async def message_edited_handler_helper(
                     arch_file_extra_path = get_file_name_with_extra_part(
                         orig_file_full_path=temp_arch_file_path,
                         filename_prefix=archive_file_prefix)
-                    await aioshutil.copy2(src=temp_file_path,
-                                          dst=arch_file_extra_path)
-
-                    if await aiofiles_os.path.exists(temp_file_path):
-                        await aiofiles_os.remove(temp_file_path)
-
                     extra_file_name = os.path.basename(arch_file_extra_path)
-                    extra_saved_mark = TELETHON_OPTIONS.SERVER_SAVED_FILE_ACTION_MARK
                 else:
                     extra_file_name = None
-                    extra_saved_mark = ""
 
-                file_name_cst = audio_params["doc_attr_file_name"]
+                if TELETHON_OPTIONS.SERVER_SAVE_MESSAGE_AUDIO_FILE:
+                    await aioshutil.copy2(src=temp_file_path,
+                                          dst=arch_file_extra_path)
+                    server_saved_mark = TELETHON_OPTIONS.SERVER_SAVED_FILE_ACTION_MARK
+                    extra_saved_mark = f"{extra_saved_mark}{server_saved_mark}"
+
+                s3_bucket, s3_key, s3_endpoint, s3_uri = "", "", "", ""
+                if TELETHON_OPTIONS.S3_SAVE_MESSAGE_AUDIO_FILE:
+                    async with AioBotoCoreManager() as s3_manager:
+                        s3_client = await s3_manager.get_client()
+                        s3_bucket_res = await check_create_s3_bucket(
+                            s3_client=s3_client,
+                            s3_bucket_name=S3_DEFAULT_BUCKET,
+                            s3_region_name=S3_REGION_NAME)
+
+                        if s3_bucket_res.valid_bucket:
+                            async with aiofiles.open(
+                                    file=temp_file_path, mode="rb") as f_obj:
+                                file_data = await f_obj.read()
+                                await s3_client.put_object(
+                                    # ContentType='image/jpeg'
+                                    Bucket=S3_DEFAULT_BUCKET,
+                                    Key=extra_file_name,
+                                    Body=file_data)
+
+                            s3_bucket = S3_DEFAULT_BUCKET
+                            s3_key = extra_file_name
+                            s3_endpoint = (f"{S3_API_ENDPOINT}/"
+                                           f"{S3_DEFAULT_BUCKET}/"
+                                           f"{extra_file_name}")
+                            s3_uri = (f"s3://{S3_DEFAULT_BUCKET}/"
+                                      f"{extra_file_name}")
+
+                            s3_saved_mark = TELETHON_OPTIONS.S3_SAVED_FILE_ACTION_MARK
+                            extra_saved_mark = f"{extra_saved_mark}{s3_saved_mark}"
+
+                file_name_cst = os.path.basename(temp_file_path)
                 file_name_params = {"file_name_cst": file_name_cst,
                                     "extra_file_name_cst": extra_file_name}
                 handler_specific_params.update(file_name_params)
-                action_str = (f"{action_str}+"
-                              f"{ACTION_STATUS.AUDIO_ATTACH_ACTION_STR}"
+
+                s3_aws_params = {"s3_bucket": s3_bucket,
+                                 "s3_key": s3_key,
+                                 "s3_endpoint": s3_endpoint,
+                                 "s3_uri": s3_uri}
+                handler_specific_params.update(s3_aws_params)
+
+                if await aiofiles_os.path.exists(temp_file_path):
+                    await aiofiles_os.remove(temp_file_path)
+                action_str = (f"{action_str}+{ACTION_STATUS.VIDEO_ATTACH_ACTION_STR}"
                               f"{extra_saved_mark}")
             elif isinstance(cur_doc_attr_obj, DocumentAttributeFilename):
                 ev_media_doc = event_main_params["ev_media_document"]
@@ -237,7 +361,11 @@ async def message_edited_handler_helper(
                     section_separator_prefix=separator)
                 handler_specific_params.update(document_params)
 
-                if TELETHON_OPTIONS.SERVER_SAVE_MESSAGE_DOC_FILE:
+                temp_file_path = ""
+                arch_file_extra_path = ""
+                extra_saved_mark = ""
+                if (TELETHON_OPTIONS.SERVER_SAVE_MESSAGE_DOC_FILE
+                        or TELETHON_OPTIONS.S3_SAVE_MESSAGE_DOC_FILE):
                     base_tlt_files_dir = TELETHON_OPTIONS.TEMP_TG_DOWNLOADED_FILES_DIR
                     temp_tlt_files_dir = get_full_dir_normal_path(
                         [BASE_DIR, base_tlt_files_dir])
@@ -260,23 +388,60 @@ async def message_edited_handler_helper(
                     arch_file_extra_path = get_file_name_with_extra_part(
                         orig_file_full_path=temp_arch_file_path,
                         filename_prefix=archive_file_prefix)
-                    await aioshutil.copy2(src=temp_file_path,
-                                          dst=arch_file_extra_path)
-
-                    if await aiofiles_os.path.exists(temp_file_path):
-                        await aiofiles_os.remove(temp_file_path)
-
                     extra_file_name = os.path.basename(arch_file_extra_path)
-                    extra_saved_mark = TELETHON_OPTIONS.SERVER_SAVED_FILE_ACTION_MARK
                 else:
                     extra_file_name = None
-                    extra_saved_mark = ""
 
-                file_name_cst = document_params["doc_attr_file_name"]
+                if TELETHON_OPTIONS.SERVER_SAVE_MESSAGE_DOC_FILE:
+                    await aioshutil.copy2(src=temp_file_path,
+                                          dst=arch_file_extra_path)
+                    server_saved_mark = TELETHON_OPTIONS.SERVER_SAVED_FILE_ACTION_MARK
+                    extra_saved_mark = f"{extra_saved_mark}{server_saved_mark}"
+
+                s3_bucket, s3_key, s3_endpoint, s3_uri = "", "", "", ""
+                if TELETHON_OPTIONS.S3_SAVE_MESSAGE_DOC_FILE:
+                    async with AioBotoCoreManager() as s3_manager:
+                        s3_client = await s3_manager.get_client()
+                        s3_bucket_res = await check_create_s3_bucket(
+                            s3_client=s3_client,
+                            s3_bucket_name=S3_DEFAULT_BUCKET,
+                            s3_region_name=S3_REGION_NAME)
+
+                        if s3_bucket_res.valid_bucket:
+                            async with aiofiles.open(
+                                    file=temp_file_path, mode="rb") as f_obj:
+                                file_data = await f_obj.read()
+                                await s3_client.put_object(
+                                    # ContentType='image/jpeg'
+                                    Bucket=S3_DEFAULT_BUCKET,
+                                    Key=extra_file_name,
+                                    Body=file_data)
+
+                            s3_bucket = S3_DEFAULT_BUCKET
+                            s3_key = extra_file_name
+                            s3_endpoint = (f"{S3_API_ENDPOINT}/"
+                                           f"{S3_DEFAULT_BUCKET}/"
+                                           f"{extra_file_name}")
+                            s3_uri = (f"s3://{S3_DEFAULT_BUCKET}/"
+                                      f"{extra_file_name}")
+
+                            s3_saved_mark = TELETHON_OPTIONS.S3_SAVED_FILE_ACTION_MARK
+                            extra_saved_mark = f"{extra_saved_mark}{s3_saved_mark}"
+
+                file_name_cst = os.path.basename(temp_file_path)
                 file_name_params = {"file_name_cst": file_name_cst,
                                     "extra_file_name_cst": extra_file_name}
                 handler_specific_params.update(file_name_params)
-                action_str = (f"{action_str}+{ACTION_STATUS.DOC_ATTACH_ACTION_STR}"
+
+                s3_aws_params = {"s3_bucket": s3_bucket,
+                                 "s3_key": s3_key,
+                                 "s3_endpoint": s3_endpoint,
+                                 "s3_uri": s3_uri}
+                handler_specific_params.update(s3_aws_params)
+
+                if await aiofiles_os.path.exists(temp_file_path):
+                    await aiofiles_os.remove(temp_file_path)
+                action_str = (f"{action_str}+{ACTION_STATUS.VIDEO_ATTACH_ACTION_STR}"
                               f"{extra_saved_mark}")
 
     # Getting edited message event reactions params
@@ -320,8 +485,8 @@ async def message_edited_handler_helper(
 
     handler_specific_params.update({
         "action": action_str,
-        "tlt_config_name": telethon_config.name,
-        "telethon_config_name": telethon_config.telethon_config_name})
+        # "telethon_config_name": telethon_config.telethon_config_name,
+        "tlt_config_name": telethon_config.name})
 
     # Separate function because handler function with its own params values
     # is enclosed by add_all_telethon_client_handlers()
