@@ -109,6 +109,9 @@ class TELETHON_OPTIONS:
     S3_SAVE_MESSAGE_DOC_FILE: bool = True
     S3_SAVED_FILE_ACTION_MARK: str = "^"
 
+    S3_LOG_BUCKET_HEAD_CHECK: bool = True
+    S3_LOG_BUCKET_CREATE_SUCCESS: bool = True
+
     S3_FILE_UPLOAD_TIMEOUT_SEC: int | float = 60
     S3_FILE_DOWNLOAD_TIMEOUT_SEC: int | float = 60
 
