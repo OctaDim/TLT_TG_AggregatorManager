@@ -303,5 +303,5 @@ S3_SERVICE_NAME = s3_conf_parser.get(section=s3_conf_name, option="S3_SERVICE_NA
 S3_REGION_NAME = s3_conf_parser.get(section=s3_conf_name, option="S3_REGION_NAME")
 
 # Server-port for BERT classifier API to request
-S3_API_SERVER_PORT = "{s3_api_host}:{s3_api_port}".format(
+S3_API_ENDPOINT = "http://{s3_api_host}:{s3_api_port}".format(
     s3_api_host=S3_HOST, s3_api_port=S3_PORT)
