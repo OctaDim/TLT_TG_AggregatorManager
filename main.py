@@ -28,6 +28,8 @@ from fast_api.app_complete_auth_qrcode.router_complete_auth_qrcode import (
     rtr_complete_client_qrcode_auth)
 from fast_api.app_find_telegram_users_data.router_find_telegram_data import (
     rtr_find_telegram_users_data)
+from fast_api.app_get_file_from_tlt_server.router_get_file_from_tlt_server import (
+    rtr_get_file_from_tlt_server)
 from fast_api.app_get_qrcode_image_file.router_get_qrcode_img_file import (
     rtr_get_qrcode_image_file)
 from fast_api.app_get_file_by_message_id.router_get_file_by_message_id import (
@@ -79,6 +81,7 @@ routers_list = [
     rtr_deactivate_messages_configs,
     rtr_send_telegram_files,
     rtr_get_file_by_message_id,
+    rtr_get_file_from_tlt_server,
 
 ]
 
