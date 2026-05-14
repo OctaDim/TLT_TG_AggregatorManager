@@ -54,10 +54,6 @@ async def get_file_by_message_id_router(
     context = {"username": auth_data.username,
                "web_account_id": web_account_id,
                "web_account_username": web_account_username,
-               "message_id": message_id,
-               "channel_id": channel_id,
-               "chat_id": chat_id,
-               "user_id": user_id,
                "tlt_config_name": tlt_config_name,
                "extra_file_name": extra_file_name,
                "get_file_msg": "",
@@ -82,14 +78,14 @@ async def get_file_by_message_id_router(
             return json_response
 
         file_owner_peer_id = channel_id or chat_id or user_id
-        file_result = await get_tg_file_by_message_id(
+        tg_file_result = await get_tg_file_by_message_id(
             file_message_id=message_id,
             file_owner_peer_id=file_owner_peer_id,
             telethon_client=tlt_client,
             telethon_config_name=tlt_config_name,
             custom_file_name=custom_file_name)
 
-        if not file_result:
+        if not tg_file_result:
             get_file_error = f"Telegram file not received [ERROR]:"
             context.update({"get_file_msg": get_file_error,
                             "get_file_error": get_file_error})
@@ -106,10 +102,10 @@ async def get_file_by_message_id_router(
                   f"get_file_error: {get_file_error}\n")
             return json_response
 
-        tlt_file_path = file_result["file_path"]
-        tlt_file_name = file_result["file_name"]
-        tlt_file_mime_type = file_result["file_mime_type"]
-        get_file_error = file_result["get_file_error"]
+        tlt_file_path = tg_file_result["file_path"]
+        tlt_file_name = tg_file_result["file_name"]
+        tlt_file_mime_type = tg_file_result["file_mime_type"]
+        get_file_error = tg_file_result["get_file_error"]
 
         if get_file_error or not tlt_file_path:
             context.update({"get_file_msg": get_file_error,
