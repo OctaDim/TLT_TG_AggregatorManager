@@ -11,8 +11,8 @@ from configs.environments import (
 
 @asynccontextmanager
 async def get_s3_client(
-        aws_access_key_id: str,
-        aws_secret_access_key: str,
+        aws_access_key_id: str | None = None,
+        aws_secret_access_key: str | None = None,
         endpoint_url: str | None = None,
         service_name="s3",
         region_name: str = "us-east-1",
@@ -33,7 +33,7 @@ async def get_s3_client(
     if region_name is None:
         region_name = S3_REGION_NAME
 
-    s3_session = await session.get_session()
+    s3_session = session.get_session()
     client_params = {"aws_access_key_id": aws_access_key_id,
                      "aws_secret_access_key": aws_secret_access_key,
                      "endpoint_url": endpoint_url,
