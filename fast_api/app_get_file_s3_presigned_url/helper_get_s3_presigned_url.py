@@ -7,7 +7,7 @@ async def get_s3_storage_object(
         s3_bucket_name: str,
         s3_object_key: str | None = None,
         custom_file_name: str | None = None,
-        s3_url_expire_timeout: int | float = None,
+        s3_url_expiration: int | float = None,
         telethon_config_name: str = None
 ) -> Dict[str, str]:
     file_result = {"s3_presigned_url": "",
@@ -23,7 +23,7 @@ async def get_s3_storage_object(
                     "Key": s3_object_key,
                     "ResponseContentDisposition": f"attachment; "  # Optional to save forcibly
                                                   f"filename={s3_object_key}"},
-                ExpiresIn=s3_url_expire_timeout)
+                ExpiresIn=s3_url_expiration)
 
             s3_head_response = await s3_client.head_object(
                 Bucket=s3_bucket_name,
@@ -43,7 +43,7 @@ async def get_s3_storage_object(
                      f"s3_bucket_name: {s3_bucket_name} \n"
                      f"s3_object_key: {s3_object_key} \n"
                      f"custom_file_name: {custom_file_name} \n"
-                     f"s3_url_expire_timeout: {s3_url_expire_timeout} \n"
+                     f"s3_url_expire_timeout: {s3_url_expiration} \n"
                      f"telethon_config_name: {telethon_config_name}\n")
         print(error_msg)
         file_result.update({"get_file_error": error_msg})
