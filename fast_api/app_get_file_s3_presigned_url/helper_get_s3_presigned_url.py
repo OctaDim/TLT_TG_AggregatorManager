@@ -16,13 +16,14 @@ async def get_s3_storage_object(
                    "get_file_error": ""}
     try:
         async with get_s3_client() as s3_client:
+            file_save_name = custom_file_name or s3_object_key
             s3_presigned_url = await s3_client.generate_presigned_url(
                 ClientMethod="get_object",
                 Params={
                     "Bucket": s3_bucket_name,
                     "Key": s3_object_key,
                     "ResponseContentDisposition": f"attachment; "  # Optional to save forcibly
-                                                  f"filename={s3_object_key}"},
+                                                  f"filename={file_save_name}"},
                 ExpiresIn=s3_url_expiration)
 
             s3_head_response = await s3_client.head_object(
@@ -31,9 +32,8 @@ async def get_s3_storage_object(
             s3_mime_type = s3_head_response.get("ContentType",
                                                 "application/octet-stream")
 
-            file_name = custom_file_name or s3_object_key
             file_result.update({"s3_presigned_url": s3_presigned_url,
-                                "file_name": file_name,
+                                "file_save_name": file_save_name,
                                 "file_mime_type": s3_mime_type,
                                 "get_file_error": ""})
             return file_result

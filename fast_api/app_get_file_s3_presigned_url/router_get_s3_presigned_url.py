@@ -41,7 +41,7 @@ async def get_file_from_s3_storage_router(
     tlt_config_name = s3_presigned_url_data.tlt_config_name
 
     s3_presigned_url = ""
-    s3_file_name = ""
+    file_save_name = ""
     s3_file_mime_type = ""
     context = {"username": auth_data.username,
                "web_account_id": web_account_id,
@@ -50,7 +50,7 @@ async def get_file_from_s3_storage_router(
                "extra_file_name": extra_file_name,
                "get_file_msg": "",
                "s3_presigned_url": "",
-               "s3_file_name": "",
+               "file_save_name": "",
                "s3_file_mime_type": "",
                "get_file_error": ""}
 
@@ -69,7 +69,7 @@ async def get_file_from_s3_storage_router(
             telethon_config_name=tlt_config_name)
 
         s3_presigned_url = s3_file_result["s3_presigned_url"]
-        s3_file_name = s3_file_result["file_name"]
+        file_save_name = s3_file_result["file_save_name"]
         s3_file_mime_type = s3_file_result["file_mime_type"]
         get_file_error = s3_file_result["get_file_error"]
 
@@ -83,10 +83,11 @@ async def get_file_from_s3_storage_router(
                   f"tlt_config_name: {tlt_config_name}\n"
                   f"s3_bucket_name: {s3_bucket_name}\n"
                   f"s3_object_key: {s3_object_key}\n"
+                  f"s3_url_expiration: {s3_url_expiration}\n"
                   f"extra_file_name: {extra_file_name}\n"
                   f"custom_file_name: {custom_file_name}\n"
                   f"s3_presigned_url: {s3_presigned_url}\n"
-                  f"s3_file_name: {s3_file_name}\n"
+                  f"file_save_name: {file_save_name}\n"
                   f"s3_file_mime_type: {s3_file_mime_type}\n"
                   f"get_file_error: {get_file_error}\n")
             return json_response
@@ -94,14 +95,14 @@ async def get_file_from_s3_storage_router(
         get_file_msg = "AWS/S3 storage object exists [OK]:"
         print(f"{get_file_msg}\n"
               f"tlt_config_name: {tlt_config_name}\n"
+              f"s3_bucket_name: {s3_bucket_name}\n"
+              f"s3_object_key: {s3_object_key}\n"
               f"s3_presigned_url: {s3_presigned_url}\n"
-              f"s3_file_name: {s3_file_name}\n"
-              f"s3_file_mime_type: {s3_file_mime_type}\n"
               f"get_file_error: {get_file_error}\n")
 
         context.update({"get_file_msg": get_file_msg,
                         "s3_presigned_url": s3_presigned_url,
-                        "s3_file_name": s3_file_name,
+                        "file_save_name": file_save_name,
                         "s3_file_mime_type": s3_file_mime_type,
                         "get_file_error": get_file_error})
         json_response = JSONResponse(
@@ -109,9 +110,12 @@ async def get_file_from_s3_storage_router(
             status_code=status.HTTP_200_OK)
         print(f"{get_file_error}\n"
               f"tlt_config_name: {tlt_config_name}\n"
+              f"extra_file_name: {extra_file_name}\n"
+              f"custom_file_name: {custom_file_name}\n"
               f"s3_presigned_url: {s3_presigned_url}\n"
-              f"s3_file_name: {s3_file_name}\n"
+              f"file_save_name: {file_save_name}\n"
               f"s3_file_mime_type: {s3_file_mime_type}\n"
+              f"s3_url_expiration: {s3_url_expiration}\n"
               f"get_file_error: {get_file_error}\n")
         return json_response
     except Exception as error:
@@ -123,10 +127,11 @@ async def get_file_from_s3_storage_router(
             f"tlt_config_name: {tlt_config_name}\n"
             f"s3_bucket_name: {s3_bucket_name}\n"
             f"s3_object_key: {s3_object_key}\n"
+            f"s3_url_expiration: {s3_url_expiration}\n"
             f"extra_file_name: {extra_file_name}\n"
             f"custom_file_name: {custom_file_name}\n"
             f"s3_presigned_url: {s3_presigned_url}\n"
-            f"s3_file_name: {s3_file_name}\n"
+            f"file_save_name: {file_save_name}\n"
             f"s3_file_mime_type: {s3_file_mime_type}\n")
         print(log_text)
     raise HTTPException(
