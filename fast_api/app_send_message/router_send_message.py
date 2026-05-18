@@ -53,6 +53,7 @@ async def send_telegram_message_router(
     tg_user_id = send_message_data.tg_user_id
     tg_user_id = int(tg_user_id) if tg_user_id else None
     message_text = send_message_data.message_text
+    specific_msg_config = send_message_data.specific_msg_config
 
     try:
         tlt_manager = TelethonManagerSingleton()  # Singleton
@@ -89,6 +90,25 @@ async def send_telegram_message_router(
                 "client_is_authorized": False,
                 "messages_used": False,
                 "message_sent_flag": msg_sent_flag})
+        elif specific_msg_config:
+            if specific_msg_config not in account_only_configs:
+                error_log = ("Specific config not found in connected "
+                             "account configs [ERROR]")
+                all_sending_results.append({
+                    "tg_username": tg_username,
+                    "sent_by_username": sent_by_username_flag,
+                    "sent_by_username_error": error_log,
+                    "tg_user_id": tg_user_id,
+                    "sent_by_user_id": sent_by_user_id_flag,
+                    "sent_by_user_id_error": error_log,
+                    "cur_config_name": specific_msg_config,
+                    "client_is_connected": False,
+                    "client_is_authorized": False,
+                    "messages_used": False,
+                    "message_sent_flag": msg_sent_flag})
+                account_only_configs = []
+            else:
+                account_only_configs = [specific_msg_config]
 
         log_pgs_good_ops = ALCHEMY_OPTIONS.ALCHEMY_SESSION_OK_ACTIONS_LOGS
         pgs_conn = PgsAsyncConnection()
