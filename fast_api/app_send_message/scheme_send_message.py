@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import HTTPException
 from pydantic import BaseModel, model_validator
@@ -9,7 +9,7 @@ class InSendMessageData(BaseModel):
     tg_username: Optional[str] = ""
     tg_user_id: Optional[str] = ""
     message_text: Optional[str] = ""
-    specific_msg_config: Optional[str] = None  # To send from certain config
+    allowed_configs: Optional[List[str]] = None  # To send from certain config
 
     @model_validator(mode="before")
     def validate_fields(cls, data):
