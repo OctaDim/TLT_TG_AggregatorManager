@@ -1,0 +1,217 @@
+#version: '3.11'  # Commented to fix "version is obsolete" warning, only for legacy
+
+services:
+  #  redis:
+  #    volumes:
+  #      - redis_cache:/data
+
+  init-minio-dir:
+    image: alpine:latest
+    container_name: minio-directory-init
+    restart: "no"
+    volumes:
+      - ./../${MINIO_BASE_DIRECTORY:-TEMP_MINIO_FILES}:/data
+#      - parent_proj_dir_shared:/parent
+#      - ./../:/parent  # Mount/bind Parent directory
+    environment:
+      MINIO_BASE_DIR: ${MINIO_BASE_DIRECTORY:-TEMP_MINIO_FILES}
+    command: |
+      sh -c '
+        mkdir -p /parent/$${MINIO_BASE_DIR} &&
+        echo "✅ Directory /parent/$${MINIO_BASE_DIR} created successfully [OK] ✅"
+      '
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio-server-octadim
+    restart: unless-stopped
+    env_file:
+      - .env  # IMPORTANT: Only run docker_compose directory
+
+    ports:
+      - "${MINIO_EXTERNAL_IP:-0.0.0.0}:${MINIO_API_PORT:-9000}:9000"     # API port
+      - "${MINIO_EXTERNAL_IP:-0.0.0.0}:${MINIO_CONSOLE_PORT:-9001}:9001"  # Web console port
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?err_MINIO_ROOT_USER_is_required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?err_MINIO_ROOT_PASSWORD_is_required}
+      # MINIO_ADDRESS: "${MINIO_EXTERNAL_IP:-0.0.0.0}:${MINIO_API_PORT:-9000}"  # Optional, only inside Minio container
+      # MINIO_DEFAULT_BUCKETS: ${MINIO_DEFAULT_BUCKETS:-}
+    volumes:
+      - ./../${MINIO_BASE_DIRECTORY:-TEMP_MINIO_FILES}:/data
+#      - minio_mounted_shared:/data  # Auto directory inside docker volumes system or mounted directory in volumes
+      #      - ./${MINIO_BASE_DIRECTORY:-TEMP_MINIO_FILES}:/data  # Relative path from docker-compose.yml
+      #      - /absolute/path/to/minio/data:/data  # Absolute server path
+    command: server /data --console-address ":${MINIO_CONSOLE_PORT:-9001}" --address ":${MINIO_API_PORT:-9000}"
+#    command: server /data --console-address ":${MINIO_CONSOLE_PORT:-9001}" --address "${MINIO_EXTERNAL_IP:-0.0.0.0}:${MINIO_API_PORT:-9000}"
+    #    command: server /data --console-address ":${MINIO_CONSOLE_PORT:-9001}"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]  # Curl not installed in all Minio images
+      #      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 5
+    networks:
+      - minio_network
+    stop_grace_period: 5m  # Soft stop SIGTERM grace period, before killing process
+    deploy: # Resources limits
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging: # Logging
+      driver: "json-file"
+      options:
+        max-size: "12m"  # File max size limit
+        max-file: "50"  # Files max number limit
+        compress: "true"  # Compress logs
+        mode: "non-blocking"  # Non-blocking mode
+        max-buffer-size: "4m"  # Memory buffer size
+
+networks:
+  minio_network:
+    driver: bridge
+
+volumes:
+  parent_proj_dir_shared:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./../${MINIO_BASE_DIRECTORY:-TEMP_MINIO_FILES}  # IMPORTANT: relative from docker-compose.yaml run dir, one level higher
+      o: bind,shared
+
+
+  minio_mounted_shared: # Mounted, with share access
+    driver: local
+    driver_opts:
+      type: none
+      device: ./../${MINIO_BASE_DIRECTORY:-TEMP_MINIO_FILES}  # IMPORTANT: relative from docker-compose.yaml run dir
+      o: bind,shared
+
+#      db_volume:  # Separate speed volume for Data Base
+#      driver: local
+#      driver_opts:
+#      type: none
+#      device: ./${MINIO_BASE_DIRECTORY:-MINIO_FILES}  # SSD disk for example
+#      o: bind
+
+#      config_volume:  # Read-only, for configs
+#      driver: local
+#      driver_opts:
+#      type: none
+#      device: /etc/app/configs
+#      o: bind,ro  # Read-Only
+
+#      redis_cache:
+#      driver: local
+#      driver_opts:
+#      type: tmpfs
+#      device: tmpfs
+#      o: size=512M,noexec,nosuid
+
+#      shared_storage:
+#      driver: local
+#      driver_opts:
+#      type: nfs
+#      device: 10.0.0.5:/volume1/docker_data
+#      o: addr=10.0.0.5,rw,hard,intr,nfsvers=4.1
+
+#      windows_backup_storage:
+#      driver: local
+#      driver_opts:
+#      type: cifs
+#      device: //192.168.1.250/backups
+#      o: username=docker,password=backup2024,uid=1000,gid=1000,rsize=8192,wsize=8192
+
+
+
+# ######################################################################
+# ######################################################################
+# ################# DOCKER-COMPOSE COMMANDS: ###########################
+# ######################################################################
+# ######################################################################
+
+# Execute command if not docker-compose in legacy docker:
+# sudo apt install docker-compose-plugin -y
+
+# Check environment variables are ok
+# cat ./docker_compose/envs/dev.env
+
+# Execute from certain directory relative to project directory (with loging, not daemon):
+# sudo docker compose -f ./docker_compose/docker-compose.yaml up
+
+# Execute as daemon:
+# sudo docker compose up -d
+
+# Execute with loging, not daemon:
+# sudo docker compose up
+
+# Redefine ip instead of .env value on docker compose start
+# MINIO_EXTERNAL_IP=192.168.1.100 docker compose up -d
+
+# See all containers
+# docker compose ps
+
+# Check which ports Minio listening (opt.1: via netstat -tulpn):
+# display info: tcp   LISTEN  0  4096  192.168.1.100:9000  0.0.0.0:*   users:(("minio",pid=1234))
+# sudo netstat -tulpn | grep -E '9000|9001'
+
+# Check which ports Minio listening (opt.2: via ss -tulpn):
+# display info: tcp   LISTEN  0  4096  192.168.1.100:9000  0.0.0.0:*   users:(("minio",pid=1234))
+# ss -tulpn | grep -E '9000|9001'
+
+# See Minio logs
+# docker compose logs minio
+
+# Check certain service healthcheck
+# docker inspect minio-server-octadim | grep -A 10 "Health"
+
+# Online logging last 200 records:
+# docker compose logs -f --tail=200
+
+# Online logging all previous records and all new online records:
+# docker compose logs -f minio
+
+# Execute with loging in separate terminal (as daemon probably):
+# docker compose logs -f
+
+# Execute with filters by service (as daemon probably):
+# docker compose logs -f minio
+
+# Execute as daemon with log saving to separate file:
+# docker compose up -d > docker-compose.log 2>&1
+
+# Execute as daemon with dividing stdout и stderr:
+# docker compose up -d > stdout.log 2> stderr.log
+
+# Monitoring log file:
+# tail -f docker-compose.log
+
+# Service restart
+# docker compose restart minio
+
+# Certain container stooping only
+# docker compose stop minio
+
+# Certain container starting only
+#docker compose start minio
+
+# Rebuild and start (if Dockerfile has been changed)
+# docker compose up -d --build
+
+# Stop all containers (With saving all data)
+# docker compose down
+
+# Stop with removing containers (Attention: removes all Minio data!!!)
+# docker compose down -v
+
+# Stop with removing containers and images (Attention: removes all Minio data!!!)
+# docker compose down --rmi all -v
+
+# See all mounted volumes
+# docker volume ls | grep minio
+
+# Volume detailed info
+# docker volume inspect docker_compose_minio_mounted_shared
