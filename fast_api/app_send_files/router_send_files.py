@@ -119,7 +119,7 @@ async def send_telegram_files_router(
                 web_account_id=web_account_id,
                 web_account_username=web_account_username,
                 allowed_configs=allowed_configs,
-                skip_disconnected=False)
+                skip_disconnected=True)
         else:
             acc_only_tlt_clients = await get_acc_only_started_tlt_clients(
                 telethon_manager=tlt_manager,
