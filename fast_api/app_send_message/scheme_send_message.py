@@ -9,7 +9,7 @@ class InSendMessageData(BaseModel):
     tg_username: Optional[str] = ""
     tg_user_id: Optional[str] = ""
     message_text: Optional[str] = ""
-    allowed_configs: Optional[List[str]] = None  # To send from certain config
+    allowed_configs: Optional[List[str]] = None  # To send from specific configurations only
 
     @model_validator(mode="before")
     def validate_fields(cls, data):
