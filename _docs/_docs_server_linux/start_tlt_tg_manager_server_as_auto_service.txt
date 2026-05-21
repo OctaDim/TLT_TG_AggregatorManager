@@ -1,0 +1,124 @@
+*** Инструкция от Димона (DM) по запуску diarize сервера, как сервиса или дИмона)) ***
+
+Лучший способ для управления дИмонами (автозапуск, логи, перезагрузка)
+
+- Создаем сервисный файл в директории Linux для авто загружаемых сервисов:
+sudo nano /etc/systemd/system/tlt_manager_micro_auto_daemon.service
+
+- Вариант 1. Копируем и вставляем текст конфигурации в открытый файл
+    (ВНИМАНИЕ: с проверкой установленной минимальной версии Redis, авто-установкой
+    Redis и ожиданием успешно запущенного сервера Redis для запуска самой службы):
+[Unit]
+Description=TLT_TG_AggregatorManager
+After=network.target redis-server.service
+Requires=redis-server.service
+[Service]
+User=octadim
+WorkingDirectory=/usr/local/TLT_TG_AggregatorManager
+ExecStartPre=/bin/bash -c '/usr/local/TLT_TG_AggregatorManager/db_redis/check_version_auto_install_redis.sh'
+ExecStart=/usr/local/TLT_TG_AggregatorManager/.venv31211_pyann/bin/python3.12 /usr/local/TLT_TG_AggregatorManager/main.py
+Restart=always
+RestartSec=180
+Type=simple
+StandardOutput=journal
+StandardError=journal
+#StandardOutput=file:/var/log/tlt_aggregator_manager/aggregator.log
+#StandardError=file:/var/log/tlt_aggregator_manager/aggregator.err
+LogLevelMax=debug
+[Install]
+WantedBy=multi-user.target
+
+- Вариант 2. Копируем и вставляем текст конфигурации в открытый файл
+    (ВНИМАНИЕ: этот вариант только с ожиданием успешно запущенного сервера
+    Redis перед запуском самой службы):
+[Unit]
+Description=TLT_TG_AggregatorManager
+After=network.target redis-server.service
+Requires=redis-server.service
+[Service]
+User=octadim
+WorkingDirectory=/usr/local/TLT_TG_AggregatorManager
+ExecStartPre=/bin/bash -c '/usr/local/TLT_TG_AggregatorManager/db_redis/check_version_auto_install_redis.sh'
+ExecStart=/usr/local/TLT_TG_AggregatorManager/.venv31211_pyann/bin/python3.12 /usr/local/TLT_TG_AggregatorManager/main.py
+Restart=always
+RestartSec=180
+Type=simple
+StandardOutput=journal
+StandardError=journal
+#StandardOutput=file:/var/log/tlt_aggregator_manager/aggregator.log
+#StandardError=file:/var/log/tlt_aggregator_manager/aggregator.err
+LogLevelMax=debug
+[Install]
+WantedBy=multi-user.target
+
+- Вариант 3. Копируем и вставляем текст конфигурации в открытый файл
+    (ВНИМАНИЕ: этот вариант без проверки успешно запущенного сервера Redis
+    перед запуском самой службы):
+[Unit]
+Description=TLT_TG_AggregatorManager
+After=network.target
+#After=network.target redis-server.service
+[Service]
+User=octadim
+WorkingDirectory=/usr/local/TLT_TG_AggregatorManager
+#ExecStartPre=/bin/bash -c '/usr/local/TLT_TG_AggregatorManager/db_redis/check_version_auto_install_redis.sh'
+ExecStart=/usr/local/TLT_TG_AggregatorManager/.venv31211_pyann/bin/python3.12 /usr/local/TLT_TG_AggregatorManager/main.py
+Restart=always
+RestartSec=180
+Type=simple
+StandardOutput=journal
+StandardError=journal
+#StandardOutput=file:/var/log/tlt_aggregator_manager/aggregator.log
+#StandardError=file:/var/log/tlt_aggregator_manager/aggregator.err
+LogLevelMax=debug
+[Install]
+WantedBy=multi-user.target
+
+- Сохраняем изменения в файле:
+[CTRL]+[O] => [ENTER]
+
+- Проверяем, что все сохранилось, зайдя опять в файл:
+sudo nano /etc/systemd/system/aggregator_micro_auto_daemon.service
+
+- Выходим из файла:
+[CTRL+X] => [ENTER]
+
+- Перезагружаем все сервисы (димоны), чтобы ос увидела новую конфу:
+sudo systemctl daemon-reload
+
+- Запускаем сервис bert_micro_auto_daemon, как димон:
+sudo systemctl start aggregator_micro_auto_daemon
+
+- Добавляем сервис в автозагрузку:
+sudo systemctl enable aggregator_micro_auto_daemon.service
+
+- Проверяем статус запущенной службы (димона)
+sudo systemctl status aggregator_micro_auto_daemon
+
+- устанавливаем цветной вывод (необязательно, но информативнее)
+sudo apt install ccze
+
+- Смотрим логи ошибок и все логи консоли в онлайн режиме (ЦВЕТНОЙ ШРИФТ):
+sudo journalctl -u aggregator_micro_auto_daemon -f --all | ccze -A
+
+- Смотрим логи ошибок и все логи консоли в онлайн режиме (БЕЛЫЙ ШРИФТ):
+sudo journalctl -u aggregator_micro_auto_daemon -f --all
+
+- Посмотреть службу слушающую 8000 порт:
+    - Сначала узнать номер PID процесса, слушающего порт:
+        lsof -i :8000
+    - Получаем инфу о службе, управляющей этим процессом:
+        systemctl status <PID>
+            - В выводе Loaded: ищем название <имя_службы>.service
+
+- Перезапуск службы-димона (долго):
+sudo systemctl restart aggregator_micro_auto_daemon
+
+- Перезагрузка службы-димона (быстро):
+sudo systemctl reload aggregator_micro_auto_daemon
+
+- Остановка службы-димона:
+sudo systemctl stop aggregator_micro_auto_daemon.service
+
+- Убрать службу из автозагрузки:
+sudo systemctl disable aggregator_micro_auto_daemon.service

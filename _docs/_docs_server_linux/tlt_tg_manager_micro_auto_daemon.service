@@ -1,0 +1,19 @@
+[Unit]
+Description=TLT_TG_AggregatorManager
+After=network.target
+#After=network.target redis-server.service
+[Service]
+User=octadim
+WorkingDirectory=/usr/local/TLT_TG_AggregatorManager
+#ExecStartPre=/bin/bash -c '/usr/local/TLT_TG_AggregatorManager/db_redis/check_version_auto_install_redis.sh'
+ExecStart=/usr/local/TLT_TG_AggregatorManager/.venv31211/bin/python3.12 /usr/local/TLT_TG_AggregatorManager/main.py
+Restart=always
+RestartSec=180
+Type=simple
+StandardOutput=journal
+StandardError=journal
+#StandardOutput=file:/var/log/messenger_aggregator/aggregator.log
+#StandardError=file:/var/log/messenger_aggregator/aggregator.err
+LogLevelMax=debug
+[Install]
+WantedBy=multi-user.target
