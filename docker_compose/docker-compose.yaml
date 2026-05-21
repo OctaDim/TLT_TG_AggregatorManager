@@ -139,6 +139,9 @@ volumes:
 # Check environment variables are ok
 # cat ./docker_compose/envs/dev.env
 
+# See all detailed console logs (logs -f in real time)
+# sudo docker compose --verbose -v -f ./docker_compose/docker-compose.yaml logs -f
+
 # Execute from certain directory relative to project directory (with verbose -v loging, as de-attached daemon):
 # sudo docker compose --verbose -v -f ./docker_compose/docker-compose.yaml up -d
 
