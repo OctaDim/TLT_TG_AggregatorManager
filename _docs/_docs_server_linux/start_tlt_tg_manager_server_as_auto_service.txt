@@ -1,4 +1,4 @@
-*** Инструкция от Димона (DM) по запуску diarize сервера, как сервиса или дИмона)) ***
+*** Инструкция от Димона (DM) по запуску сервиса, как сервиса или дИмона)) ***
 
 Лучший способ для управления дИмонами (автозапуск, логи, перезагрузка)
 
@@ -78,7 +78,7 @@ WantedBy=multi-user.target
 [CTRL]+[O] => [ENTER]
 
 - Проверяем, что все сохранилось, зайдя опять в файл:
-sudo nano /etc/systemd/system/aggregator_micro_auto_daemon.service
+sudo nano /etc/systemd/system/tlt_tg_manager_micro_auto_daemon.service
 
 - Выходим из файла:
 [CTRL+X] => [ENTER]
@@ -87,22 +87,22 @@ sudo nano /etc/systemd/system/aggregator_micro_auto_daemon.service
 sudo systemctl daemon-reload
 
 - Запускаем сервис bert_micro_auto_daemon, как димон:
-sudo systemctl start aggregator_micro_auto_daemon
+sudo systemctl start tlt_tg_manager_micro_auto_daemon
 
 - Добавляем сервис в автозагрузку:
-sudo systemctl enable aggregator_micro_auto_daemon.service
+sudo systemctl enable tlt_tg_manager_micro_auto_daemon.service
 
 - Проверяем статус запущенной службы (димона)
-sudo systemctl status aggregator_micro_auto_daemon
+sudo systemctl status tlt_tg_manager_micro_auto_daemon
 
 - устанавливаем цветной вывод (необязательно, но информативнее)
 sudo apt install ccze
 
 - Смотрим логи ошибок и все логи консоли в онлайн режиме (ЦВЕТНОЙ ШРИФТ):
-sudo journalctl -u aggregator_micro_auto_daemon -f --all | ccze -A
+sudo journalctl -u tlt_tg_manager_micro_auto_daemon -f --all | ccze -A
 
 - Смотрим логи ошибок и все логи консоли в онлайн режиме (БЕЛЫЙ ШРИФТ):
-sudo journalctl -u aggregator_micro_auto_daemon -f --all
+sudo journalctl -u tlt_tg_manager_micro_auto_daemon -f --all
 
 - Посмотреть службу слушающую 8000 порт:
     - Сначала узнать номер PID процесса, слушающего порт:
@@ -112,13 +112,13 @@ sudo journalctl -u aggregator_micro_auto_daemon -f --all
             - В выводе Loaded: ищем название <имя_службы>.service
 
 - Перезапуск службы-димона (долго):
-sudo systemctl restart aggregator_micro_auto_daemon
+sudo systemctl restart tlt_tg_manager_micro_auto_daemon
 
 - Перезагрузка службы-димона (быстро):
-sudo systemctl reload aggregator_micro_auto_daemon
+sudo systemctl reload tlt_tg_manager_micro_auto_daemon
 
 - Остановка службы-димона:
-sudo systemctl stop aggregator_micro_auto_daemon.service
+sudo systemctl stop tlt_tg_manager_micro_auto_daemon.service
 
 - Убрать службу из автозагрузки:
-sudo systemctl disable aggregator_micro_auto_daemon.service
+sudo systemctl disable tlt_tg_manager_micro_auto_daemon.service
