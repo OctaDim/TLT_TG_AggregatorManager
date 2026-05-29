@@ -1,0 +1,107 @@
+name: octadim_postgres # Sets an isolated Compose project name for PostgreSQL.
+
+services: # Defines all containers in this PostgreSQL stack.
+  init-postgres-dir: # Prepares the host PostgreSQL data directory before database startup.
+    image: alpine:3.20 # Uses a small Linux image for directory checks.
+    container_name: postgres-directory-init-octadim # Sets a stable init container name.
+    restart: "no" # Runs this one-shot task once and never restarts it.
+    network_mode: none # Disables networking because directory preparation does not need it.
+    volumes: # Declares host mounts used by the init container.
+      - type: bind # Uses a host directory instead of a Docker named volume.
+        source: ${POSTGRES_DATA_DIR:?err_POSTGRES_DATA_DIR_is_required} # Reads the host data path from the PostgreSQL env file.
+        target: /postgres-data # Mounts the host data path inside the init container.
+        bind: # Configures bind-mount behavior.
+          create_host_path: true # Creates the host directory when it is missing.
+    environment: # Passes only variables needed by this init container.
+      POSTGRES_DATA_DIR: ${POSTGRES_DATA_DIR:?err_POSTGRES_DATA_DIR_is_required} # Keeps the original host path visible in logs.
+    command: | # Runs strict shell validation for the mounted host directory.
+      sh -euc '
+        mkdir -p /postgres-data
+
+        if [ ! -d /postgres-data ]; then
+          echo "ERROR: PostgreSQL host data directory does not exist: $${POSTGRES_DATA_DIR}" >&2
+          exit 1
+        fi
+
+        if [ ! -w /postgres-data ]; then
+          echo "ERROR: PostgreSQL host data directory is not writable: $${POSTGRES_DATA_DIR}" >&2
+          exit 1
+        fi
+
+        echo "PostgreSQL host data directory is ready: $${POSTGRES_DATA_DIR}"
+      '
+
+  postgres: # Runs the PostgreSQL database server.
+    image: postgres:16-alpine # Uses PostgreSQL 16 on Alpine Linux.
+    container_name: postgres-server-octadim # Sets a stable PostgreSQL container name.
+    restart: unless-stopped # Restarts PostgreSQL unless it was stopped manually.
+    depends_on: # Controls startup order between services.
+      init-postgres-dir: # Waits for the directory preparation service.
+        condition: service_completed_successfully # Starts PostgreSQL only after the init task exits successfully.
+    ports: # Publishes PostgreSQL to the host.
+      - "${POSTGRES_HOST:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432" # Maps host IP and port to PostgreSQL port 5432.
+    environment: # Passes only PostgreSQL-related variables into the container.
+      POSTGRES_USER: ${POSTGRES_USER:?err_POSTGRES_USER_is_required} # Sets the initial PostgreSQL superuser.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?err_POSTGRES_PASSWORD_is_required} # Sets the initial PostgreSQL superuser password.
+      POSTGRES_DB: ${POSTGRES_DB_NAME:-postgres} # Sets the initial database name.
+      POSTGRES_INITDB_ARGS: ${POSTGRES_INITDB_ARGS:---encoding=UTF8 --locale=C.UTF-8 --auth-host=scram-sha-256} # Sets initdb options for first initialization.
+      PGDATA: /var/lib/postgresql/data/pgdata # Stores PostgreSQL files in a subdirectory inside the bind mount.
+    volumes: # Declares persistent database storage.
+      - type: bind # Uses a host directory for persistent PostgreSQL data.
+        source: ${POSTGRES_DATA_DIR:?err_POSTGRES_DATA_DIR_is_required} # Reads the host data directory from the PostgreSQL env file.
+        target: /var/lib/postgresql/data # Mounts host storage at the PostgreSQL data root.
+        bind: # Configures bind-mount startup behavior.
+          create_host_path: false # Fails startup if the init service did not create the host directory.
+      # - ./init-scripts:/docker-entrypoint-initdb.d:ro # Optionally runs SQL or shell init scripts on first database creation.
+    entrypoint: # Wraps the official entrypoint with a pre-start storage check.
+      - sh # Runs the wrapper through POSIX shell.
+      - -euc # Enables fail-fast shell execution.
+      - | # Validates the mounted directory before delegating to PostgreSQL.
+        data_root="/var/lib/postgresql/data"
+
+        if [ ! -d "$${data_root}" ]; then
+          echo "ERROR: PostgreSQL data directory is missing before startup: $${data_root}" >&2
+          exit 1
+        fi
+
+        if [ ! -w "$${data_root}" ]; then
+          echo "ERROR: PostgreSQL data directory is not writable before startup: $${data_root}" >&2
+          exit 1
+        fi
+
+        exec docker-entrypoint.sh "$$@"
+      - postgres-entrypoint-wrapper # Provides the shell script name as $0.
+    command: # Starts the default PostgreSQL server process.
+      - postgres # Runs the PostgreSQL server command from the official image.
+    shm_size: "256mb" # Increases shared memory for PostgreSQL workloads.
+    healthcheck: # Defines readiness checks for PostgreSQL.
+      test: # Runs pg_isready inside the container.
+        - CMD-SHELL # Executes the healthcheck through a shell.
+        - pg_isready -h 127.0.0.1 -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}" # Checks local database readiness.
+      interval: 30s # Runs the healthcheck every 30 seconds.
+      timeout: 20s # Fails a single healthcheck after 20 seconds.
+      retries: 5 # Marks the container unhealthy after five failed checks.
+      start_period: 30s # Gives PostgreSQL 30 seconds before counting failures.
+    networks: # Connects PostgreSQL to its private bridge network.
+      - postgres_network # Uses the PostgreSQL-only network.
+    stop_grace_period: 5m # Gives PostgreSQL time for a clean shutdown.
+    deploy: # Documents resource expectations for compatible Compose targets.
+      resources: # Groups resource limits and reservations.
+        limits: # Defines hard resource ceilings.
+          cpus: "2" # Limits PostgreSQL to two CPUs.
+          memory: 2G # Limits PostgreSQL memory to 2 GiB.
+        reservations: # Defines expected baseline resources.
+          cpus: "0.5" # Reserves half a CPU where supported.
+          memory: 512M # Reserves 512 MiB where supported.
+    logging: # Configures container log rotation.
+      driver: json-file # Uses Docker json-file logging.
+      options: # Sets json-file logging options.
+        max-size: "12m" # Rotates each log file after 12 MiB.
+        max-file: "50" # Keeps up to 50 rotated log files.
+        compress: "true" # Compresses rotated log files.
+        mode: non-blocking # Prevents log backpressure from blocking PostgreSQL.
+        max-buffer-size: "4m" # Allows a 4 MiB log buffer in non-blocking mode.
+
+networks: # Declares networks used by this stack.
+  postgres_network: # Defines the private PostgreSQL network.
+    driver: bridge # Uses the local Docker bridge network driver.

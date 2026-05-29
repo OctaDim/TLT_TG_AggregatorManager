@@ -7,7 +7,7 @@ services:
 
   init-minio-dir:
     image: alpine:latest
-    container_name: minio-directory-init
+    container_name: minio-directory-init-octadim
     restart: "no"
     volumes:
       - ./../${MINIO_BASE_DIRECTORY:-TEMP_MINIO_FILES}:/data
