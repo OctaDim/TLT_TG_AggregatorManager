@@ -12,7 +12,7 @@ async def save_new_model_object_qry(
         ModelClassORM: Type[Base] | DeclarativeMeta,
         ongoing_session: AsyncSession,
         new_data: Dict[str, any],
-        log_new_data: bool
+        log_new_data: bool = False
 ) -> bool | None:
     if not new_data:
         return None

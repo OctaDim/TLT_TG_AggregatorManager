@@ -59,7 +59,8 @@ async def create_default_sqladmin_users() -> bool | None:
             await save_new_model_object_qry(
                 ModelClassORM=AuthRoleModel,
                 ongoing_session=pgs_async_session,
-                new_data=cur_sqladmin_user_data)
+                new_data=cur_sqladmin_user_data,
+                log_new_data=False)
 
     print("SQLAdmin default users creation [OK]")
     return True

@@ -2,7 +2,7 @@ from pathlib import Path
 import unittest
 
 
-ROOT_DIR = Path(__file__).resolve().parent
+ROOT_DIR = Path(__file__).resolve().parents[2] / "docker_compose"
 POSTGRES_COMPOSE = ROOT_DIR / "docker-compose_postgres.yaml"
 MINIO_COMPOSE = ROOT_DIR / "docker-compose_s3_minio.yaml"
 POSTGRES_RUNBOOK = ROOT_DIR / "POSTGRES_RUNBOOK.md"
