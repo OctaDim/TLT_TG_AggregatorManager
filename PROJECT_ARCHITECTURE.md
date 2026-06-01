@@ -53,14 +53,16 @@ not have to rediscover the same project map.
 |   |-- admin_views/                # SQLAdmin authentication role backend.
 |   `-- custom_templates/sqladmin/  # Customized SQLAdmin Jinja templates.
 |-- configs/                        # Environment loading, options, enums, labels, filters.
-|-- db_postgres/                    # PostgreSQL models, connections, init, queries, tests.
+|-- db_postgres/                    # PostgreSQL models, connections, init, queries.
 |   |-- postgres_conn/              # SQLAlchemy async/sync engine and session helpers.
 |   |-- postgres_init/              # Declarative base, table initialization, default users.
 |   |-- postgres_models/            # ORM models for Telethon configs and admin roles.
 |   |-- postgres_queries/           # Domain-specific database queries.
-|   |-- postgres_queries_utils/     # Reusable query builder/update helpers.
-|   `-- postgres_tests/             # Script-style query checks and experiments.
-|-- docker_compose/                 # Local PostgreSQL and MinIO compose stacks and tests.
+|   `-- postgres_queries_utils/     # Reusable query builder/update helpers.
+|-- docker_compose/                 # Local PostgreSQL and MinIO compose stacks/runbooks.
+|-- _tests/                         # Tests organized by the package being tested.
+|   |-- docker_compose/             # Static compose/runbook contract tests.
+|   `-- db_postgres/postgres_tests/ # Script-style PostgreSQL query checks.
 |-- fast_api/                       # Feature-based FastAPI routers, schemas, helpers.
 |-- meta_classes/                   # Shared metaclasses, currently singleton support.
 |-- s3_async_managers/              # aiobotocore client manager and context helper.
@@ -155,6 +157,13 @@ PostgreSQL persistence is implemented with SQLAlchemy 2.x:
 - `postgres_queries/` contains domain-specific operations.
 - `postgres_queries_utils/` contains generic filtering, ordering, update, and
   object conversion helpers.
+- The sync SQLAlchemy engine uses the `postgresql+psycopg2` dialect, supplied
+  in this local Python 3.14 environment by `psycopg2-binary`. Keep
+  `psycopg2-binary` in `requirements.txt` unless system `pg_config`/`libpq-dev`
+  is intentionally available for building source `psycopg2`.
+- SQLAdmin default-user creation goes through
+  `db_postgres/postgres_queries_utils/save_new_model_object.py`; pass
+  `log_new_data=False` for seeded auth rows to avoid printing credentials.
 
 ### `admin_panel/`
 
@@ -185,6 +194,12 @@ Configuration is centralized but mostly import-time:
 The selected config section depends on detected external IP and `sys.platform`.
 This is important for agents: importing `configs.environments` may perform
 network/IP checks and read local secret-bearing config files.
+
+In the current local WSL workspace all selectable `.configs_*.ini` service
+sections are intentionally loopback-oriented. API, PostgreSQL, aggregator,
+S3/MinIO, and SOCKS proxy host values resolve to `127.0.0.1`; PostgreSQL uses
+the Docker-published port `15432`, and S3/MinIO uses the Docker Compose
+credentials and default bucket from `docker_compose/.env.s3_minio`.
 
 ## AI-Agent Development Map
 
@@ -284,7 +299,7 @@ agent can quickly find the correct registration point and verification path.
 - FastAPI 0.128.1, Starlette 0.50.0, Uvicorn 0.40.0.
 - Pydantic 2.12.5.
 - Telethon 1.42.0.
-- SQLAlchemy 2.0.46 with asyncpg and psycopg2 drivers.
+- SQLAlchemy 2.0.46 with asyncpg and psycopg2-binary drivers.
 - SQLAdmin 0.23.0 with Jinja2 templates and Starlette sessions.
 - PostgreSQL 16 Alpine for the local compose stack.
 - aiobotocore 3.7.0 and botocore 1.43.0 for S3-compatible storage.
@@ -302,8 +317,34 @@ agent can quickly find the correct registration point and verification path.
 - The Python app reads PostgreSQL runtime settings from `.configs_postgres.ini`.
 - The compose stack reads infrastructure settings from
   `docker_compose/.env.postgres`.
+- The local Windows/WSL PostgreSQL config sections in `.configs_postgres.ini`
+  should stay aligned with `docker_compose/.env.postgres`; in this workspace
+  the Docker-published local port is `15432` to avoid conflicts with native
+  Windows or Ubuntu PostgreSQL services on `5432`.
+- All PostgreSQL config sections currently point to the local compose database
+  `wsl_octadim_dexp` on `127.0.0.1:15432` so the external-IP section selector
+  cannot accidentally route the service to a remote database.
 - `docker_compose/.env.postgres` is present in the current workspace. Treat it
   as local environment data and avoid printing or committing secrets.
+- PostgreSQL's container log may report `listening on IPv4 address "0.0.0.0"`
+  and `listening on IPv6 address "::"` because the official PostgreSQL image
+  starts the server inside the container with broad internal listen addresses.
+  Host exposure is still controlled separately by the Compose `ports` mapping,
+  which currently publishes container port `5432` only on host
+  `127.0.0.1:${POSTGRES_PORT:-5432}`.
+- Windows DBeaver access to the WSL-hosted PostgreSQL compose stack is
+  documented in `docker_compose/POSTGRES_RUNBOOK.md`. The default connection
+  path is `127.0.0.1:${POSTGRES_PORT:-5432}` through Docker/WSL localhost
+  forwarding. In WSL2 mirrored networking mode, use a non-default host port
+  such as `15432` for this compose stack when Windows or Ubuntu already has
+  PostgreSQL on `5432`. If a previously created container is healthy but has no
+  published host port, recreate it with the current compose file so the port
+  mapping is applied.
+- DBeaver `no pg_hba.conf entry ... no encryption` errors should be diagnosed
+  by checking `docker logs postgres-server-octadim` and active
+  `pg_hba_file_rules` first. In this local stack SSL is normally off, so that
+  error often means DBeaver reached another PostgreSQL instance or an old
+  container instead of the compose service documented here.
 
 ### S3 / MinIO
 
@@ -315,6 +356,10 @@ agent can quickly find the correct registration point and verification path.
   `docker_compose/.env.s3_minio`.
 - `docker_compose/.env.s3_minio` is present in the current workspace. Treat it
   as local environment data and avoid printing or committing secrets.
+- All S3 config sections currently point to local MinIO at `127.0.0.1:9000`,
+  using the access key, secret key, and default bucket from
+  `docker_compose/.env.s3_minio`. The local bucket name uses hyphens
+  (`minio-bucket-1`) because S3 bucket names cannot contain underscores.
 
 ### External Aggregator API
 
@@ -396,6 +441,16 @@ single-process service where implicit auto-discovery would hide startup order
 and side effects. When adding API modules, update `main.py` deliberately and
 document the new mounted surface here.
 
+### ADR-009: Local PostgreSQL Host Binding Stays on Loopback
+
+The PostgreSQL compose stack publishes the database port to the host loopback
+address by default (`127.0.0.1`) so local tools and the Python application can
+connect without exposing PostgreSQL on all host interfaces. PostgreSQL still
+listens on `0.0.0.0` and `::` inside the container so bridge-network peers and
+the Docker port-forwarding path can reach the server. Agents should distinguish
+PostgreSQL's internal `listen_addresses` logs from Docker's external host port
+publication when reviewing exposure risk.
+
 ## Development Conventions
 
 - Keep `PROJECT_ARCHITECTURE.md` synchronized with code, file structure, and
@@ -425,10 +480,10 @@ document the new mounted surface here.
 
 Current automated verification is limited:
 
-- `docker_compose/test_compose_configs.py` uses `unittest` to statically verify
-  expected PostgreSQL and MinIO compose contracts and runbook commands.
-- `db_postgres/postgres_tests/` contains script-style database checks that
-  require live PostgreSQL and project-specific model availability.
+- `_tests/docker_compose/test_compose_configs.py` uses `unittest` to statically
+  verify expected PostgreSQL and MinIO compose contracts and runbook commands.
+- `_tests/db_postgres/postgres_tests/` contains script-style database checks
+  that require live PostgreSQL and project-specific model availability.
 - Runtime startup verification still requires a configured PostgreSQL instance,
   Telegram credentials/sessions, and S3-compatible storage. Documentation-only
   checks should not be presented as proof that the full service starts.
@@ -436,7 +491,7 @@ Current automated verification is limited:
 Recommended checks after documentation-only edits:
 
 - `.venv3145/bin/python -m py_compile main.py`
-- `.venv3145/bin/python -m unittest docker_compose/test_compose_configs.py`
+- `.venv3145/bin/python -m unittest _tests/docker_compose/test_compose_configs.py`
 
 Recommended checks after runtime code changes:
 
@@ -462,17 +517,18 @@ Recommended checks after runtime code changes:
   may need explicit cleanup between runs.
 - Some TODOs describe future background tasks, Redis checks, handler lifecycle
   improvements, and QR-code image handling.
-- `db_postgres/postgres_tests/test_get_model_records_flex_qry.py` references a
-  `postgres_models.__temp` import path that is not present in the current file
-  listing; treat it as an experimental script until updated.
+- `_tests/db_postgres/postgres_tests/test_get_model_records_flex_qry.py`
+  references a `postgres_models.__temp` import path that is not present in the
+  current file listing; treat it as an experimental script until updated.
 - `admin_panel_views` is currently empty in `main.py`, so SQLAdmin is mounted
   but no model views are registered there by default.
 
 ## Detailed Documentation Links
 
-- `docker_compose/POSTGRES_RUNBOOK.md` - PostgreSQL compose usage and
-  validation.
+- `docker_compose/POSTGRES_RUNBOOK.md` - PostgreSQL compose usage, validation,
+  and Windows DBeaver connection guidance for WSL-hosted containers.
 - `docker_compose/S3_MINIO_RUNBOOK.md` - MinIO compose usage and validation.
 - `_docs/_docs_server_linux/` - Linux service deployment notes.
 - `_docs/_docs_event_params_descr/` - Telegram event parameter documentation.
-- `docker_compose/test_compose_configs.py` - static tests for compose contracts.
+- `_tests/docker_compose/test_compose_configs.py` - static tests for compose
+  contracts.
