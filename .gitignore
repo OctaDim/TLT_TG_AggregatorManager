@@ -282,3 +282,5 @@ TEMP_TELETHON_TEMP_FILES/*
 !.env.*.example
 
 _backup/*
+
+TEMP_MINIO_FILES/*
