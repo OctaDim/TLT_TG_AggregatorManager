@@ -60,6 +60,11 @@ not have to rediscover the same project map.
 |   |-- postgres_queries/           # Domain-specific database queries.
 |   `-- postgres_queries_utils/     # Reusable query builder/update helpers.
 |-- docker_compose/                 # Local PostgreSQL and MinIO compose stacks/runbooks.
+|   |-- .env.postgres               # Local PostgreSQL compose variables; secret-aware, not a code module.
+|   |-- .env.s3_minio               # Local MinIO compose variables; secret-aware, not a code module.
+|   |-- docker-compose_postgres.yaml # PostgreSQL 16 stack with host-dir init and readiness checks.
+|   |-- docker-compose_s3_minio.yaml # MinIO stack with host-dir init, healthcheck, and bucket init job.
+|   `-- *_RUNBOOK.md                # Operational runbooks for compose validation and local access.
 |-- _tests/                         # Tests organized by the package being tested.
 |   |-- docker_compose/             # Static compose/runbook contract tests.
 |   `-- db_postgres/postgres_tests/ # Script-style PostgreSQL query checks.
@@ -74,7 +79,9 @@ not have to rediscover the same project map.
 
 Development-local folders such as `.venv3145/`, `.idea/`, `.codex/`, and
 `.agents/` are present in the workspace but are not part of the application
-runtime architecture. `.agents/` is still relevant for AI-agent operating
+runtime architecture. Runtime data folders such as `TELETHON_SESSIONS/` and
+`TEMP_MINIO_FILES/` may also exist locally; treat them as generated operational
+state, not source structure. `.agents/` is still relevant for AI-agent operating
 instructions and should be checked before substantial edits. In the current
 snapshot `.agents/` exists but contains no files.
 
@@ -325,7 +332,8 @@ agent can quickly find the correct registration point and verification path.
   `wsl_octadim_dexp` on `127.0.0.1:15432` so the external-IP section selector
   cannot accidentally route the service to a remote database.
 - `docker_compose/.env.postgres` is present in the current workspace. Treat it
-  as local environment data and avoid printing or committing secrets.
+  as local environment data and avoid printing or committing secrets. It is not
+  tracked by Git in the current checkout.
 - PostgreSQL's container log may report `listening on IPv4 address "0.0.0.0"`
   and `listening on IPv6 address "::"` because the official PostgreSQL image
   starts the server inside the container with broad internal listen addresses.
@@ -355,7 +363,8 @@ agent can quickly find the correct registration point and verification path.
 - The compose stack reads infrastructure settings from
   `docker_compose/.env.s3_minio`.
 - `docker_compose/.env.s3_minio` is present in the current workspace. Treat it
-  as local environment data and avoid printing or committing secrets.
+  as local environment data and avoid printing or committing secrets. It is not
+  tracked by Git in the current checkout.
 - All S3 config sections currently point to local MinIO at `127.0.0.1:9000`,
   using the access key, secret key, and default bucket from
   `docker_compose/.env.s3_minio`. The local bucket name uses hyphens
@@ -484,6 +493,9 @@ Current automated verification is limited:
   verify expected PostgreSQL and MinIO compose contracts and runbook commands.
 - `_tests/db_postgres/postgres_tests/` contains script-style database checks
   that require live PostgreSQL and project-specific model availability.
+- The repository follows the convention that tests live under `_tests/` with a
+  subdirectory corresponding to the package or infrastructure area being
+  tested, for example `_tests/docker_compose/` and `_tests/db_postgres/`.
 - Runtime startup verification still requires a configured PostgreSQL instance,
   Telegram credentials/sessions, and S3-compatible storage. Documentation-only
   checks should not be presented as proof that the full service starts.
@@ -506,9 +518,11 @@ Recommended checks after runtime code changes:
 
 ## Known Risks and Agent Notes
 
-- `PROJECT_ARCHITECTURE.md` is currently untracked in Git in this workspace.
+- `PROJECT_ARCHITECTURE.md` is tracked in Git in the current checkout and must
+  be kept synchronized with source, infrastructure, and documentation changes.
 - `docker_compose/.env.postgres` and `docker_compose/.env.s3_minio` are present
-  now; older notes that said they were absent are stale for this workspace.
+  now and are not tracked by Git; older notes that said they were absent are
+  stale for this workspace.
 - Plain `python` and direct `python3.14` commands may fail under the current
   pyenv setup; `.venv3145/bin/python` is the verified local interpreter.
 - Importing `configs.environments` can run IP detection and read local config
