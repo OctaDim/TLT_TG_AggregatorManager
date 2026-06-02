@@ -1,0 +1,9 @@
+- Проверка состояния PostgreSQL
+sudo systemctl status postgresql
+
+- Запуск сервера PostgreSQL
+sudo systemctl start postgresql
+
+- Проверка целостности базы данных после успешного запуска:
+sudo -u postgres psql -c "SELECT version();"
+sudo -u postgres psql -c "SELECT datname FROM pg_database;"
