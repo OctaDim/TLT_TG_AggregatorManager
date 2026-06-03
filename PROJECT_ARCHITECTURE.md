@@ -73,8 +73,9 @@ not have to rediscover the same project map.
 |   |-- local_docker-compose-rabbitmq_aiopika.yaml # RabbitMQ stack bound through local env.
 |   |-- ip_docker-compose-rabbitmq_aiopika.yaml # RabbitMQ stack bound through IP env.
 |   `-- *_RUNBOOK.md                # Operational runbooks for compose validation and local access.
-|-- docs/                           # Repository documentation that is safe to commit.
-|   `-- sensitive_config_samples/   # Sanitized examples for secret-bearing config files.
+|-- _docs/                          # Operational notes and committed project documentation.
+|   |-- tlt_sensitive_config_samples/ # Sanitized examples for secret-bearing config files.
+|   `-- _docs_event_params_descr/   # Telegram event field documentation and source notes.
 |-- _tests/                         # Tests organized by the package being tested.
 |   |-- docker_compose/             # Static compose/runbook contract tests.
 |   |-- sensitive_config/           # Secret-safe sample-file contract tests.
@@ -220,7 +221,7 @@ S3/MinIO, and SOCKS proxy host values resolve to `127.0.0.1`; PostgreSQL uses
 the Docker-published port `15432`, and S3/MinIO uses the Docker Compose
 credentials and default bucket from `docker_compose/.env.s3_minio`.
 
-### `docs/sensitive_config_samples/`
+### `_docs/tlt_sensitive_config_samples/`
 
 This directory contains safe-to-commit examples for secret-bearing local
 configuration. `root_configs/` mirrors the root `.configs_*.ini` files, and
@@ -545,7 +546,8 @@ a public-facing service with localhost credentials or vice versa.
 ### ADR-012: Sanitized Secret File Examples Are Committed Separately
 
 The repository commits sanitized sample files under
-`docs/sensitive_config_samples/` instead of committing real local config files.
+`_docs/tlt_sensitive_config_samples/` instead of committing real local config
+files.
 This keeps future setup reproducible because agents and developers can see the
 required sections and parameter names, while Git history stays free of real API
 keys, passwords, session signing keys, Telegram credentials, proxy credentials,
@@ -566,7 +568,7 @@ and host-specific deployment secrets.
   contents.
 - Keep compose `.env_local_*` files local and secret-aware too; `.gitignore`
   excludes both `.env.*` and `.env_local_*` patterns.
-- Keep `docs/sensitive_config_samples/` synchronized with real secret-bearing
+- Keep `_docs/tlt_sensitive_config_samples/` synchronized with real secret-bearing
   config file shapes. Samples must use placeholder values only.
 - Keep runtime data directories such as `TEMP_MINIO_LOCAL_FILES/` and
   `RABBITMQ_AIOPIKA_LOCAL_DATA/` ignored and out of commits.
@@ -639,7 +641,7 @@ Recommended checks after runtime code changes:
   `.env.postgres`, `.env.s3_minio`, and `.env.rabbitmq_aiopika` files may still
   exist in a developer workspace as legacy local data, but runbooks should use
   the split files. `.gitignore` excludes both split env naming patterns.
-- The committed config examples under `docs/sensitive_config_samples/` are
+- The committed config examples under `_docs/tlt_sensitive_config_samples/` are
   intentionally sanitized. Do not replace `<REPLACE_ME>` with real values.
 - Plain `python` and direct `python3.14` commands may fail under the current
   pyenv setup; `.venv3145/bin/python` is the verified local interpreter.

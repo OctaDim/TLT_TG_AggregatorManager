@@ -4,7 +4,7 @@ import unittest
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
-SAMPLES_DIR = ROOT_DIR / "docs" / "sensitive_config_samples"
+SAMPLES_DIR = ROOT_DIR / "_docs" / "tlt_sensitive_config_samples"
 
 ROOT_CONFIG_PAIRS = [
     (ROOT_DIR / ".configs_aggregator.ini", SAMPLES_DIR / "root_configs" / ".configs_aggregator.ini.example"),
