@@ -226,8 +226,9 @@ credentials and default bucket from `docker_compose/.env.s3_minio`.
 This directory contains safe-to-commit examples for secret-bearing local
 configuration. `root_configs/` mirrors the root `.configs_*.ini` files, and
 `docker_compose/` mirrors the split Docker Compose env files. The sample files
-preserve the same sections and parameter names as the real files, but every
-value is replaced with `<REPLACE_ME>`.
+preserve the same sections and parameter names as the real files. Values are
+fake but realistic enough to show the expected format for hosts, ports, user
+names, passwords, keys, hashes, bucket names, and data paths.
 
 Update these examples whenever real config files gain, remove, or rename
 parameters. Real `.configs_*.ini`, `docker_compose/.env.*`, and
@@ -568,8 +569,9 @@ and host-specific deployment secrets.
   contents.
 - Keep compose `.env_local_*` files local and secret-aware too; `.gitignore`
   excludes both `.env.*` and `.env_local_*` patterns.
-- Keep `_docs/tlt_sensitive_config_samples/` synchronized with real secret-bearing
-  config file shapes. Samples must use placeholder values only.
+- Keep `_docs/tlt_sensitive_config_samples/` synchronized with real
+  secret-bearing config file shapes. Samples must use fake but realistic values
+  that show the expected format without copying real secrets.
 - Keep runtime data directories such as `TEMP_MINIO_LOCAL_FILES/` and
   `RABBITMQ_AIOPIKA_LOCAL_DATA/` ignored and out of commits.
 - Active `docker_compose/*docker-compose*.yaml` files must start with either
@@ -642,7 +644,8 @@ Recommended checks after runtime code changes:
   exist in a developer workspace as legacy local data, but runbooks should use
   the split files. `.gitignore` excludes both split env naming patterns.
 - The committed config examples under `_docs/tlt_sensitive_config_samples/` are
-  intentionally sanitized. Do not replace `<REPLACE_ME>` with real values.
+  intentionally sanitized even though they use realistic-looking values. Never
+  copy real secret values into these examples.
 - Plain `python` and direct `python3.14` commands may fail under the current
   pyenv setup; `.venv3145/bin/python` is the verified local interpreter.
 - Importing `configs.environments` can run IP detection and read local config

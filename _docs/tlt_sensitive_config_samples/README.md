@@ -12,8 +12,10 @@ RabbitMQ passwords, session keys, proxy credentials, and deployment-specific
 host data.
 
 The files in this directory are committed examples. They preserve the same file
-shape, section names, and parameter names as the real local files, but every
-value is replaced with `<REPLACE_ME>`.
+shape, section names, and parameter names as the real local files. Values are
+fake but realistic, so developers can see the expected format for hosts, ports,
+usernames, passwords, access keys, hashes, bucket names, and data paths without
+exposing real secrets.
 
 ## Layout
 
@@ -48,8 +50,10 @@ value is replaced with `<REPLACE_ME>`.
 ## Update Rules
 
 When a real secret-bearing config file gains, removes, or renames a parameter,
-update the matching sample file in the same change. Keep placeholder values
-sanitized and never copy real credentials into this directory.
+update the matching sample file in the same change. Keep example values
+realistic enough to show the expected format, but never copy real credentials,
+tokens, API hashes, passwords, cookies, or host-specific secret values into this
+directory.
 
 Run this contract check after updating samples:
 
