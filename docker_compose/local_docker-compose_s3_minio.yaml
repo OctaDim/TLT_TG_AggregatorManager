@@ -1,0 +1,117 @@
+name: octadim_local_s3_minio # Sets an isolated Compose project name for local MinIO.
+
+services: # Defines all containers in this S3-compatible MinIO stack.
+  init-minio-dir: # Prepares the host MinIO data directory before server startup.
+    image: alpine:3.20 # Uses a small Linux image for directory checks.
+    container_name: local-minio-directory-init-octadim # Sets a stable init container name.
+    restart: "no" # Runs this one-shot task once and never restarts it.
+    network_mode: none # Disables networking because directory preparation does not need it.
+    volumes: # Declares host mounts used by the init container.
+      - type: bind # Uses a host directory instead of a Docker named volume.
+        source: ${MINIO_DATA_DIR:?err_MINIO_DATA_DIR_is_required} # Reads the host MinIO data path from the MinIO env file.
+        target: /minio-data # Mounts the host data path inside the init container.
+        bind: # Configures bind-mount behavior.
+          create_host_path: true # Creates the host directory when it is missing.
+    environment: # Passes only variables needed by this init container.
+      MINIO_DATA_DIR: ${MINIO_DATA_DIR:?err_MINIO_DATA_DIR_is_required} # Keeps the original host path visible in logs.
+    command: | # Runs strict shell validation for the mounted host directory.
+      sh -euc '
+        mkdir -p /minio-data
+
+        if [ ! -d /minio-data ]; then
+          echo "ERROR: MinIO host data directory does not exist: $${MINIO_DATA_DIR}" >&2
+          exit 1
+        fi
+
+        if [ ! -w /minio-data ]; then
+          echo "ERROR: MinIO host data directory is not writable: $${MINIO_DATA_DIR}" >&2
+          exit 1
+        fi
+
+        echo "MinIO host data directory is ready: $${MINIO_DATA_DIR}"
+      '
+
+  minio: # Runs the S3-compatible MinIO object storage server.
+    image: minio/minio:latest # Uses the latest MinIO server image.
+    container_name: local-minio-server-octadim # Sets a stable MinIO container name.
+    restart: unless-stopped # Restarts MinIO unless it was stopped manually.
+    depends_on: # Controls startup order between services.
+      init-minio-dir: # Waits for the directory preparation service.
+        condition: service_completed_successfully # Starts MinIO only after the init task exits successfully.
+    ports: # Publishes MinIO API and console ports to the host.
+      - "${MINIO_EXTERNAL_IP:-0.0.0.0}:${MINIO_API_PORT:-9000}:9000" # Maps the S3 API port.
+      - "${MINIO_EXTERNAL_IP:-0.0.0.0}:${MINIO_CONSOLE_PORT:-9001}:9001" # Maps the web console port.
+    environment: # Passes only MinIO-related variables into the container.
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?err_MINIO_ROOT_USER_is_required} # Sets the MinIO root access key.
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?err_MINIO_ROOT_PASSWORD_is_required} # Sets the MinIO root secret key.
+    volumes: # Declares persistent object storage.
+      - type: bind # Uses a host directory for persistent MinIO data.
+        source: ${MINIO_DATA_DIR:?err_MINIO_DATA_DIR_is_required} # Reads the host MinIO data directory from the MinIO env file.
+        target: /data # Mounts host storage at MinIO data root.
+        bind: # Configures bind-mount startup behavior.
+          create_host_path: false # Fails startup if the init service did not create the host directory.
+    command: # Starts the MinIO server with explicit bind addresses.
+      - server # Runs MinIO in server mode.
+      - /data # Uses the mounted host directory for object data.
+      - --address # Sets the S3 API listen address.
+      - ":9000" # Listens on the container S3 API port.
+      - --console-address # Sets the web console listen address.
+      - ":9001" # Listens on the container web console port.
+    healthcheck: # Defines readiness checks for MinIO.
+      test: # Runs MinIO client readiness check inside the container.
+        - CMD # Executes the command directly.
+        - mc # Uses the MinIO client bundled with the image.
+        - ready # Checks service readiness.
+        - local # Targets the local MinIO server alias.
+      interval: 30s # Runs the healthcheck every 30 seconds.
+      timeout: 20s # Fails a single healthcheck after 20 seconds.
+      retries: 5 # Marks the container unhealthy after five failed checks.
+      start_period: 30s # Gives MinIO 30 seconds before counting failures.
+    networks: # Connects MinIO to its private bridge network.
+      - minio_network # Uses the MinIO-only network.
+    stop_grace_period: 5m # Gives MinIO time for a clean shutdown.
+    deploy: # Documents resource expectations for compatible Compose targets.
+      resources: # Groups resource limits and reservations.
+        limits: # Defines hard resource ceilings.
+          cpus: "2" # Limits MinIO to two CPUs.
+          memory: 2G # Limits MinIO memory to 2 GiB.
+        reservations: # Defines expected baseline resources.
+          cpus: "0.5" # Reserves half a CPU where supported.
+          memory: 512M # Reserves 512 MiB where supported.
+    logging: # Configures container log rotation.
+      driver: json-file # Uses Docker json-file logging.
+      options: # Sets json-file logging options.
+        max-size: "12m" # Rotates each log file after 12 MiB.
+        max-file: "50" # Keeps up to 50 rotated log files.
+        compress: "true" # Compresses rotated log files.
+        mode: non-blocking # Prevents log backpressure from blocking MinIO.
+        max-buffer-size: "4m" # Allows a 4 MiB log buffer in non-blocking mode.
+
+  create-minio-buckets: # Creates default buckets after MinIO becomes healthy.
+    image: minio/mc:latest # Uses the official MinIO client image.
+    container_name: local-minio-bucket-init-octadim # Sets a stable bucket init container name.
+    restart: "no" # Runs bucket creation once and never restarts it.
+    depends_on: # Controls bucket initialization order.
+      minio: # Waits for the MinIO server.
+        condition: service_healthy # Starts bucket creation only after MinIO is healthy.
+    environment: # Passes only variables needed for bucket creation.
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?err_MINIO_ROOT_USER_is_required} # Provides the access key for the MinIO client.
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?err_MINIO_ROOT_PASSWORD_is_required} # Provides the secret key for the MinIO client.
+      MINIO_DEFAULT_BUCKETS: ${MINIO_DEFAULT_BUCKETS:-} # Provides a space-separated list of buckets to create.
+    entrypoint: # Runs bucket initialization through a strict shell script.
+      - sh # Uses POSIX shell from the MinIO client image.
+      - -euc # Enables fail-fast shell execution.
+      - | # Configures the alias and creates missing buckets.
+        mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}"
+
+        for bucket in $${MINIO_DEFAULT_BUCKETS}; do
+          if [ -n "$${bucket}" ]; then
+            mc mb --ignore-existing "local/$${bucket}"
+          fi
+        done
+    networks: # Connects the bucket init job to the MinIO network.
+      - minio_network # Uses the same network as the MinIO server.
+
+networks: # Declares networks used by this stack.
+  minio_network: # Defines the private MinIO network.
+    driver: bridge # Uses the local Docker bridge network driver.

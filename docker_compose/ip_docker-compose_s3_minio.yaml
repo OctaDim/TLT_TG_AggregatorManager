@@ -1,9 +1,9 @@
-name: octadim_s3_minio # Sets an isolated Compose project name for MinIO.
+name: octadim_ip_s3_minio # Sets an isolated Compose project name for IP-bound MinIO.
 
 services: # Defines all containers in this S3-compatible MinIO stack.
   init-minio-dir: # Prepares the host MinIO data directory before server startup.
     image: alpine:3.20 # Uses a small Linux image for directory checks.
-    container_name: minio-directory-init-octadim # Sets a stable init container name.
+    container_name: ip-minio-directory-init-octadim # Sets a stable init container name.
     restart: "no" # Runs this one-shot task once and never restarts it.
     network_mode: none # Disables networking because directory preparation does not need it.
     volumes: # Declares host mounts used by the init container.
@@ -33,7 +33,7 @@ services: # Defines all containers in this S3-compatible MinIO stack.
 
   minio: # Runs the S3-compatible MinIO object storage server.
     image: minio/minio:latest # Uses the latest MinIO server image.
-    container_name: minio-server-octadim # Sets a stable MinIO container name.
+    container_name: ip-minio-server-octadim # Sets a stable MinIO container name.
     restart: unless-stopped # Restarts MinIO unless it was stopped manually.
     depends_on: # Controls startup order between services.
       init-minio-dir: # Waits for the directory preparation service.
@@ -89,7 +89,7 @@ services: # Defines all containers in this S3-compatible MinIO stack.
 
   create-minio-buckets: # Creates default buckets after MinIO becomes healthy.
     image: minio/mc:latest # Uses the official MinIO client image.
-    container_name: minio-bucket-init-octadim # Sets a stable bucket init container name.
+    container_name: ip-minio-bucket-init-octadim # Sets a stable bucket init container name.
     restart: "no" # Runs bucket creation once and never restarts it.
     depends_on: # Controls bucket initialization order.
       minio: # Waits for the MinIO server.
