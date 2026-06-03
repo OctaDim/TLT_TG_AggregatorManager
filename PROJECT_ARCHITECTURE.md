@@ -1,5 +1,5 @@
 Created by: Codex
-Date: 2026-06-01
+Date: 2026-06-03
 
 # Project Architecture
 
@@ -20,7 +20,7 @@ It combines:
 - SQLAlchemy 2.x PostgreSQL persistence.
 - SQLAdmin-based administrative UI.
 - aiobotocore-based S3 access.
-- Docker Compose files and runbooks for local PostgreSQL and MinIO.
+- Docker Compose files and runbooks for local PostgreSQL, MinIO, and RabbitMQ.
 
 This repository currently has `PROJECT_ARCHITECTURE.md` as a workspace-local
 architecture guide. Keep it updated together with any code, configuration,
@@ -59,14 +59,25 @@ not have to rediscover the same project map.
 |   |-- postgres_models/            # ORM models for Telethon configs and admin roles.
 |   |-- postgres_queries/           # Domain-specific database queries.
 |   `-- postgres_queries_utils/     # Reusable query builder/update helpers.
-|-- docker_compose/                 # Local PostgreSQL and MinIO compose stacks/runbooks.
-|   |-- .env.postgres               # Local PostgreSQL compose variables; secret-aware, not a code module.
-|   |-- .env.s3_minio               # Local MinIO compose variables; secret-aware, not a code module.
-|   |-- docker-compose_postgres.yaml # PostgreSQL 16 stack with host-dir init and readiness checks.
-|   |-- docker-compose_s3_minio.yaml # MinIO stack with host-dir init, healthcheck, and bucket init job.
+|-- docker_compose/                 # Local PostgreSQL, MinIO, and RabbitMQ compose stacks/runbooks.
+|   |-- .env_local_postgres         # Localhost PostgreSQL variables for 127.0.0.1.
+|   |-- .env.ip_postgres            # IP-bound PostgreSQL variables for a concrete host IP.
+|   |-- .env_local_s3_minio         # Localhost MinIO variables for 127.0.0.1.
+|   |-- .env.ip_s3_minio            # IP-bound MinIO variables for a concrete host IP.
+|   |-- .env_local_rabbitmq_aiopika # Localhost RabbitMQ variables for 127.0.0.1.
+|   |-- .env.ip_rabbitmq_aiopika    # IP-bound RabbitMQ variables for a concrete host IP.
+|   |-- local_docker-compose_postgres.yaml # PostgreSQL 16 stack bound through local env.
+|   |-- ip_docker-compose_postgres.yaml # PostgreSQL 16 stack bound through IP env.
+|   |-- local_docker-compose_s3_minio.yaml # MinIO stack bound through local env.
+|   |-- ip_docker-compose_s3_minio.yaml # MinIO stack bound through IP env.
+|   |-- local_docker-compose-rabbitmq_aiopika.yaml # RabbitMQ stack bound through local env.
+|   |-- ip_docker-compose-rabbitmq_aiopika.yaml # RabbitMQ stack bound through IP env.
 |   `-- *_RUNBOOK.md                # Operational runbooks for compose validation and local access.
+|-- docs/                           # Repository documentation that is safe to commit.
+|   `-- sensitive_config_samples/   # Sanitized examples for secret-bearing config files.
 |-- _tests/                         # Tests organized by the package being tested.
 |   |-- docker_compose/             # Static compose/runbook contract tests.
+|   |-- sensitive_config/           # Secret-safe sample-file contract tests.
 |   `-- db_postgres/postgres_tests/ # Script-style PostgreSQL query checks.
 |-- fast_api/                       # Feature-based FastAPI routers, schemas, helpers.
 |-- meta_classes/                   # Shared metaclasses, currently singleton support.
@@ -79,11 +90,12 @@ not have to rediscover the same project map.
 
 Development-local folders such as `.venv3145/`, `.idea/`, `.codex/`, and
 `.agents/` are present in the workspace but are not part of the application
-runtime architecture. Runtime data folders such as `TELETHON_SESSIONS/` and
-`TEMP_MINIO_FILES/` may also exist locally; treat them as generated operational
-state, not source structure. `.agents/` is still relevant for AI-agent operating
-instructions and should be checked before substantial edits. In the current
-snapshot `.agents/` exists but contains no files.
+runtime architecture. Runtime data folders such as `TELETHON_SESSIONS/`,
+`TEMP_MINIO_FILES/`, `TEMP_MINIO_LOCAL_FILES/`, and
+`RABBITMQ_AIOPIKA_LOCAL_DATA/` may also exist locally; treat them as generated
+operational state, not source structure. `.agents/` is still relevant for
+AI-agent operating instructions and should be checked before substantial edits.
+In the current snapshot `.agents/` exists but contains no files.
 
 ## Key Modules
 
@@ -208,6 +220,18 @@ S3/MinIO, and SOCKS proxy host values resolve to `127.0.0.1`; PostgreSQL uses
 the Docker-published port `15432`, and S3/MinIO uses the Docker Compose
 credentials and default bucket from `docker_compose/.env.s3_minio`.
 
+### `docs/sensitive_config_samples/`
+
+This directory contains safe-to-commit examples for secret-bearing local
+configuration. `root_configs/` mirrors the root `.configs_*.ini` files, and
+`docker_compose/` mirrors the split Docker Compose env files. The sample files
+preserve the same sections and parameter names as the real files, but every
+value is replaced with `<REPLACE_ME>`.
+
+Update these examples whenever real config files gain, remove, or rename
+parameters. Real `.configs_*.ini`, `docker_compose/.env.*`, and
+`docker_compose/.env_local_*` files remain ignored and must not be committed.
+
 ## AI-Agent Development Map
 
 This section is intentionally practical. Use it when making changes so the next
@@ -308,9 +332,11 @@ agent can quickly find the correct registration point and verification path.
 - Telethon 1.42.0.
 - SQLAlchemy 2.0.46 with asyncpg and psycopg2-binary drivers.
 - SQLAdmin 0.23.0 with Jinja2 templates and Starlette sessions.
-- PostgreSQL 16 Alpine for the local compose stack.
+- PostgreSQL 16 Alpine for the local/IP compose stacks.
 - aiobotocore 3.7.0 and botocore 1.43.0 for S3-compatible storage.
-- MinIO compose stack for local S3-compatible storage.
+- MinIO compose stacks for local and IP-bound S3-compatible storage.
+- RabbitMQ 3.13 management image for local and IP-bound aio-pika-oriented
+  compose stacks.
 - qrcode, Pillow, hachoir, aiofiles, aioshutil, requests, httpx, and utility
   libraries for media, file, and HTTP workflows.
 
@@ -318,28 +344,30 @@ agent can quickly find the correct registration point and verification path.
 
 ### PostgreSQL
 
-- Compose file: `docker_compose/docker-compose_postgres.yaml`.
+- Local compose file: `docker_compose/local_docker-compose_postgres.yaml`.
+- Local env file: `docker_compose/.env_local_postgres`.
+- IP-bound compose file: `docker_compose/ip_docker-compose_postgres.yaml`.
+- IP-bound env file: `docker_compose/.env.ip_postgres`.
 - Runbook: `docker_compose/POSTGRES_RUNBOOK.md`.
-- Compose project name: `octadim_postgres`.
+- Compose project names: `octadim_local_postgres` and `octadim_ip_postgres`.
 - The Python app reads PostgreSQL runtime settings from `.configs_postgres.ini`.
 - The compose stack reads infrastructure settings from
-  `docker_compose/.env.postgres`.
+  the selected `.env.*.postgres` file.
 - The local Windows/WSL PostgreSQL config sections in `.configs_postgres.ini`
-  should stay aligned with `docker_compose/.env.postgres`; in this workspace
-  the Docker-published local port is `15432` to avoid conflicts with native
-  Windows or Ubuntu PostgreSQL services on `5432`.
+  should stay aligned with the chosen PostgreSQL compose env file; in this
+  workspace the Docker-published local port is `15432` to avoid conflicts with
+  native Windows or Ubuntu PostgreSQL services on `5432`.
 - All PostgreSQL config sections currently point to the local compose database
   `wsl_octadim_dexp` on `127.0.0.1:15432` so the external-IP section selector
   cannot accidentally route the service to a remote database.
-- `docker_compose/.env.postgres` is present in the current workspace. Treat it
-  as local environment data and avoid printing or committing secrets. It is not
-  tracked by Git in the current checkout.
+- Compose env files are local environment data. Treat them as secret-bearing
+  files and avoid printing or committing real credentials.
 - PostgreSQL's container log may report `listening on IPv4 address "0.0.0.0"`
   and `listening on IPv6 address "::"` because the official PostgreSQL image
   starts the server inside the container with broad internal listen addresses.
   Host exposure is still controlled separately by the Compose `ports` mapping,
-  which currently publishes container port `5432` only on host
-  `127.0.0.1:${POSTGRES_PORT:-5432}`.
+  which publishes container port `5432` on the host address selected by the
+  env file.
 - Windows DBeaver access to the WSL-hosted PostgreSQL compose stack is
   documented in `docker_compose/POSTGRES_RUNBOOK.md`. The default connection
   path is `127.0.0.1:${POSTGRES_PORT:-5432}` through Docker/WSL localhost
@@ -356,19 +384,55 @@ agent can quickly find the correct registration point and verification path.
 
 ### S3 / MinIO
 
-- Compose file: `docker_compose/docker-compose_s3_minio.yaml`.
+- Local compose file: `docker_compose/local_docker-compose_s3_minio.yaml`.
+- Local env file: `docker_compose/.env_local_s3_minio`.
+- IP-bound compose file: `docker_compose/ip_docker-compose_s3_minio.yaml`.
+- IP-bound env file: `docker_compose/.env.ip_s3_minio`.
 - Runbook: `docker_compose/S3_MINIO_RUNBOOK.md`.
-- Compose project name: `octadim_s3_minio`.
+- Compose project names: `octadim_local_s3_minio` and `octadim_ip_s3_minio`.
 - The Python app reads S3 runtime settings from `.configs_s3_aws_api.ini`.
 - The compose stack reads infrastructure settings from
-  `docker_compose/.env.s3_minio`.
-- `docker_compose/.env.s3_minio` is present in the current workspace. Treat it
-  as local environment data and avoid printing or committing secrets. It is not
-  tracked by Git in the current checkout.
+  the selected `.env.*.s3_minio` file.
+- Compose env files are local environment data. Treat them as secret-bearing
+  files and avoid printing or committing real credentials.
 - All S3 config sections currently point to local MinIO at `127.0.0.1:9000`,
-  using the access key, secret key, and default bucket from
-  `docker_compose/.env.s3_minio`. The local bucket name uses hyphens
-  (`minio-bucket-1`) because S3 bucket names cannot contain underscores.
+  using the access key, secret key, and default bucket from the local compose
+  env file. The local bucket name uses hyphens (`minio-bucket-1`) because S3
+  bucket names cannot contain underscores.
+
+### RabbitMQ / aio-pika
+
+- Local compose file:
+  `docker_compose/local_docker-compose-rabbitmq_aiopika.yaml`.
+- Local env file: `docker_compose/.env_local_rabbitmq_aiopika`.
+- IP-bound compose file:
+  `docker_compose/ip_docker-compose-rabbitmq_aiopika.yaml`.
+- IP-bound env file: `docker_compose/.env.ip_rabbitmq_aiopika`.
+- Runbook: `docker_compose/RABBITMQ_AIOPIKA_RUNBOOK.md`.
+- Compose project names: `octadim_local_rabbitmq_aiopika` and
+  `octadim_ip_rabbitmq_aiopika`.
+- The compose stack reads infrastructure settings from
+  the selected `.env.*.rabbitmq_aiopika` file.
+- The stack publishes AMQP on
+  `${RABBITMQ_EXTERNAL_IP:-127.0.0.1}:${RABBITMQ_AMQP_PORT:-5672}` and the
+  management UI on
+  `${RABBITMQ_EXTERNAL_IP:-127.0.0.1}:${RABBITMQ_MANAGEMENT_PORT:-15672}`.
+- If RabbitMQ startup fails with `Bind for 0.0.0.0:5672 failed: port is
+  already allocated`, render the selected compose file with `docker compose
+  config` and inspect host listeners with `ss -ltnp | rg ':5672|:15672'`.
+  A listener on `*:5672` or `*:15672` can block this stack even when the
+  rendered compose file asks Docker to bind `127.0.0.1`.
+- Persistent broker state is bind-mounted from `RABBITMQ_DATA_DIR` after a
+  one-shot init container verifies that the host directory exists and is
+  writable.
+- The healthcheck uses `rabbitmq-diagnostics -q ping` inside the broker
+  container. This is a broker readiness signal, not proof that any application
+  queue topology has been declared.
+- Compose env files are local environment data. Treat them as secret-bearing
+  files and avoid printing or committing real credentials.
+- RabbitMQ is currently an infrastructure option for future aio-pika based
+  messaging. No active Python RabbitMQ client or queue-processing code is wired
+  into `main.py` in the current snapshot.
 
 ### External Aggregator API
 
@@ -450,15 +514,42 @@ single-process service where implicit auto-discovery would hide startup order
 and side effects. When adding API modules, update `main.py` deliberately and
 document the new mounted surface here.
 
-### ADR-009: Local PostgreSQL Host Binding Stays on Loopback
+### ADR-009: Local Infrastructure Host Binding Stays Explicit
 
-The PostgreSQL compose stack publishes the database port to the host loopback
-address by default (`127.0.0.1`) so local tools and the Python application can
-connect without exposing PostgreSQL on all host interfaces. PostgreSQL still
-listens on `0.0.0.0` and `::` inside the container so bridge-network peers and
-the Docker port-forwarding path can reach the server. Agents should distinguish
-PostgreSQL's internal `listen_addresses` logs from Docker's external host port
-publication when reviewing exposure risk.
+The local compose stacks use dedicated `local_` compose files and
+`.env_local_*` files to bind published service ports to `127.0.0.1`. This lets
+local tools and the Python application connect without exposing PostgreSQL,
+MinIO, or RabbitMQ on all host interfaces. Container-internal services may
+still listen broadly inside Docker; agents should distinguish internal listen
+addresses from Docker's external host port publication when reviewing exposure
+risk.
+
+### ADR-010: RabbitMQ Compose Stack for aio-pika Integration Work
+
+RabbitMQ is added as a local compose stack because aio-pika targets AMQP and
+RabbitMQ provides a widely used AMQP broker with durable queues, virtual hosts,
+and a management UI for inspecting local message flow. The stack is documented
+as infrastructure only until Python code adds an aio-pika dependency and
+explicit producer or consumer wiring. Redis remains separate because it is not
+an AMQP broker and would change the messaging contract.
+
+### ADR-011: Separate Compose and Env Files for Localhost and Concrete Host IP
+
+Each compose-backed service has a `local_` compose file plus `.env_local_*`
+file for loopback startup and an `ip_` compose file plus `.env.ip_*` file for a
+specific host address such as `176.124.136.22`. The split keeps secrets and
+published host bindings environment-specific without editing compose YAML. It
+also prevents ambiguous run commands where a developer might accidentally start
+a public-facing service with localhost credentials or vice versa.
+
+### ADR-012: Sanitized Secret File Examples Are Committed Separately
+
+The repository commits sanitized sample files under
+`docs/sensitive_config_samples/` instead of committing real local config files.
+This keeps future setup reproducible because agents and developers can see the
+required sections and parameter names, while Git history stays free of real API
+keys, passwords, session signing keys, Telegram credentials, proxy credentials,
+and host-specific deployment secrets.
 
 ## Development Conventions
 
@@ -473,6 +564,15 @@ publication when reviewing exposure risk.
 - Keep compose `.env.*` files local and secret-aware; runbooks may name them,
   but architecture docs should describe their purpose rather than include their
   contents.
+- Keep compose `.env_local_*` files local and secret-aware too; `.gitignore`
+  excludes both `.env.*` and `.env_local_*` patterns.
+- Keep `docs/sensitive_config_samples/` synchronized with real secret-bearing
+  config file shapes. Samples must use placeholder values only.
+- Keep runtime data directories such as `TEMP_MINIO_LOCAL_FILES/` and
+  `RABBITMQ_AIOPIKA_LOCAL_DATA/` ignored and out of commits.
+- Active `docker_compose/*docker-compose*.yaml` files must start with either
+  `local_` or `ip_`. Match each compose file to its corresponding
+  `.env_local_*` or `.env.ip_*` file.
 - When adding a new FastAPI endpoint, add a router module, schema module, helper
   module if needed, and register the router in `main.py`.
 - When adding persistent data, define or update an ORM model, include it in
@@ -490,20 +590,26 @@ publication when reviewing exposure risk.
 Current automated verification is limited:
 
 - `_tests/docker_compose/test_compose_configs.py` uses `unittest` to statically
-  verify expected PostgreSQL and MinIO compose contracts and runbook commands.
+  verify expected PostgreSQL, MinIO, and RabbitMQ compose contracts and runbook
+  commands.
+- `_tests/sensitive_config/test_sensitive_config_samples.py` compares committed
+  sanitized samples with the ignored local config files so parameter drift is
+  detected without committing secrets.
 - `_tests/db_postgres/postgres_tests/` contains script-style database checks
   that require live PostgreSQL and project-specific model availability.
 - The repository follows the convention that tests live under `_tests/` with a
   subdirectory corresponding to the package or infrastructure area being
   tested, for example `_tests/docker_compose/` and `_tests/db_postgres/`.
 - Runtime startup verification still requires a configured PostgreSQL instance,
-  Telegram credentials/sessions, and S3-compatible storage. Documentation-only
-  checks should not be presented as proof that the full service starts.
+  Telegram credentials/sessions, S3-compatible storage, and any optional
+  RabbitMQ messaging code that may be added later. Documentation-only checks
+  should not be presented as proof that the full service starts.
 
 Recommended checks after documentation-only edits:
 
 - `.venv3145/bin/python -m py_compile main.py`
 - `.venv3145/bin/python -m unittest _tests/docker_compose/test_compose_configs.py`
+- `.venv3145/bin/python -m unittest _tests/sensitive_config/test_sensitive_config_samples.py`
 
 Recommended checks after runtime code changes:
 
@@ -512,17 +618,29 @@ Recommended checks after runtime code changes:
 - Run PostgreSQL query checks only when the expected database and config files
   are available.
 - Validate compose files with Docker on a host where Docker is installed:
-  `docker compose -f docker_compose/docker-compose_postgres.yaml --env-file docker_compose/.env.postgres config --quiet`
+  `docker compose -f docker_compose/local_docker-compose_postgres.yaml --env-file docker_compose/.env_local_postgres config --quiet`
   and
-  `docker compose -f docker_compose/docker-compose_s3_minio.yaml --env-file docker_compose/.env.s3_minio config --quiet`.
+  `docker compose -f docker_compose/ip_docker-compose_postgres.yaml --env-file docker_compose/.env.ip_postgres config --quiet`
+  and
+  `docker compose -f docker_compose/local_docker-compose_s3_minio.yaml --env-file docker_compose/.env_local_s3_minio config --quiet`
+  and
+  `docker compose -f docker_compose/ip_docker-compose_s3_minio.yaml --env-file docker_compose/.env.ip_s3_minio config --quiet`
+  and
+  `docker compose -f docker_compose/local_docker-compose-rabbitmq_aiopika.yaml --env-file docker_compose/.env_local_rabbitmq_aiopika config --quiet`
+  and
+  `docker compose -f docker_compose/ip_docker-compose-rabbitmq_aiopika.yaml --env-file docker_compose/.env.ip_rabbitmq_aiopika config --quiet`.
 
 ## Known Risks and Agent Notes
 
 - `PROJECT_ARCHITECTURE.md` is tracked in Git in the current checkout and must
   be kept synchronized with source, infrastructure, and documentation changes.
-- `docker_compose/.env.postgres` and `docker_compose/.env.s3_minio` are present
-  now and are not tracked by Git; older notes that said they were absent are
-  stale for this workspace.
+- Split compose env files under `docker_compose/.env_local_*` and
+  `docker_compose/.env.ip_*` are local secret-bearing files. Older unsplit
+  `.env.postgres`, `.env.s3_minio`, and `.env.rabbitmq_aiopika` files may still
+  exist in a developer workspace as legacy local data, but runbooks should use
+  the split files. `.gitignore` excludes both split env naming patterns.
+- The committed config examples under `docs/sensitive_config_samples/` are
+  intentionally sanitized. Do not replace `<REPLACE_ME>` with real values.
 - Plain `python` and direct `python3.14` commands may fail under the current
   pyenv setup; `.venv3145/bin/python` is the verified local interpreter.
 - Importing `configs.environments` can run IP detection and read local config
