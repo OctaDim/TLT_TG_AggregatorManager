@@ -1,0 +1,48 @@
+[Postgres_Hakasia_product_server]
+POSTGRES_USER = postgres_example_user
+POSTGRES_PASSWORD = postgres_example_password_ChangeMe_2026
+POSTGRES_HOST = 127.0.0.1
+POSTGRES_PORT = 15432
+POSTGRES_DB_NAME = wsl_octadim_example
+
+[Postgres_production]
+POSTGRES_USER = postgres_example_user
+POSTGRES_PASSWORD = postgres_example_password_ChangeMe_2026
+POSTGRES_HOST = 127.0.0.1
+POSTGRES_PORT = 15432
+POSTGRES_DB_NAME = wsl_octadim_example
+
+[Postgres_prod_server_176_124_136_22]
+POSTGRES_USER = postgres_example_user
+POSTGRES_PASSWORD = postgres_example_password_ChangeMe_2026
+POSTGRES_HOST = 127.0.0.1
+POSTGRES_PORT = 15432
+POSTGRES_DB_NAME = wsl_octadim_example
+
+[Postgres_port_all_ips_0_0_0_0_8000]
+POSTGRES_USER = postgres_example_user
+POSTGRES_PASSWORD = postgres_example_password_ChangeMe_2026
+POSTGRES_HOST = 127.0.0.1
+POSTGRES_PORT = 15432
+POSTGRES_DB_NAME = wsl_octadim_example
+
+[Postgres_win_localhost_127_0_0_1_8000]
+POSTGRES_USER = postgres_example_user
+POSTGRES_PASSWORD = postgres_example_password_ChangeMe_2026
+POSTGRES_HOST = 127.0.0.1
+POSTGRES_PORT = 15432
+POSTGRES_DB_NAME = wsl_octadim_example
+
+[Postgres_unix_localhost_127_0_1_1_8000]
+POSTGRES_USER = postgres_example_user
+POSTGRES_PASSWORD = postgres_example_password_ChangeMe_2026
+POSTGRES_HOST = 127.0.0.1
+POSTGRES_PORT = 15432
+POSTGRES_DB_NAME = wsl_octadim_example
+
+[Postgres_dexp_ip_192_168_0_117_8000]
+POSTGRES_USER = postgres_example_user
+POSTGRES_PASSWORD = postgres_example_password_ChangeMe_2026
+POSTGRES_HOST = 127.0.0.1
+POSTGRES_PORT = 15432
+POSTGRES_DB_NAME = wsl_octadim_example

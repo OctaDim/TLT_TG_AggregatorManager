@@ -1,0 +1,5 @@
+[SQLADMIN_any_ip_prod]
+SQLADMIN_SUPERADMIN_USERNAME = example_superadmin
+SQLADMIN_SUPERADMIN_PASSWORD = example_superadmin_password_ChangeMe_2026
+SQLADMIN_ADMIN_USERNAME = example_admin
+SQLADMIN_ADMIN_PASSWORD = example_admin_password_ChangeMe_2026

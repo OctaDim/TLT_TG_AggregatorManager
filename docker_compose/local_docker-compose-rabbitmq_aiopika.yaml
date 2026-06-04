@@ -1,0 +1,85 @@
+name: octadim_local_rabbitmq_aiopika # Sets an isolated Compose project name for local RabbitMQ.
+
+services: # Defines all containers in this RabbitMQ stack.
+  init-rabbitmq-dir: # Prepares the host RabbitMQ data directory before server startup.
+    image: alpine:3.20 # Uses a small Linux image for directory checks.
+    container_name: local-rabbitmq-directory-init-octadim-aiopika # Sets a stable init container name.
+    restart: "no" # Runs this one-shot task once and never restarts it.
+    network_mode: none # Disables networking because directory preparation does not need it.
+    volumes: # Declares host mounts used by the init container.
+      - type: bind # Uses a host directory instead of a Docker named volume.
+        source: ${RABBITMQ_DATA_DIR:?err_RABBITMQ_DATA_DIR_is_required} # Reads the host data path from the RabbitMQ env file.
+        target: /rabbitmq-data # Mounts the host data path inside the init container.
+        bind: # Configures bind-mount behavior.
+          create_host_path: true # Creates the host directory when it is missing.
+    environment: # Passes only variables needed by this init container.
+      RABBITMQ_DATA_DIR: ${RABBITMQ_DATA_DIR:?err_RABBITMQ_DATA_DIR_is_required} # Keeps the original host path visible in logs.
+    command: | # Runs strict shell validation for the mounted host directory.
+      sh -euc '
+        mkdir -p /rabbitmq-data
+
+        if [ ! -d /rabbitmq-data ]; then
+          echo "ERROR: RabbitMQ host data directory does not exist: $${RABBITMQ_DATA_DIR}" >&2
+          exit 1
+        fi
+
+        if [ ! -w /rabbitmq-data ]; then
+          echo "ERROR: RabbitMQ host data directory is not writable: $${RABBITMQ_DATA_DIR}" >&2
+          exit 1
+        fi
+
+        echo "RabbitMQ host data directory is ready: $${RABBITMQ_DATA_DIR}"
+      '
+
+  rabbitmq: # Runs the RabbitMQ broker with the management UI enabled.
+    image: rabbitmq:3.13-management-alpine # Uses RabbitMQ with the management plugin included.
+    container_name: local-rabbitmq-server-octadim-aiopika # Sets a stable RabbitMQ container name.
+    restart: unless-stopped # Restarts RabbitMQ unless it was stopped manually.
+    depends_on: # Controls startup order between services.
+      init-rabbitmq-dir: # Waits for the directory preparation service.
+        condition: service_completed_successfully # Starts RabbitMQ only after the init task exits successfully.
+    ports: # Publishes AMQP and management UI ports to the host.
+      - "${RABBITMQ_EXTERNAL_IP:-127.0.0.1}:${RABBITMQ_AMQP_PORT:-5672}:5672" # Maps the AMQP port used by aio-pika.
+      - "${RABBITMQ_EXTERNAL_IP:-127.0.0.1}:${RABBITMQ_MANAGEMENT_PORT:-15672}:15672" # Maps the management web UI port.
+    environment: # Passes only RabbitMQ-related variables into the container.
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:?err_RABBITMQ_DEFAULT_USER_is_required} # Sets the initial broker user.
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?err_RABBITMQ_DEFAULT_PASS_is_required} # Sets the initial broker password.
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_DEFAULT_VHOST:-/} # Sets the initial virtual host.
+      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE:?err_RABBITMQ_ERLANG_COOKIE_is_required} # Sets the node cookie for stable broker identity.
+    volumes: # Declares persistent broker storage.
+      - type: bind # Uses a host directory for persistent RabbitMQ data.
+        source: ${RABBITMQ_DATA_DIR:?err_RABBITMQ_DATA_DIR_is_required} # Reads the host RabbitMQ data directory from the env file.
+        target: /var/lib/rabbitmq # Mounts host storage at the RabbitMQ data root.
+        bind: # Configures bind-mount startup behavior.
+          create_host_path: false # Fails startup if the init service did not create the host directory.
+    healthcheck: # Defines readiness checks for RabbitMQ.
+      test: # Runs a RabbitMQ diagnostics command inside the container.
+        - CMD-SHELL # Executes the healthcheck through a shell.
+        - rabbitmq-diagnostics -q ping # Checks that the broker node is reachable.
+      interval: 30s # Runs the healthcheck every 30 seconds.
+      timeout: 20s # Fails a single healthcheck after 20 seconds.
+      retries: 5 # Marks the container unhealthy after five failed checks.
+      start_period: 40s # Gives RabbitMQ time before counting failures.
+    networks: # Connects RabbitMQ to its private bridge network.
+      - rabbitmq_aiopika_network # Uses the RabbitMQ-only network.
+    stop_grace_period: 5m # Gives RabbitMQ time for a clean shutdown.
+    deploy: # Documents resource expectations for compatible Compose targets.
+      resources: # Groups resource limits and reservations.
+        limits: # Defines hard resource ceilings.
+          cpus: "2" # Limits RabbitMQ to two CPUs.
+          memory: 2G # Limits RabbitMQ memory to 2 GiB.
+        reservations: # Defines expected baseline resources.
+          cpus: "0.5" # Reserves half a CPU where supported.
+          memory: 512M # Reserves 512 MiB where supported.
+    logging: # Configures container log rotation.
+      driver: json-file # Uses Docker json-file logging.
+      options: # Sets json-file logging options.
+        max-size: "12m" # Rotates each log file after 12 MiB.
+        max-file: "50" # Keeps up to 50 rotated log files.
+        compress: "true" # Compresses rotated log files.
+        mode: non-blocking # Prevents log backpressure from blocking RabbitMQ.
+        max-buffer-size: "4m" # Allows a 4 MiB log buffer in non-blocking mode.
+
+networks: # Declares networks used by this stack.
+  rabbitmq_aiopika_network: # Defines the private RabbitMQ network.
+    driver: bridge # Uses the local Docker bridge network driver.

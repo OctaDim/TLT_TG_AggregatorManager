@@ -1,9 +1,9 @@
-name: octadim_postgres # Sets an isolated Compose project name for PostgreSQL.
+name: octadim_local_postgres # Sets an isolated Compose project name for local PostgreSQL.
 
 services: # Defines all containers in this PostgreSQL stack.
   init-postgres-dir: # Prepares the host PostgreSQL data directory before database startup.
     image: alpine:3.20 # Uses a small Linux image for directory checks.
-    container_name: postgres-directory-init-octadim # Sets a stable init container name.
+    container_name: local-postgres-directory-init-octadim # Sets a stable init container name.
     restart: "no" # Runs this one-shot task once and never restarts it.
     network_mode: none # Disables networking because directory preparation does not need it.
     volumes: # Declares host mounts used by the init container.
@@ -33,7 +33,7 @@ services: # Defines all containers in this PostgreSQL stack.
 
   postgres: # Runs the PostgreSQL database server.
     image: postgres:16-alpine # Uses PostgreSQL 16 on Alpine Linux.
-    container_name: postgres-server-octadim # Sets a stable PostgreSQL container name.
+    container_name: local-postgres-server-octadim # Sets a stable PostgreSQL container name.
     restart: unless-stopped # Restarts PostgreSQL unless it was stopped manually.
     depends_on: # Controls startup order between services.
       init-postgres-dir: # Waits for the directory preparation service.
@@ -68,6 +68,16 @@ services: # Defines all containers in this PostgreSQL stack.
           echo "ERROR: PostgreSQL data directory is not writable before startup: $${data_root}" >&2
           exit 1
         fi
+
+        command -v psql >/dev/null 2>&1 || {
+          echo "ERROR: psql is not available in the PostgreSQL container image" >&2
+          exit 1
+        }
+
+        command -v pg_isready >/dev/null 2>&1 || {
+          echo "ERROR: pg_isready is not available in the PostgreSQL container image" >&2
+          exit 1
+        }
 
         exec docker-entrypoint.sh "$$@"
       - postgres-entrypoint-wrapper # Provides the shell script name as $0.

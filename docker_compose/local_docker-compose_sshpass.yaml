@@ -1,0 +1,22 @@
+name: octadim_local_sshpass # Sets an isolated Compose project name for local SSH helper tooling.
+
+services: # Defines helper containers for local operational tooling.
+  sshpass-tools: # Keeps sshpass and OpenSSH client tools available for docker exec usage.
+    image: alpine:3.20 # Uses a small Linux image and installs only required SSH tooling.
+    container_name: local-sshpass-tools-octadim # Sets a stable local helper container name.
+    restart: unless-stopped # Keeps the helper container available until stopped manually.
+    network_mode: bridge # Allows outbound SSH connections from the helper container.
+    command: | # Installs and verifies sshpass before keeping the container alive.
+      sh -euc '
+        apk add --no-cache openssh-client sshpass
+        command -v sshpass >/dev/null 2>&1
+        command -v ssh >/dev/null 2>&1
+        sshpass -V
+        tail -f /dev/null
+      '
+    logging: # Configures container log rotation.
+      driver: json-file # Uses Docker json-file logging.
+      options: # Sets json-file logging options.
+        max-size: "4m" # Rotates each log file after 4 MiB.
+        max-file: "10" # Keeps up to 10 rotated log files.
+        compress: "true" # Compresses rotated log files.
