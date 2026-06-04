@@ -56,7 +56,9 @@ docker-compose -f local_docker-compose_postgres.yaml --env-file .env_local_postg
 docker-compose -f local_docker-compose_postgres.yaml --env-file .env_local_postgres logs -f postgres
 docker-compose -f ip_docker-compose_postgres.yaml --env-file .env.ip_postgres ps
 docker-compose -f ip_docker-compose_postgres.yaml --env-file .env.ip_postgres logs -f postgres
+docker exec local-postgres-server-octadim psql --version
 docker exec local-postgres-server-octadim pg_isready -h 127.0.0.1 -U <POSTGRES_USER> -d <POSTGRES_DB_NAME>
+docker exec ip-postgres-server-octadim psql --version
 docker exec ip-postgres-server-octadim pg_isready -h 127.0.0.1 -U <POSTGRES_USER> -d <POSTGRES_DB_NAME>
 ```
 
@@ -68,3 +70,6 @@ docker exec ip-postgres-server-octadim pg_isready -h 127.0.0.1 -U <POSTGRES_USER
 - PostgreSQL data is bind-mounted from `POSTGRES_DATA_DIR`, not stored in a Docker named volume.
 - `docker-compose down -v` does not delete files stored in `POSTGRES_DATA_DIR`.
 - Replace placeholder secrets in the selected `.env.*.postgres` file before real use.
+- The PostgreSQL entrypoint wrapper verifies that `psql` and `pg_isready` exist
+  in the selected image before it delegates to the official PostgreSQL
+  entrypoint. This keeps client-tool availability part of the startup contract.

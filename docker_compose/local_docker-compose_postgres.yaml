@@ -69,6 +69,16 @@ services: # Defines all containers in this PostgreSQL stack.
           exit 1
         fi
 
+        command -v psql >/dev/null 2>&1 || {
+          echo "ERROR: psql is not available in the PostgreSQL container image" >&2
+          exit 1
+        }
+
+        command -v pg_isready >/dev/null 2>&1 || {
+          echo "ERROR: pg_isready is not available in the PostgreSQL container image" >&2
+          exit 1
+        }
+
         exec docker-entrypoint.sh "$$@"
       - postgres-entrypoint-wrapper # Provides the shell script name as $0.
     command: # Starts the default PostgreSQL server process.
