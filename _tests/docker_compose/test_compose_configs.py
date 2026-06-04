@@ -16,9 +16,14 @@ RABBITMQ_AIOPIKA_COMPOSE_FILES = [
     ROOT_DIR / "local_docker-compose-rabbitmq_aiopika.yaml",
     ROOT_DIR / "ip_docker-compose-rabbitmq_aiopika.yaml",
 ]
+SSHPASS_COMPOSE_FILES = [
+    ROOT_DIR / "local_docker-compose_sshpass.yaml",
+    ROOT_DIR / "ip_docker-compose_sshpass.yaml",
+]
 POSTGRES_RUNBOOK = ROOT_DIR / "POSTGRES_RUNBOOK.md"
 MINIO_RUNBOOK = ROOT_DIR / "S3_MINIO_RUNBOOK.md"
 RABBITMQ_AIOPIKA_RUNBOOK = ROOT_DIR / "RABBITMQ_AIOPIKA_RUNBOOK.md"
+SSHPASS_RUNBOOK = ROOT_DIR / "SSHPASS_RUNBOOK.md"
 
 
 class DockerComposeConfigTests(unittest.TestCase):
@@ -50,11 +55,38 @@ class DockerComposeConfigTests(unittest.TestCase):
             "${POSTGRES_PASSWORD:?err_POSTGRES_PASSWORD_is_required}",
             "${POSTGRES_HOST:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432",
             "PGDATA: /var/lib/postgresql/data/pgdata",
+            "command -v psql",
+            "command -v pg_isready",
             "pg_isready -h 127.0.0.1",
             "postgres_network:",
         ]
 
         for compose_file in POSTGRES_COMPOSE_FILES:
+            text = compose_file.read_text(encoding="utf-8")
+            with self.subTest(compose_file=compose_file.name, fragment="name"):
+                self.assertIn(expected_names[compose_file.name], text)
+
+            for fragment in required_fragments:
+                with self.subTest(compose_file=compose_file.name, fragment=fragment):
+                    self.assertIn(fragment, text)
+
+    def test_sshpass_compose_files_contain_required_startup_contract(self):
+        expected_names = {
+            "local_docker-compose_sshpass.yaml": "name: octadim_local_sshpass",
+            "ip_docker-compose_sshpass.yaml": "name: octadim_ip_sshpass",
+        }
+
+        required_fragments = [
+            "sshpass-tools:",
+            "image: alpine:3.20",
+            "apk add --no-cache openssh-client sshpass",
+            "command -v sshpass",
+            "command -v ssh",
+            "sshpass -V",
+            "tail -f /dev/null",
+        ]
+
+        for compose_file in SSHPASS_COMPOSE_FILES:
             text = compose_file.read_text(encoding="utf-8")
             with self.subTest(compose_file=compose_file.name, fragment="name"):
                 self.assertIn(expected_names[compose_file.name], text)
@@ -153,6 +185,16 @@ class DockerComposeConfigTests(unittest.TestCase):
                     "local_docker-compose-rabbitmq_aiopika.yaml --env-file .env_local_rabbitmq_aiopika",
                     "ip_docker-compose-rabbitmq_aiopika.yaml --env-file .env.ip_rabbitmq_aiopika",
                     "config --quiet",
+                ],
+            ),
+            (
+                SSHPASS_RUNBOOK,
+                [
+                    "local_docker-compose_sshpass.yaml",
+                    "ip_docker-compose_sshpass.yaml",
+                    "config --quiet",
+                    "docker exec local-sshpass-tools-octadim sshpass -V",
+                    "docker exec ip-sshpass-tools-octadim sshpass -V",
                 ],
             ),
         ]

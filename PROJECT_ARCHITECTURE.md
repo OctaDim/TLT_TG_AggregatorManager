@@ -1,5 +1,6 @@
 Created by: Codex
-Date: 2026-06-03
+Date: 2026-06-04
+Time: 09:41:18 +03
 
 # Project Architecture
 
@@ -20,7 +21,8 @@ It combines:
 - SQLAlchemy 2.x PostgreSQL persistence.
 - SQLAdmin-based administrative UI.
 - aiobotocore-based S3 access.
-- Docker Compose files and runbooks for local PostgreSQL, MinIO, and RabbitMQ.
+- Docker Compose files and runbooks for local PostgreSQL, MinIO, RabbitMQ, and
+  sshpass helper tooling.
 
 This repository currently has `PROJECT_ARCHITECTURE.md` as a workspace-local
 architecture guide. Keep it updated together with any code, configuration,
@@ -59,7 +61,7 @@ not have to rediscover the same project map.
 |   |-- postgres_models/            # ORM models for Telethon configs and admin roles.
 |   |-- postgres_queries/           # Domain-specific database queries.
 |   `-- postgres_queries_utils/     # Reusable query builder/update helpers.
-|-- docker_compose/                 # Local PostgreSQL, MinIO, and RabbitMQ compose stacks/runbooks.
+|-- docker_compose/                 # Local PostgreSQL, MinIO, RabbitMQ, and sshpass compose stacks/runbooks.
 |   |-- .env_local_postgres         # Localhost PostgreSQL variables for 127.0.0.1.
 |   |-- .env.ip_postgres            # IP-bound PostgreSQL variables for a concrete host IP.
 |   |-- .env_local_s3_minio         # Localhost MinIO variables for 127.0.0.1.
@@ -72,6 +74,8 @@ not have to rediscover the same project map.
 |   |-- ip_docker-compose_s3_minio.yaml # MinIO stack bound through IP env.
 |   |-- local_docker-compose-rabbitmq_aiopika.yaml # RabbitMQ stack bound through local env.
 |   |-- ip_docker-compose-rabbitmq_aiopika.yaml # RabbitMQ stack bound through IP env.
+|   |-- local_docker-compose_sshpass.yaml # Local helper container with sshpass and ssh.
+|   |-- ip_docker-compose_sshpass.yaml # IP-mode helper container with sshpass and ssh.
 |   `-- *_RUNBOOK.md                # Operational runbooks for compose validation and local access.
 |-- _docs/                          # Operational notes and committed project documentation.
 |   |-- tlt_sensitive_config_samples/ # Sanitized examples for secret-bearing config files.
@@ -219,7 +223,7 @@ In the current local WSL workspace all selectable `.configs_*.ini` service
 sections are intentionally loopback-oriented. API, PostgreSQL, aggregator,
 S3/MinIO, and SOCKS proxy host values resolve to `127.0.0.1`; PostgreSQL uses
 the Docker-published port `15432`, and S3/MinIO uses the Docker Compose
-credentials and default bucket from `docker_compose/.env.s3_minio`.
+credentials and default bucket from `docker_compose/.env_local_s3_minio`.
 
 ### `_docs/tlt_sensitive_config_samples/`
 
@@ -335,6 +339,7 @@ agent can quickly find the correct registration point and verification path.
 - SQLAlchemy 2.0.46 with asyncpg and psycopg2-binary drivers.
 - SQLAdmin 0.23.0 with Jinja2 templates and Starlette sessions.
 - PostgreSQL 16 Alpine for the local/IP compose stacks.
+- Alpine 3.20 helper compose stacks for `sshpass` and OpenSSH client tooling.
 - aiobotocore 3.7.0 and botocore 1.43.0 for S3-compatible storage.
 - MinIO compose stacks for local and IP-bound S3-compatible storage.
 - RabbitMQ 3.13 management image for local and IP-bound aio-pika-oriented
@@ -360,10 +365,20 @@ agent can quickly find the correct registration point and verification path.
   workspace the Docker-published local port is `15432` to avoid conflicts with
   native Windows or Ubuntu PostgreSQL services on `5432`.
 - All PostgreSQL config sections currently point to the local compose database
-  `wsl_octadim_dexp` on `127.0.0.1:15432` so the external-IP section selector
+  `wsl_dexp_octadim` on `127.0.0.1:15432` so the external-IP section selector
   cannot accidentally route the service to a remote database.
+- Local DBeaver-style access was verified on 2026-06-03 through
+  `127.0.0.1:15432` with database `wsl_dexp_octadim` and user `octadim`. The
+  active container was `local-postgres-server-octadim`, Docker published
+  `127.0.0.1:15432->5432`, both `wsl_dexp_octadim` and default database
+  `postgres` existed, and both `octadim` and default login role `postgres`
+  existed.
 - Compose env files are local environment data. Treat them as secret-bearing
   files and avoid printing or committing real credentials.
+- The PostgreSQL compose entrypoint wrapper verifies that `psql` and
+  `pg_isready` are available in the selected image before delegating to the
+  official PostgreSQL entrypoint. The healthcheck still uses `pg_isready` as
+  the runtime readiness probe.
 - PostgreSQL's container log may report `listening on IPv4 address "0.0.0.0"`
   and `listening on IPv6 address "::"` because the official PostgreSQL image
   starts the server inside the container with broad internal listen addresses.
@@ -379,7 +394,7 @@ agent can quickly find the correct registration point and verification path.
   published host port, recreate it with the current compose file so the port
   mapping is applied.
 - DBeaver `no pg_hba.conf entry ... no encryption` errors should be diagnosed
-  by checking `docker logs postgres-server-octadim` and active
+  by checking `docker logs local-postgres-server-octadim` and active
   `pg_hba_file_rules` first. In this local stack SSL is normally off, so that
   error often means DBeaver reached another PostgreSQL instance or an old
   container instead of the compose service documented here.
@@ -435,6 +450,19 @@ agent can quickly find the correct registration point and verification path.
 - RabbitMQ is currently an infrastructure option for future aio-pika based
   messaging. No active Python RabbitMQ client or queue-processing code is wired
   into `main.py` in the current snapshot.
+
+### sshpass Helper Tools
+
+- Local compose file: `docker_compose/local_docker-compose_sshpass.yaml`.
+- IP-mode compose file: `docker_compose/ip_docker-compose_sshpass.yaml`.
+- Runbook: `docker_compose/SSHPASS_RUNBOOK.md`.
+- Compose project names: `octadim_local_sshpass` and `octadim_ip_sshpass`.
+- These helper stacks install `openssh-client` and `sshpass` inside an Alpine
+  container, verify `sshpass` and `ssh`, and then keep the container alive for
+  `docker exec` usage.
+- The helper compose files intentionally do not store SSH passwords, hosts, or
+  usernames. Pass sensitive values at execution time and prefer key-based SSH
+  whenever it is available.
 
 ### External Aggregator API
 
@@ -554,6 +582,15 @@ required sections and parameter names, while Git history stays free of real API
 keys, passwords, session signing keys, Telegram credentials, proxy credentials,
 and host-specific deployment secrets.
 
+### ADR-013: `sshpass` Lives in a Dedicated Helper Container
+
+`sshpass` is provided through separate local and IP-mode Compose helper files
+instead of being installed into the application, PostgreSQL, MinIO, or RabbitMQ
+containers. This keeps password-based SSH tooling isolated from core service
+runtime images, avoids adding SSH utilities to database or broker containers,
+and makes the helper explicit for development/operations cases where key-based
+SSH is unavailable.
+
 ## Development Conventions
 
 - Keep `PROJECT_ARCHITECTURE.md` synchronized with code, file structure, and
@@ -594,8 +631,8 @@ and host-specific deployment secrets.
 Current automated verification is limited:
 
 - `_tests/docker_compose/test_compose_configs.py` uses `unittest` to statically
-  verify expected PostgreSQL, MinIO, and RabbitMQ compose contracts and runbook
-  commands.
+  verify expected PostgreSQL, MinIO, RabbitMQ, and sshpass compose contracts and
+  runbook commands.
 - `_tests/sensitive_config/test_sensitive_config_samples.py` compares committed
   sanitized samples with the ignored local config files so parameter drift is
   detected without committing secrets.
@@ -633,6 +670,10 @@ Recommended checks after runtime code changes:
   `docker compose -f docker_compose/local_docker-compose-rabbitmq_aiopika.yaml --env-file docker_compose/.env_local_rabbitmq_aiopika config --quiet`
   and
   `docker compose -f docker_compose/ip_docker-compose-rabbitmq_aiopika.yaml --env-file docker_compose/.env.ip_rabbitmq_aiopika config --quiet`.
+- Validate sshpass helper compose rendering:
+  `docker compose -f docker_compose/local_docker-compose_sshpass.yaml config --quiet`
+  and
+  `docker compose -f docker_compose/ip_docker-compose_sshpass.yaml config --quiet`.
 
 ## Known Risks and Agent Notes
 
@@ -665,6 +706,10 @@ Recommended checks after runtime code changes:
 - `docker_compose/POSTGRES_RUNBOOK.md` - PostgreSQL compose usage, validation,
   and Windows DBeaver connection guidance for WSL-hosted containers.
 - `docker_compose/S3_MINIO_RUNBOOK.md` - MinIO compose usage and validation.
+- `docker_compose/RABBITMQ_AIOPIKA_RUNBOOK.md` - RabbitMQ/aio-pika compose
+  usage, validation, and troubleshooting.
+- `docker_compose/SSHPASS_RUNBOOK.md` - sshpass helper compose usage and
+  validation.
 - `_docs/_docs_server_linux/` - Linux service deployment notes.
 - `_docs/_docs_event_params_descr/` - Telegram event parameter documentation.
 - `_tests/docker_compose/test_compose_configs.py` - static tests for compose
