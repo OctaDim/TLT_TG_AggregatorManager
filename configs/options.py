@@ -52,7 +52,7 @@ class SQLADMIN_OPTIONS:
 
 @dataclass(frozen=True)
 class TELETHON_OPTIONS:
-    USE_TELETHON_PROXY: bool = True
+    USE_TELETHON_PROXY: bool = False
     TERMINATE_PROCESS_TIMEOUT: int = 15
     KILL_PROCESS_TIMEOUT: int = 10
     EACH_ACC_CLIENT_START_DELAY_SEC: int = 0
