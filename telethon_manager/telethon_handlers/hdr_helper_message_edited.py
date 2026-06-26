@@ -34,6 +34,8 @@ from utils_common.get_obj_attrs_vals_by_attr_chain import (
     get_attrs_values_by_attr_chains)
 from utils_common.normalized_path import (
     get_full_dir_normal_path, get_full_file_normal_path)
+from utils_specific.enrich_sender_profile_data import (
+    enrich_sender_profile_data)
 from utils_specific.handle_all_event_params import (
     send_all_event_params)
 
@@ -482,6 +484,12 @@ async def message_edited_handler_helper(
             "reactions_doc_id_cst": emoji_doc_id_list,
             "reactions_doc_id_count_cst": len(emoji_doc_id_list), })
         action_str = f"{action_str}+{ACTION_STATUS.EMOJI_ATTACH_ACTION_STR}"
+
+    sender_enrichment = await enrich_sender_profile_data(
+        event=event,
+        telethon_client=telethon_client,
+        event_params=handler_specific_params)
+    handler_specific_params.update(sender_enrichment)
 
     handler_specific_params.update({
         "action": action_str,

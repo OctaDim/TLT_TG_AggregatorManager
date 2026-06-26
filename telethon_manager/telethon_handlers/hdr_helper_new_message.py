@@ -33,6 +33,8 @@ from utils_common.get_obj_attrs_vals_by_attr_chain import (
     get_attrs_values_by_attr_chains)
 from utils_common.normalized_path import (
     get_full_dir_normal_path, get_full_file_normal_path)
+from utils_specific.enrich_sender_profile_data import (
+    enrich_sender_profile_data)
 from utils_specific.handle_all_event_params import (
     send_all_event_params)
 
@@ -442,6 +444,12 @@ async def new_message_handler_helper(
                     await aiofiles_os.remove(temp_file_path)
                 action_str = (f"{action_str}+{ACTION_STATUS.VIDEO_ATTACH_ACTION_STR}"
                               f"{extra_saved_mark}")
+    sender_enrichment = await enrich_sender_profile_data(
+        event=event,
+        telethon_client=telethon_client,
+        event_params=handler_specific_params)
+    handler_specific_params.update(sender_enrichment)
+
     handler_specific_params.update({
         "action": action_str,
         # "telethon_config_name": telethon_config.telethon_config_name,
