@@ -26,6 +26,10 @@ from fast_api.app_complete_auth_phone.router_complete_auth_phone import (
     rtr_complete_client_phone_auth)
 from fast_api.app_complete_auth_qrcode.router_complete_auth_qrcode import (
     rtr_complete_client_qrcode_auth)
+from fast_api.app_dialog_messages_live.router_dialog_messages_live import (
+    rtr_get_dialog_messages_live)
+from fast_api.app_dialogs_by_configs.router_dialogs_by_configs import (
+    rtr_get_dialogs_by_configs)
 from fast_api.app_find_telegram_users_data.router_find_telegram_data import (
     rtr_find_telegram_users_data)
 from fast_api.app_get_file_by_message_id.router_get_file_by_message_id import (
@@ -46,6 +50,10 @@ from fast_api.app_reconnect_authed_tlt_clients.router_reconnect_authed_tlt_clien
     rtr_reconnect_authed_tlt_clients)
 from fast_api.app_send_files.router_send_files import (
     rtr_send_telegram_files)
+from fast_api.app_send_dialog_files.router_send_dialog_files import (
+    rtr_send_dialog_files)
+from fast_api.app_send_dialog_message.router_send_dialog_message import (
+    rtr_send_dialog_message)
 from fast_api.app_send_message.router_send_message import (
     rtr_send_telegram_message)
 from fast_api.app_start_new_telethon_client.router_start_new_tlt_client import (
@@ -71,6 +79,7 @@ routers_list = [
     rtr_start_new_telethon_client,
     rtr_find_telegram_users_data,
     rtr_send_telegram_message,
+    rtr_send_dialog_message,
     rtr_tlt_configs_by_web_account,
     rtr_complete_client_phone_auth,
     rtr_complete_client_qrcode_auth,
@@ -79,9 +88,12 @@ routers_list = [
     rtr_stop_clear_tlt_clients,
     rtr_reconnect_authed_tlt_clients,
     rtr_tlt_messages_configs_by_web_acc,
+    rtr_get_dialogs_by_configs,
+    rtr_get_dialog_messages_live,
     rtr_activate_messages_configs,
     rtr_deactivate_messages_configs,
     rtr_send_telegram_files,
+    rtr_send_dialog_files,
     rtr_get_file_by_message_id,
     rtr_get_file_from_tlt_server,
     rtr_get_file_from_s3_storage,
