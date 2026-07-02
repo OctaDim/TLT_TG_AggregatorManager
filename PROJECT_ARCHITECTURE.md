@@ -1,6 +1,6 @@
 Created by: Codex
-Date: 2026-06-29
-Time: 10:18:42 UTC
+Date: 2026-07-02
+Time: 12:53:17 MSK
 
 # Project Architecture
 
@@ -571,6 +571,7 @@ Consequences:
 - Do not store secrets or sensitive data in Markdown or documentation.
 - Do not inspect or analyze `zBackUp/` and `zTest/`.
 - Treat Telethon session files, proxy backups, `.env`, `.configs_*.ini`, and MinIO/DB credentials as sensitive.
+- Treat local IDE settings as developer-private. `.vscode/` is ignored because editor extensions can store API keys or other local credentials there.
 - New tests for a Python package should go into a package-local `_tests/` directory.
 - Do not commit unless explicitly requested. If commits are requested, generated commit messages must start with `AI_` and be split by meaning/category.
 - Prefer existing helper modules and patterns over introducing new abstractions.
@@ -586,6 +587,9 @@ Existing tests are currently under `db_postgres/postgres_tests/`. The repository
 - Mock Telethon clients, S3 clients, and external aggregator requests unless an integration test explicitly requires real services.
 - Do not require real secrets in tests.
 - Use test fixtures or environment overrides for PostgreSQL/S3 integration tests.
+- `fast_api/app_get_telegram_folder_dialogs/_tests/` covers filter semantics,
+  post-filter limits, TTL reuse, concurrent single-flight behavior, and folder
+  list warm-up without requiring a real Telegram account.
 
 ## Detailed Documentation References
 
@@ -603,3 +607,276 @@ Existing tests are currently under `db_postgres/postgres_tests/`. The repository
 - Keep this document synchronized with manual changes or pulled repository changes.
 - Summarize architecture changes here, including the reason behind important decisions.
 - Never paste actual secret values into this file.
+
+## Telegram Folders API
+
+Telegram folders are implemented as live MTProto dialog filters owned by one
+Telegram user account. PostgreSQL is deliberately not used to cache folder
+state. Every dialog-filter read calls `messages.getDialogFilters`; filter mutations are
+sent to Telegram and followed by another server read before the API returns.
+Archive mutations rely on the authoritative `Updates` response returned by Telegram.
+
+The archive is not a dialog filter. It is Telegram's system peer folder with
+fixed `folder_id=1`. Archive operations use `folders.editPeerFolders` and move
+peers between folder `1` (archived) and folder `0` (not archived). Both dialog
+filters and archive changes are server-side account state and are synchronized
+to official mobile and desktop clients through Telegram updates.
+
+### Package Structure
+
+Each endpoint has its own package, router, and request/response schema module:
+
+- `fast_api/app_get_telegram_folders/`
+- `fast_api/app_get_telegram_folder/`
+- `fast_api/app_get_telegram_folder_dialogs/`
+- `fast_api/app_create_telegram_folder/`
+- `fast_api/app_update_telegram_folder/`
+- `fast_api/app_delete_telegram_folder/`
+- `fast_api/app_reorder_telegram_folders/`
+- `fast_api/app_preview_folder_candidates/`
+- `fast_api/app_resolve_peers_for_folder/`
+- `fast_api/app_get_telegram_archive_dialogs/`
+- `fast_api/app_archive_telegram_peers/`
+- `fast_api/app_unarchive_telegram_peers/`
+
+`fast_api/app_telegram_folders_common/` owns shared Pydantic contracts and the
+single Telethon adapter used by all endpoint packages. This prevents raw
+MTProto constructors, peer-resolution rules, account authorization, and error
+translation from diverging between endpoints.
+
+### Common Request And Response Contracts
+
+Every endpoint is `POST /{API_BASE_URL_NAME}/...` and requires these JSON body
+objects:
+
+- `auth_data.username`: `str`, required.
+- `auth_data.password`: `str`, required.
+- `web_account_data.web_account_id`: `str`, required.
+- `web_account_data.web_account_username`: `str`, required.
+- `tlt_config_ref.config_name`: `str`, required; schema name is
+  `TGAccountTLTConfigRef`.
+
+Every endpoint invokes `verify_auth_username_password`, verifies that the
+config belongs to the supplied web account, connects the selected client when
+needed, verifies Telegram authorization, and rejects bot configs because
+Telegram folder methods are user-only.
+
+Every success response includes `account`:
+
+- `config_name`: `str`, required.
+- `telegram_account_id`: `int | null`.
+- `username`: `str | null`.
+- `first_name_cst`: `str | null`.
+- `last_name_cst`: `str | null`.
+- `phone_cst`: `str | null`.
+- `account_type_cst`: `str | null`.
+- `bot_cst`: `str | null`; only the final 10 token characters are allowed,
+  never a complete bot token. Folder endpoints reject bot configs, so this is
+  normally `null` here.
+
+`TGPeerRef` input fields:
+
+- `peer_id`: `int | null`; either this or `username` is required.
+- `username`: `str | null`; either this or `peer_id` is required.
+- `peer_storage_type`: `str | null`; optional disambiguation (`user`, `chat`,
+  `channel`, with `bot` and `group` accepted as aliases).
+
+Resolved peer output fields are `peer_id`, `username`, `title`,
+`first_name_cst`, `last_name_cst`, `phone_cst`, `bot_cst`, `peer_type_cst`,
+`peer_storage_type`, and `peer_is_bot`. Profile fields are nullable because
+Telegram privacy and entity-cache state may prevent retrieval. Telegram does
+not disclose an arbitrary bot's token, so peer-level `bot_cst` is normally
+`null`.
+
+`TGFolderDefinition` contains required `title: str` (1-12 characters), optional
+`emoticon: str | null`, optional `color: int | null`, `title_noanimate: bool`,
+category flags `contacts`, `non_contacts`, `groups`, `broadcasts`, `bots`,
+exclusion flags `exclude_muted`, `exclude_read`, `exclude_archived`, and lists
+`pinned_peers`, `include_peers`, `exclude_peers` of `TGPeerRef`. Pinned peers
+are normalized into the include whitelist. A peer cannot be both included and
+excluded, and a folder must have an explicit peer or category inclusion.
+
+`TGFolderData` returns the same filter properties plus `folder_id: int`,
+`folder_kind: str` (`default`, `custom`, or `chatlist`), `has_my_invites: bool`,
+and enriched `pinned_peers`, `include_peers`, and `exclude_peers` lists.
+
+### Folder Endpoints
+
+#### `POST /{API_BASE_URL_NAME}/get_telegram_folders`
+
+- Additional input: none.
+- Output: common `message` and `account`, `tags_enabled: bool`, and
+  `folders: list[TGFolderData]`.
+
+#### `POST /{API_BASE_URL_NAME}/get_telegram_folder`
+
+- Input `folder_data.folder_id`: `int`, required, range 2-255.
+- Output: common fields and `folder: TGFolderData`.
+
+#### `POST /{API_BASE_URL_NAME}/get_telegram_folder_dialogs`
+
+- Input `folder_data.folder_id`: `int`, required, range 2-255.
+- Input `folder_data.dialogs_limit`: `int`, optional, default 100, range 1-1000.
+- Output: common fields, current `folder: TGFolderData`, `dialogs_limit`,
+  `scanned_dialogs_count`, `returned_count`,
+  `membership_source="telegram_dialog_filter_snapshot"`, and typed live dialogs.
+- Performance fields are `snapshot_source: str` (`telegram_refresh`, `cache`,
+  or `single_flight_cache`), `snapshot_age_ms: float`,
+  `snapshot_wait_ms: float`, `snapshot_scan_ms: float`,
+  `membership_filter_ms: float`, and `total_processing_ms: float`.
+- Each dialog additionally exposes folder-specific `is_pinned`, `is_archived`,
+  and `folder_match_reason`.
+- Telegram does not materialize user dialog-filter contents through
+  `messages.getDialogs(folder_id=custom_filter_id)`. The helper reads the current
+  filter from `messages.getDialogFilters`, scans server peer folders 0 and 1,
+  applies explicit and dynamic filter rules, restores the filter pin order, and
+  applies `dialogs_limit` only after membership evaluation.
+- Full live-dialog snapshots are cached in process for 60 seconds per
+  `(config_name, client instance)` and capped at 64 entries. Concurrent misses
+  share one asyncio lock/single-flight scan. `get_telegram_folders` schedules a
+  background warm-up so the normal page flow starts scanning before a user
+  selects a folder.
+
+#### `POST /{API_BASE_URL_NAME}/create_telegram_folder`
+
+- Input `folder_data.folder_id`: `int | null`, optional, range 2-255; the first
+  free ID is chosen when omitted.
+- Input `folder_data.folder_definition`: `TGFolderDefinition`, required.
+- Output: common fields and the server-refetched `folder: TGFolderData`.
+
+#### `POST /{API_BASE_URL_NAME}/update_telegram_folder`
+
+- Input `folder_data.folder_id`: `int`, required, range 2-255.
+- Input `folder_data.folder_definition`: `TGFolderDefinition`, required; this
+  is a full replacement, not a partial patch.
+- Output: common fields and the server-refetched `folder: TGFolderData`.
+
+#### `POST /{API_BASE_URL_NAME}/delete_telegram_folder`
+
+- Input `folder_data.folder_id`: `int`, required, range 2-255.
+- Output: common fields, `folder_id: int`, and `deleted: bool` confirmed by a
+  fresh Telegram read.
+
+#### `POST /{API_BASE_URL_NAME}/reorder_telegram_folders`
+
+- Input `reorder_data.folder_ids`: non-empty unique `list[int]`, required;
+  each ID must be in range 2-255 and exist on Telegram.
+- Output: common fields, resulting `folder_ids: list[int]`, and
+  `folders: list[TGFolderData]` from Telegram.
+- A partial requested order is supported; omitted existing folders retain
+  their relative order after the requested IDs.
+
+#### `POST /{API_BASE_URL_NAME}/preview_folder_candidates`
+
+- Input `preview_data.folder_definition`: `TGFolderDefinition`, required.
+- Input `preview_data.dialogs_limit`: `int`, optional, default 200, range
+  1-1000.
+- Output: common fields, `is_estimate: bool` (always true), the limit,
+  included/excluded counts, and candidates with resolved peer data,
+  `included: bool`, and machine-readable `reasons: list[str]`.
+- Explicit exclusion wins over every rule. Explicit include/pin wins over
+  dynamic muted/read/archive exclusions. The preview is an estimate because
+  final folder membership is evaluated by Telegram clients using current
+  dialog state.
+
+#### `POST /{API_BASE_URL_NAME}/resolve_peers_for_folder`
+
+- Input `peers_data.peers`: non-empty `list[TGPeerRef]`, required.
+- Output: common fields, resolved/unresolved counts, and one result per input
+  with `requested_peer`, `resolved`, optional enriched `peer`, and optional
+  `error`. Partial resolution is intentional; folder mutations remain strict.
+
+### Archive Endpoints
+
+#### `POST /{API_BASE_URL_NAME}/get_telegram_archive_dialogs`
+
+- Input `archive_data.dialogs_limit`: `int`, optional, default 100, range
+  1-1000.
+- Output: common fields, fixed `folder_id: 1`, limit, returned count, and live
+  Telethon dialog records. No archive state is read from PostgreSQL.
+
+#### `POST /{API_BASE_URL_NAME}/archive_telegram_peers`
+
+- Input `peers_data.peers`: non-empty `list[TGPeerRef]`, required.
+- Output: common fields, fixed `folder_id: 1`, `archived_count`, and enriched
+  moved peers.
+
+#### `POST /{API_BASE_URL_NAME}/unarchive_telegram_peers`
+
+- Input `peers_data.peers`: non-empty `list[TGPeerRef]`, required.
+- Output: common fields, destination `folder_id: 0`, `unarchived_count`, and
+  enriched moved peers.
+
+### Limits And Failure Behavior
+
+- User accounts only; Telegram rejects these methods for bots.
+- Folder IDs `0` and `1` are reserved for default chats and archive behavior.
+- Imported/shared `DialogFilterChatlist` objects are readable but cannot be
+  changed or deleted through the ordinary custom-folder endpoints.
+- Telegram controls Premium/non-Premium folder, chat, and pin limits through
+  server app configuration. RPC validation remains authoritative.
+- Concurrent changes from another Telegram client can race between the API's
+  read and write because MTProto exposes no compare-and-swap folder version.
+- Flood waits return HTTP 429. Telegram RPC validation errors return HTTP 400;
+  missing local/config/peer resources use 404, conflicts use 409, and unknown
+  Telegram transport failures use 502.
+- Arbitrary peer phone/name data may remain absent. Arbitrary bot tokens can
+  never be retrieved from Telegram.
+- Exact custom-folder membership requires scanning live dialogs from peer
+  folders 0 and 1 on a snapshot cache miss. `dialogs_limit` limits the returned
+  list, not a required scan, because pre-limiting would produce incomplete
+  folder contents. Hits reuse only the short-lived dialog snapshot; the current
+  `DialogFilter` is still read from Telegram for every endpoint call.
+
+Official external references:
+
+- Telegram folders: <https://core.telegram.org/api/folders>
+- Dialog filters read: <https://core.telegram.org/method/messages.getDialogFilters>
+- Dialog filter mutation: <https://core.telegram.org/method/messages.updateDialogFilter>
+- Dialog filter order: <https://core.telegram.org/method/messages.updateDialogFiltersOrder>
+- Archive peer mutation: <https://core.telegram.org/method/folders.editPeerFolders>
+
+### ADR-010: Keep Telegram As The Only Folder State Store
+
+Decision: folder/filter and archive state is never cached in PostgreSQL. Reads
+always query Telegram and mutations are confirmed by a fresh Telegram read
+where a read API exists.
+
+Why: folders are account-scoped server state that users may change at any time
+from mobile or desktop Telegram. A database mirror would immediately introduce
+staleness, conflict resolution, update-consumer, and reconciliation concerns
+without adding authority.
+
+Consequences:
+
+- API latency and availability depend on the selected Telethon client and
+  Telegram.
+- Mobile, desktop, and this API naturally converge on Telegram's server state.
+- The archive uses its dedicated peer-folder mechanism instead of pretending
+  to be a mutable dialog filter.
+- Preview is explicitly marked as an estimate and cannot replace a subsequent
+  authoritative Telegram read.
+- Custom folder contents must be evaluated from the current dialog filter and
+  live dialogs. Passing a custom filter ID to `iter_dialogs(folder=...)` is
+  forbidden because that argument maps to Telegram peer folders 0 and 1 only.
+
+### ADR-011: Cache live dialog snapshots, never dialog filters
+
+Decision: keep a bounded 60-second in-process cache of raw live dialog
+snapshots, coordinate misses with one per-config/client asyncio lock, and warm
+the snapshot when folder metadata is requested. Continue reading the current
+Telegram `DialogFilter` on every folder-content request.
+
+Why: an account with more than one thousand dialogs required 6-9 seconds to
+scan peer folders 0 and 1 for every folder selection. The same complete dialog
+set can safely serve several folder definitions for a few seconds, while
+caching the filter itself would hide edits made in official Telegram clients.
+
+Consequences:
+
+- repeated folder selection within the TTL avoids Telegram dialog pagination;
+- concurrent folder requests share one scan instead of multiplying load;
+- folder responses expose scan, wait, filter, cache-source, and total timings;
+- dynamic unread, muted, archive, and ordering data may be up to 60 seconds old
+  on a cache hit, while folder definitions remain fresh;
+- the cache is process-local and intentionally not PostgreSQL or Redis state.
