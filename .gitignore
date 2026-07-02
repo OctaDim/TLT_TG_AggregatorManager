@@ -1,6 +1,7 @@
 not_public/
 not_for_git/
 .idea/
+.vscode/
 
 
 # Byte-compiled / optimized / DLL files
