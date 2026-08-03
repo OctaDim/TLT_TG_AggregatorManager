@@ -43,7 +43,7 @@ api_conf_parser.read(filenames=api_ini_normal_path)
 
 if cur_external_ip == "___.___.___.___":  # Just example
     api_conf_name = API_CONFIG_NAMES.API_TEST
-elif cur_external_ip == "P.R.O.D":
+elif cur_external_ip == "176.124.136.36":
     api_conf_name = API_CONFIG_NAMES.API_PRODUCTION
 elif cur_external_ip == "192.168.21.22":
     api_conf_name = API_CONFIG_NAMES.API_TEST
@@ -76,7 +76,7 @@ telegram_api_conf_parser.read(filenames=telegram_api_ini_normal_path)
 
 if cur_external_ip == "___.___.___.___":  # Just example
     telegram_api_conf_name = TELEGRAM_API_CONFIG_NAMES.TG_OFFICIAL_API_test  # Certain configs can be defined
-if cur_external_ip == "P.R.O.D":
+if cur_external_ip == "176.124.136.36":
     telegram_api_conf_name = TELEGRAM_API_CONFIG_NAMES.TG_OFFICIAL_API_production
 if cur_external_ip == "192.168.21.22":
     telegram_api_conf_name = TELEGRAM_API_CONFIG_NAMES.TG_OFFICIAL_API_test
@@ -107,7 +107,7 @@ proxy_conf_parser.read(filenames=proxy_ini_normal_path)
 
 if cur_external_ip == "___.___.___.___":  # Just example
     proxy_conf_name = PROXY_CONFIG_NAMES.PROXY_TEST
-elif cur_external_ip == "P.R.O.D":
+elif cur_external_ip == "176.124.136.36":
     proxy_conf_name = PROXY_CONFIG_NAMES.PROXY_PRODUCTION
 elif cur_external_ip == "192.168.21.22":
     proxy_conf_name = PROXY_CONFIG_NAMES.PROXY_TEST
@@ -141,7 +141,7 @@ sqladmin_conf_parser.read(filenames=sqladmin_ini_normal_path)
 
 if cur_external_ip == "___.___.___.___":  # Just example
     sqladmin_conf_name = SQLADMIN_CONFIG_NAMES.SQLADMIN_TEST
-elif cur_external_ip == "P.R.O.D":
+elif cur_external_ip == "176.124.136.36":
     sqladmin_conf_name = SQLADMIN_CONFIG_NAMES.SQLADMIN_PRODUCTION
 elif cur_external_ip == "192.168.21.22":
     sqladmin_conf_name = SQLADMIN_CONFIG_NAMES.SQLADMIN_TEST
@@ -176,7 +176,7 @@ postgres_conf_parser.read(filenames=postgres_ini_normal_path)
 
 if cur_external_ip == "___.___.___.___":  # Just example
     postgres_conf_name = POSTGRES_CONFIG_NAMES.POSTGRES_TEST
-elif cur_external_ip == "P.R.O.D":
+elif cur_external_ip == "176.124.136.36":
     postgres_conf_name = POSTGRES_CONFIG_NAMES.POSTGRES_PRODUCTION
 elif cur_external_ip == "192.168.21.22":
     postgres_conf_name = POSTGRES_CONFIG_NAMES.POSTGRES_TEST
@@ -193,6 +193,11 @@ POSTGRES_HOST = postgres_conf_parser.get(section=postgres_conf_name, option="POS
 POSTGRES_PORT = postgres_conf_parser.get(section=postgres_conf_name, option="POSTGRES_PORT") or None
 POSTGRES_DB_NAME = postgres_conf_parser.get(section=postgres_conf_name, option="POSTGRES_DB_NAME")
 
+# print("POSTGRES_USER", POSTGRES_USER)
+# print("POSTGRES_PASSWORD", POSTGRES_PASSWORD)
+# print("POSTGRES_HOST", POSTGRES_HOST)
+# print("POSTGRES_PORT", POSTGRES_PORT)
+# print("POSTGRES_DB_NAME", POSTGRES_DB_NAME)
 
 # GETTING AGGREGATOR INI CONFIGS #########################################
 @dataclass(frozen=True)
@@ -212,6 +217,8 @@ aggregator_conf_parser.read(filenames=aggregator_ini_normal_path)
 
 if cur_external_ip == "___.___.___.___":  # Just example
     aggregator_conf_name = AGGREGATOR_CONFIG_NAMES.AGGREGATOR_TEST
+elif cur_external_ip == "176.124.136.36":
+    aggregator_conf_name = AGGREGATOR_CONFIG_NAMES.AGGREGATOR_PRODUCTION
 elif cur_external_ip == "192.168.21.22":
     aggregator_conf_name = AGGREGATOR_CONFIG_NAMES.AGGREGATOR_TEST
 elif sys.platform == "linux":
@@ -249,7 +256,7 @@ s3_conf_parser.read(filenames=s3_ini_normal_path)
 
 if cur_external_ip == "___.___.___.___":  # Just example
     s3_conf_name = S3_CONFIG_NAMES.S3_TEST
-elif cur_external_ip == "P.R.O.D":
+elif cur_external_ip == "176.124.136.36":
     s3_conf_name = S3_CONFIG_NAMES.S3_PRODUCTION
 elif cur_external_ip == "192.168.21.22":
     s3_conf_name = S3_CONFIG_NAMES.S3_TEST
