@@ -2,7 +2,7 @@ from configs.enums import USER_ROLE
 from configs.environments import (
     SQLADMIN_SUPERADMIN_PASSWORD, SQLADMIN_ADMIN_PASSWORD, SQLADMIN_ADMIN_USERNAME,
     SQLADMIN_SUPERADMIN_USERNAME)
-from configs.options import ALCHEMY_OPTIONS, SQLADMIN_OPTIONS
+from configs.options import ALCHEMY_OPTIONS, SQLADMIN_OPTIONS, TELETHON_OPTIONS
 from db_postgres.postgres_conn.pgs_connection import PgsAsyncConnection
 from db_postgres.postgres_conn.postgres_session import PgsAsyncSession
 from db_postgres.postgres_models.auth_role_model import AuthRoleModel
@@ -59,7 +59,8 @@ async def create_default_sqladmin_users() -> bool | None:
             await save_new_model_object_qry(
                 ModelClassORM=AuthRoleModel,
                 ongoing_session=pgs_async_session,
-                new_data=cur_sqladmin_user_data)
+                new_data=cur_sqladmin_user_data,
+                log_new_data=TELETHON_OPTIONS.LOG_NEW_TELETHON_CONFIG_DATA)
 
     print("SQLAdmin default users creation [OK]")
     return True
